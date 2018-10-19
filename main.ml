@@ -8,5 +8,5 @@ let rec main () =
 (* Execute the game engine. *)
 let () = 
   ANSITerminal.(print_string [red]
-                  "Python\n"); 
+                  "OPython\n"); 
   main ()
