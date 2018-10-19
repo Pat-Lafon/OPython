@@ -20,7 +20,7 @@ bisect-test:
 	$(OCAMLBUILD) -package bisect -syntax camlp4o,bisect_pp \
 	  $(TEST) && ./$(TEST) -runner sequential
 
-play:
+run:
 	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
 
 check:
