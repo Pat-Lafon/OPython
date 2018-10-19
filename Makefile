@@ -1,4 +1,4 @@
-MODULES=main\
+MODULES=main state parser\
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
