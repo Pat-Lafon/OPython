@@ -1,5 +1,5 @@
 
-type value = Int of int| String of string | Var of string
+type value = Int of int| String of string 
 type t = (string*value)list
 
 let empty : t = []
