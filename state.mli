@@ -8,7 +8,7 @@
 
 (* You are free to add more code here. *)
 
-type value = Int of int| String of string | Var of string
+type value = Int of int| String of string 
 type t = (string*value) list
 
 val empty : t 

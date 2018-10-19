@@ -18,25 +18,30 @@ let helper_divide = function
   | (Int (x), Int(y)) -> Int(int_of_float (floor ((float_of_int x)/.(float_of_int y))))
   | _ -> failwith "wrong types"
 
-let rec evaluate (exp : expr) : value = 
-  match exp with 
-  | Binary (e1, op, e2) -> begin 
+let rec eval (exp : expr) (st : State.t) : value = 
+  match (exp,st) with 
+  | (Binary (e1, op, e2), st) -> begin 
       match op with 
-      | Plus -> helper_plus (evaluate e1, evaluate e2)
-      | Minus -> helper_minus (evaluate e1, evaluate e2)
-      | Multiply -> helper_multiply (evaluate e1, evaluate e2)
-      | Divide -> helper_divide (evaluate e1, evaluate e2)
+      | Plus -> helper_plus (eval e1 st, eval e2 st)
+      | Minus -> helper_minus (eval e1 st, eval e2 st)
+      | Multiply -> helper_multiply (eval e1 st, eval e2 st)
+      | Divide -> helper_divide (eval e1 st, eval e2 st)
     end
-  | Unary (op, e1) -> begin 
-      match (op,evaluate e1) with 
+  | Unary (op, e1), st-> begin 
+      match (op,eval e1 st) with 
       | (Plus, Int (x)) -> Int (x)
       | (Minus, Int (x)) -> Int (-x)
       | _ -> failwith "wrong types"
     end
-  | Variable (x) -> Int (0)
-  | Value (x) -> x
+  | Variable (x),st -> begin 
+      match State.find x st with 
+      | Some t -> t
+      | None -> failwith "undefined types"
+    end
 
-(* let eval input st = match input with
-   | Some s, expr -> insert s (evaluate expr) st
-   | None, expr -> print (evaluate expr)
-*)
+  | Value (x) ,st -> x
+
+let evaluate input st = match input with
+  | Some s, expr -> insert s (eval expr st) st
+  | None, expr -> failwith "print (evaluate expr)"
+
