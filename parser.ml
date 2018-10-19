@@ -6,6 +6,7 @@ exception VarNameInvalid
 type op = Plus | Minus | Divide | Multiply
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value
 
+<<<<<<< HEAD
 let reserved_keywords = [
   "False";	"def"; "if"; "raise"; "None"; "del";	"import";	"return"; "True";	
   "elif";	"in";	"try"; "and";	"else";	"is";	"while"; "as";	"except";	"lambda";	
@@ -27,3 +28,5 @@ let is_var_name (s:string) : unit =
   if List.mem s reserved_keywords then raise ReservedVarName else ()
 
 let parse_line (line : string) = 
+=======
+>>>>>>> 539124c14996c201221356d5e689c83f34e079ec
