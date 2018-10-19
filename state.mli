@@ -7,4 +7,17 @@
 *)
 
 (* You are free to add more code here. *)
-type t = []
+
+type value = Int of int| String of string | Var of string
+type t = (string*value)list
+
+val empty : t 
+
+val is_empty : t -> bool 
+
+val insert : string -> value -> t -> t
+
+val find : string -> t
+
+
+val member : string -> t -> bool
