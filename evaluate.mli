@@ -1,4 +1,4 @@
 open Parser
 open State
 
-val evaluate : expr -> value
+val evaluate : string option * Parser.expr -> State.t -> State.t

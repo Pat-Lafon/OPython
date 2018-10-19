@@ -12,3 +12,5 @@ val parse_expr : string -> expr
 val parse_expr : string -> expr
 
 val parse_assignment : string -> string option * expr
+
+val parse_line : string -> string option * expr

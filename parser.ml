@@ -39,11 +39,23 @@ let is_assignment line =
   | Some idx -> not ((String.get line (idx+1)) = '=')
   | None -> false
 
+(* let digits s = Str.string_match (Str.regexp "[0-9]+$") s 0 *)
+
+  let digits = String.map (fun x -> let num = Char.code x in 
+                       if (48 <= num && num <= 57)
+                       then x else raise Not_found) 
+let rec digits s idx =
+    if String.length s = idx then true else 
+    let code = (Char.code (String.get s idx)) in 48 <= code && code <= 57 && digits s (idx + 1)
+
 let rec parse_expr_helper str : expr = 
     match get_idx str '+' with
-    | None -> Value(Int(int_of_string (String.trim str)))
-    | Some idx -> let left = String.trim (String.sub str 0 idx) in
-    let right = String.trim (String.sub str (idx + 1) ((String.length str) - idx)) in
+    | None -> if digits str 0
+            then Value(Int(int_of_string (String.trim str)))
+            else Variable(str)
+    | Some idx -> 
+    let left = String.trim (String.sub str 0 idx) in
+    let right = String.trim (String.sub str (idx + 1) ((String.length str) - idx - 1)) in
     Binary(parse_expr_helper left, Plus, parse_expr_helper right)
 
 let parse_expr line = parse_expr_helper line
@@ -51,7 +63,7 @@ let parse_expr line = parse_expr_helper line
 let parse_assignment line = 
   let eq_idx = String.index line '=' in
   let left = String.trim (String.sub line 0 eq_idx) in
-  let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx)) in
+  let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right)
 
 let parse_line (line : string) = 

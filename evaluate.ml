@@ -43,5 +43,6 @@ let rec eval (exp : expr) (st : State.t) : value =
 
 let evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
-  | None, expr -> failwith "print (evaluate expr)"
-
+  | None, expr -> (match (eval expr st) with 
+    | Int i -> print_endline (string_of_int i); st
+    | String s -> print_endline s; st)
