@@ -59,7 +59,8 @@ let rec
 and
   parse_expr (line:string) (oplist:(string*op)list) : expr = match oplist with
   | [] -> let line = String.trim line in
-    if line.[0] = '"' then Value(String(line))
+    if line.[0] = '"' || line.[0] = '\'' 
+    then Value(String(String.sub line 1 (String.length line-2)))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if bool_of_string_opt line <> None then Value(Bool(bool_of_string line))
@@ -75,9 +76,13 @@ let parse_assignment (line:string) : string option * expr =
   let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right operators)
 
+(* Will become some helper that raises a Syntax error if not valid
+   For example, catch cases like: 'hello  *)
+let valid_line line = ()
+
 let parse_line (line : string) : string option * expr = 
+  valid_line line;
   if String.length line = 0 then raise EmptyInput
   else if is_assignment line 
   then parse_assignment line
   else (None, parse_expr line operators)
-
