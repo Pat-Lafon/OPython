@@ -14,6 +14,7 @@ let helper_multiply = function
   | (Int (x), Int(y)) -> Int (x * y)
   | _ -> failwith "wrong types"
 
+(* AS OF PYTHON3, DIVISION RETURNS A FLOAT WHEN IT SHOULD BE A FLOAT, INT OTHERWISE *)
 let helper_divide = function 
   | (Int (x), Int(y)) -> Int(x/y)
   | _ -> failwith "wrong types"
