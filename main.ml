@@ -4,7 +4,7 @@ open Parser
 open Error
 
 (** [main ()] prompts for the game to play, then starts it. *)
-let rec main st =
+let rec main (st:State.t) : unit =
   print_string  ">>> ";
   match Parser.parse_line (read_line ()) |> (fun x -> Evaluate.evaluate x st) with
   | exception End_of_file -> main st
@@ -15,6 +15,6 @@ let rec main st =
 
 (* Execute the game engine. *)
 let _ = 
-  ANSITerminal.(print_string [red]
+  ANSITerminal.(print_string [magenta]
                   "-----------OPython-------------\n"); 
   main empty
