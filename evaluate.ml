@@ -1,5 +1,6 @@
 open Parser
 open State
+open Error
 
 let helper_plus = function 
   | (Int (x), Int(y)) -> Int(x+y)
@@ -30,11 +31,14 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
     (match (op, eval e1 st) with 
      | (Plus, Int (x)) -> Int (x)
      | (Minus, Int (x)) -> Int (-x)
-     | _ -> failwith "wrong types")
+     (* If able, say what type was input *)
+     | (Plus, _) -> raise (TypeError "bad operand type for unary +")
+     | (Minus, _) -> raise (TypeError "bad operand type for unary -")
+     | _ -> raise (SyntaxError "invalid syntax"))
   | Variable x -> 
     (match State.find x st with 
      | Some t -> t
-     | None -> failwith "undefined types")
+     | None -> raise (NameError ("name '"^x^"' is not defined")))
   | Value x -> x
 
 let print (value:State.value):unit = 

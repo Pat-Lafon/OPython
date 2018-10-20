@@ -1,6 +1,5 @@
 open State
-
-exception SyntaxError of string
+open Error
 
 type op = Plus | Minus | Divide | Multiply
 type expr = Binary of (expr * op * expr) 
@@ -29,7 +28,7 @@ let is_var_name (s:string) : string =
                        else raise (SyntaxError "invalid syntax")) s in 
   (* Check that var is not a reserved keyword *)
   if List.mem s reserved_keywords 
-  then raise (SyntaxError "can't assign to keyword") 
+  then raise (Error.SyntaxError "can't assign to keyword") 
   else s
 
 let get_idx str char =
