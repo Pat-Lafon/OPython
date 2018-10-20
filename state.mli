@@ -8,7 +8,7 @@
 
 (* You are free to add more code here. *)
 
-type value = Int of int| String of string 
+type value = Int of int | Float of float | String of string | Bool of bool
 type t = (string*value) list
 
 val empty : t 

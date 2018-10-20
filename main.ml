@@ -12,5 +12,5 @@ let rec main st =
 (* Execute the game engine. *)
 let _ = 
   ANSITerminal.(print_string [red]
-                  "OPython\n"); 
+                  "-----------OPython-------------\n"); 
   main empty
