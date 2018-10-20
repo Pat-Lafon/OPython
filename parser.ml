@@ -1,7 +1,8 @@
 open State
 open Error
 
-type op = Plus | Minus | Divide | Multiply
+type op = Plus | Minus | Divide | Multiply | Modular | Exponent | Floor_Divide 
+        | Equal | Not_Equal | And | Or | Not | Complement
 type expr = Binary of (expr * op * expr) 
           | Unary of (op * expr) 
           | Value of State.value 
