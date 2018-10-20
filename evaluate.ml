@@ -4,6 +4,7 @@ open Error
 
 let helper_plus = function 
   | (Int (x), Int(y)) -> Int(x+y)
+  (* Does not work atm, need to remove and then re-add "" around x and y *)
   | (String (x), String (y)) -> String (x ^ y)
   | _ -> failwith "wrong types"
 

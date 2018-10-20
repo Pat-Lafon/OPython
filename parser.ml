@@ -7,8 +7,7 @@ type expr = Binary of (expr * op * expr)
           | Unary of (op * expr) 
           | Value of State.value 
           | Variable of string
-let operators = [('+', Plus);('-', Minus);('/', Divide);('*', Multiply)]
-
+let operators = [("+", Plus);("-", Minus);("/", Divide);("*", Multiply)]
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
   "elif";	"in";	"try"; "and";	"else";	"is";	"while"; "as"; "except"; "lambda";	
@@ -32,49 +31,51 @@ let is_var_name (s:string) : string =
   then raise (Error.SyntaxError "can't assign to keyword") 
   else s
 
-let get_idx str char =
-  try Some (String.index str char) with
-  | Not_found -> None
+let rec get_idx (str:string) (op:string) : int =
+  if String.length str = 0 then -1
+  else if String.sub str 0 (String.length op) = op then 0
+  (* Add code here to ignore stuff in quotes and parenthesis and anything else that should be ignored *)
+  (*else if  then*)
+  else let acc = get_idx (String.sub str 1 (String.length str - 1)) op in 
+    if acc = -1 then -1 else 1 + acc
 
-let is_assignment line =
-  match get_idx line '=' with
-  | Some idx -> not ((String.get line (idx+1)) = '=')
-  | None -> false
+let expr_contains (line:string) (op:string) : bool = get_idx line op <> -1
 
-(* let digits s = Str.string_match (Str.regexp "[0-9]+$") s 0 *)
+(* Will need some kind of trim function to improve upon String.trim. 
+   Handle stuff like parenthesis, example: (3 + 2) -> 3 + 2*)
 
-let digits = String.map (fun x -> let num = Char.code x in 
-                          if (48 <= num && num <= 57)
-                          then x else raise Not_found) 
-(* What is the point of this? And the function above as well? *)
-let rec digits s idx =
-  if String.length s = idx then true else 
-    let code = (Char.code (String.get s idx)) in 48 <= code && code <= 57 && digits s (idx + 1)
+let is_assignment (line:string) : bool =
+  let idx = get_idx line "=" in
+  if idx <> -1 && not ((String.get line (idx+1)) = '=') then true
+  else false
 
 let rec 
   parse_expr_helper str op: expr = 
-  match get_idx str (fst op) with
-  | None -> failwith "Should not happen"
-  | Some idx -> 
-    let left = String.trim (String.sub str 0 idx) in
-    let right = String.trim (String.sub str (idx + 1) ((String.length str) - idx - 1)) in
-    Binary(parse_expr left operators, snd op, parse_expr right operators) 
+  let idx = get_idx str (fst op) in
+  let oplen = String.length (fst op) in
+  let left = String.trim (String.sub str 0 idx) in
+  let right = String.trim (String.sub str (idx + oplen) (String.length str - idx - oplen)) in
+  Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
-  parse_expr line = function
-  | [] -> if digits line 0
-    then Value(Int(int_of_string (String.trim line)))
+  parse_expr (line:string) (oplist:(string*op)list) : expr = match oplist with
+  | [] -> let line = String.trim line in
+    if line.[0] = '"' then Value(String(line))
+    else if int_of_string_opt line <> None then Value(Int(int_of_string line))
+    else if float_of_string_opt line <> None then Value(Float(float_of_string line))
+    else if bool_of_string_opt line <> None then Value(Bool(bool_of_string line))
     else Variable(line)
-  | h :: t -> if String.contains line (fst h) 
+  | h :: t -> if expr_contains line (fst h) 
     then parse_expr_helper line h 
     else parse_expr line t
 
-let parse_assignment line = 
+(* Will have to revisit this to deal with +=, -= %=, ect. *)
+let parse_assignment (line:string) : string option * expr = 
   let eq_idx = String.index line '=' in
   let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
   let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right operators)
 
-let parse_line (line : string) = 
+let parse_line (line : string) : string option * expr = 
   if String.length line = 0 then raise EmptyInput
   else if is_assignment line 
   then parse_assignment line
