@@ -26,7 +26,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Plus -> helper_plus (eval e1 st, eval e2 st)
      | Minus -> helper_minus (eval e1 st, eval e2 st)
      | Multiply -> helper_multiply (eval e1 st, eval e2 st)
-     | Divide -> helper_divide (eval e1 st, eval e2 st))
+     | Divide -> helper_divide (eval e1 st, eval e2 st)
+     | _ -> failwith "unimplemented")
   | Unary (op, e1) ->
     (match (op, eval e1 st) with 
      | (Plus, Int (x)) -> Int (x)
