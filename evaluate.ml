@@ -17,7 +17,8 @@ let helper_multiply = function
 
 (* AS OF PYTHON3, DIVISION RETURNS A FLOAT WHEN IT SHOULD BE A FLOAT, INT OTHERWISE *)
 let helper_divide = function 
-  | (Int (x), Int(y)) -> Int(x/y)
+  | (Int (x), Int(y)) -> 
+    if y = 0 then raise (ZeroDivisionError "division by zero") else Int(x/y)
   | _ -> failwith "wrong types"
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 

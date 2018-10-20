@@ -46,6 +46,7 @@ let is_assignment line =
 let digits = String.map (fun x -> let num = Char.code x in 
                           if (48 <= num && num <= 57)
                           then x else raise Not_found) 
+(* What is the point of this? And the function above as well? *)
 let rec digits s idx =
   if String.length s = idx then true else 
     let code = (Char.code (String.get s idx)) in 48 <= code && code <= 57 && digits s (idx + 1)
@@ -74,7 +75,8 @@ let parse_assignment line =
   (Some left, parse_expr right operators)
 
 let parse_line (line : string) = 
-  if is_assignment line 
+  if String.length line = 0 then raise EmptyInput
+  else if is_assignment line 
   then parse_assignment line
   else (None, parse_expr line operators)
 
