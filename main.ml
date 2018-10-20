@@ -11,7 +11,7 @@ let rec main st =
   | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); main st
   | exception (NameError x) -> print_endline ("NameError: "^x); main st
   | exception (TypeError x) -> print_endline ("TypeError: "^x); main st
-  | newst -> main(st)
+  | newst -> main(newst)
 
 (* Execute the game engine. *)
 let _ = 
