@@ -8,9 +8,9 @@ val get_idx : string -> char -> int option
 
 val is_assignment : string -> bool
 
-val parse_expr : string -> expr
+val parse_expr_helper : string -> char * op -> expr
 
-val parse_expr : string -> expr
+val parse_expr : string -> (char * op) list -> expr
 
 val parse_assignment : string -> string option * expr
 

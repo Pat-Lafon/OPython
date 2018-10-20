@@ -7,7 +7,7 @@ type expr = Binary of (expr * op * expr)
           | Unary of (op * expr) 
           | Value of State.value 
           | Variable of string
-let operators = ['+';'-';'/';'*']
+let operators = [('+', Plus);('-', Minus);('/', Divide);('*', Multiply)]
 
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
@@ -52,18 +52,18 @@ let rec digits s idx =
 
 let rec 
   parse_expr_helper str op: expr = 
-  match get_idx str op with
+  match get_idx str (fst op) with
   | None -> failwith "Should not happen"
   | Some idx -> 
     let left = String.trim (String.sub str 0 idx) in
     let right = String.trim (String.sub str (idx + 1) ((String.length str) - idx - 1)) in
-    Binary(parse_expr left operators, Plus, parse_expr right operators) 
+    Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
   parse_expr line = function
   | [] -> if digits line 0
     then Value(Int(int_of_string (String.trim line)))
     else Variable(line)
-  | h :: t -> if String.contains line h 
+  | h :: t -> if String.contains line (fst h) 
     then parse_expr_helper line h 
     else parse_expr line t
 
