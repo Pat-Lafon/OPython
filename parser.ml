@@ -1,7 +1,6 @@
 open State
 
-exception ReservedVarName
-exception VarNameInvalid
+exception SyntaxError of string
 
 type op = Plus | Minus | Divide | Multiply
 type expr = Binary of (expr * op * expr) 
@@ -20,15 +19,18 @@ let is_var_name (s:string) : string =
   (* Check that the first letter is not an integer*)
   let _ = let num = Char.code s.[0] in 
     if (48 <= num && num <= 57) 
-    then raise VarNameInvalid 
+    then raise (SyntaxError "invalid syntax")
     else () in
   (* Check that every character in the string is a valid name character*)
   let _ = String.map (fun x -> let num = Char.code x in 
                        if (48 <= num && num <= 57) || (65 <= num && num <= 90) 
                           || (97 <= num && num <= 122) || (num = 95) 
-                       then x else raise VarNameInvalid) s in 
+                       then x 
+                       else raise (SyntaxError "invalid syntax")) s in 
   (* Check that var is not a reserved keyword *)
-  if List.mem s reserved_keywords then raise ReservedVarName else s
+  if List.mem s reserved_keywords 
+  then raise (SyntaxError "can't assign to keyword") 
+  else s
 
 let get_idx str char =
   try Some (String.index str char) with

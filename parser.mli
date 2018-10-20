@@ -1,5 +1,7 @@
 open State
 
+exception SyntaxError of string
+
 type op = Plus | Minus | Divide | Multiply
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value | Variable of string
 
