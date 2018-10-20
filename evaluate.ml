@@ -15,7 +15,7 @@ let helper_multiply = function
   | _ -> failwith "wrong types"
 
 let helper_divide = function 
-  | (Int (x), Int(y)) -> Int(int_of_float (floor ((float_of_int x)/.(float_of_int y))))
+  | (Int (x), Int(y)) -> Int(x/y)
   | _ -> failwith "wrong types"
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
