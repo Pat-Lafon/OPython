@@ -1,20 +1,10 @@
-(** 
-   Representation of dynamic adventure state.
-
-   This module represents the state of an adventure as it is being played,
-   including the adventurer's current room, the rooms that have been visited,
-   and functions that cause the state to change.
-*)
-
-(* You are free to add more code here. *)
-
 type value = Int of int | Float of float | String of string | Bool of bool
 type t = (string*value) list
 
 val empty : t 
-
+(*
 val is_empty : t -> bool 
-
+*)
 val insert : string -> value -> t -> t
 
 val find : string -> t -> value option
