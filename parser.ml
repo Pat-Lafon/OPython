@@ -7,7 +7,7 @@ type expr = Binary of (expr * op * expr)
           | Unary of (op * expr) 
           | Value of State.value 
           | Variable of string
-let operators = "+-/*"
+let operators = ['+';'-';'/';'*']
 
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
@@ -50,26 +50,31 @@ let rec digits s idx =
   if String.length s = idx then true else 
     let code = (Char.code (String.get s idx)) in 48 <= code && code <= 57 && digits s (idx + 1)
 
-let rec parse_expr_helper str : expr = 
-  match get_idx str '+' with
-  | None -> if digits str 0
-    then Value(Int(int_of_string (String.trim str)))
-    else Variable(str)
+let rec 
+  parse_expr_helper str op: expr = 
+  match get_idx str op with
+  | None -> failwith "Should not happen"
   | Some idx -> 
     let left = String.trim (String.sub str 0 idx) in
     let right = String.trim (String.sub str (idx + 1) ((String.length str) - idx - 1)) in
-    Binary(parse_expr_helper left, Plus, parse_expr_helper right)
-
-let parse_expr line = parse_expr_helper line
+    Binary(parse_expr left operators, Plus, parse_expr right operators) 
+and
+  parse_expr line = function
+  | [] -> if digits line 0
+    then Value(Int(int_of_string (String.trim line)))
+    else Variable(line)
+  | h :: t -> if String.contains line h 
+    then parse_expr_helper line h 
+    else parse_expr line t
 
 let parse_assignment line = 
   let eq_idx = String.index line '=' in
   let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
   let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
-  (Some left, parse_expr right)
+  (Some left, parse_expr right operators)
 
 let parse_line (line : string) = 
   if is_assignment line 
   then parse_assignment line
-  else (None, parse_expr line)
+  else (None, parse_expr line operators)
 
