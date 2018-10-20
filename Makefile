@@ -33,12 +33,8 @@ finalcheck: check
 bisect: clean bisect-test
 	bisect-report -I _build -html report bisect0001.out
 
-perf: 
-	$(OCAMLBUILD) performanceTest.native && ./performanceTest.native
-	gnuplot perf.p
-
 zip:
-	zip search_src.zip *.ml* _tags Makefile analysis.pdf
+	zip search_src.zip *.ml* _tags Makefile
 	
 docs: docs-public docs-private
 	
