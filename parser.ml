@@ -39,7 +39,7 @@ let is_var_name (s:string) : string =
 
 let rec get_idx (str:string) (op:string) : int =
   if String.length str = 0 then -1
-  else if String.length str > String.length op then -1
+  else if String.length str < String.length op then -1
   else if String.sub str 0 (String.length op) = op then 0
   else if str.[0] = '(' then 
     (match String.index str ')' with 
@@ -62,7 +62,7 @@ let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option *
    Handle stuff like parenthesis, example: (3 + 2) -> 3 + 2*)
 
 let is_assignment (line:string) : bool =
-  let idx = get_idx line "=" in
+  let idx = get_idx line "=" in 
   (* Check that we aren't looking at ==, >=, <=, != *)
   if idx <> -1 then 
     let prev = String.get line (idx-1) in
