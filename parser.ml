@@ -46,11 +46,14 @@ let expr_contains (line:string) (op:string) : bool = get_idx line op <> -1
 
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in
-  if idx <> -1 && not ((String.get line (idx+1)) = '=') then true
+  (* Check that we aren't looking at ==, >=, <=, != *)
+  if idx <> -1 then 
+    let prev = String.get line (idx-1) in
+    let next = String.get line (idx+1) in
+    prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-let rec 
-  parse_expr_helper str op: expr = 
+let rec parse_expr_helper str op: expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
   let left = String.trim (String.sub str 0 idx) in
