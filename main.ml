@@ -7,7 +7,6 @@ open Error
 let rec main (st:State.t) : unit =
   print_string  ">>> ";
   match Parser.parse_line (read_line ()) |> (fun x -> Evaluate.evaluate x st) with
-  | exception End_of_file -> main st
   | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); main st
   | exception (NameError x) -> print_endline ("NameError: "^x); main st
   | exception (TypeError x) -> print_endline ("TypeError: "^x); main st

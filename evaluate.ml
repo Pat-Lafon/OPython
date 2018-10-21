@@ -48,7 +48,7 @@ let print (value:State.value):unit =
    | Int x -> string_of_int x
    | Float x -> string_of_float x
    | Bool x -> string_of_bool x
-   | String x -> x) |> print_endline
+   | String x -> "'" ^ x ^ "'") |> print_endline
 
 let evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
