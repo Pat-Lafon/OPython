@@ -7,7 +7,13 @@ type expr = Binary of (expr * op * expr)
           | Unary of (op * expr) 
           | Value of State.value 
           | Variable of string
-let operators = [("+", Plus);("-", Minus);("/", Divide);("*", Multiply)]
+
+let operators = [[("+", Plus);("-", Minus);];
+                 [("%", Modular);];
+                 [("/", Divide);("//", Floor_Divide);("*", Multiply);];
+                 [("**", Exponent);];
+                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or);("not", Not)]]
+
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
   "elif";	"in";	"try"; "and";	"else";	"is";	"while"; "as"; "except"; "lambda";	
@@ -39,7 +45,12 @@ let rec get_idx (str:string) (op:string) : int =
   else let acc = get_idx (String.sub str 1 (String.length str - 1)) op in 
     if acc = -1 then -1 else 1 + acc
 
-let expr_contains (line:string) (op:string) : bool = get_idx line op <> -1
+let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option * int = 
+  match op with
+  | [] -> None, max_int
+  | h :: t -> let next = expr_contains line t in 
+    let current = get_idx line (fst h) in
+    if current < snd next then Some h, current else next
 
 (* Will need some kind of trim function to improve upon String.trim. 
    Handle stuff like parenthesis, example: (3 + 2) -> 3 + 2*)
@@ -60,17 +71,17 @@ let rec parse_expr_helper str op: expr =
   let right = String.trim (String.sub str (idx + oplen) (String.length str - idx - oplen)) in
   Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
-  parse_expr (line:string) (oplist:(string*op)list) : expr = match oplist with
+  parse_expr (line:string) (oplist:(string*op) list list) : expr = match oplist with
   | [] -> let line = String.trim line in
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
-    else if bool_of_string_opt line <> None then Value(Bool(bool_of_string line))
+    else if "True" = line || "False" = line then Value(Bool(bool_of_string line))
     else Variable(line)
-  | h :: t -> if expr_contains line (fst h) 
-    then parse_expr_helper line h 
-    else parse_expr line t
+  | h :: t -> match expr_contains line h with
+    | Some x, _ -> parse_expr_helper line x
+    | None, _ -> parse_expr line t
 
 (* Will have to revisit this to deal with +=, -= %=, ect. *)
 let parse_assignment (line:string) : string option * expr = 
