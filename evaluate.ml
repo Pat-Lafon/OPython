@@ -150,8 +150,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | (Not, Bool (x)) -> Bool (not x)
      | (Complement, Int (x)) -> Int (-x-1) 
      | (Complement, Bool (x)) -> if x = true then Int (-2) else Int (-1)
-     | (Not, Int (x)) -> Bool (false)
-     | (Not, Float (x)) -> Bool (false)
+     | (Not, Int (x)) -> if x = 0 then Bool(true) else Bool (false)
+     | (Not, Float (x)) -> if x = 0. then Bool(true) else Bool (false)
      | _ -> raise (SyntaxError "invalid syntax"))
   | Variable x -> 
     (match State.find x st with 
@@ -164,7 +164,9 @@ let print (value:State.value):unit =
    | Int x -> string_of_int x
    | Float x -> string_of_float x
    | Bool x -> string_of_bool x |> String.capitalize_ascii
-   | String x -> "'" ^ x ^ "'") |> print_endline
+   | String x -> "'" ^ x ^ "'"
+   | List x -> "[]") |> print_endline
+
 
 let evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
