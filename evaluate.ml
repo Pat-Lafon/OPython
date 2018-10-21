@@ -106,7 +106,7 @@ let print (value:State.value):unit =
   (match value with
    | Int x -> string_of_int x
    | Float x -> string_of_float x
-   | Bool x -> string_of_bool x
+   | Bool x -> string_of_bool x |> String.capitalize_ascii
    | String x -> "'" ^ x ^ "'") |> print_endline
 
 let evaluate input st = match input with

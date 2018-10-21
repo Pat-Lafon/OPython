@@ -83,7 +83,7 @@ and
     then Value(String(String.sub line 1 (String.length line-2)))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
-    else if "True" = line || "False" = line then Value(Bool(bool_of_string line))
+    else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
     else Variable(line)
   | h :: t -> match expr_contains line h with
     | Some x, _ -> parse_expr_helper line x
