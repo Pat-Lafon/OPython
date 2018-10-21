@@ -5,20 +5,46 @@ open Error
 let helper_plus = function 
   | (Int (x), Int(y)) -> Int(x+y)
   | (String (x), String (y)) -> String (x ^ y)
+  | (Float (x), Float (y)) -> Float (x +. y)
   | _ -> failwith "wrong types"
 
 let helper_minus = function 
   | (Int (x), Int(y)) -> Int(x-y)
+  | (Float (x), Float (y)) -> Float (x -. y)
   | _ -> failwith "wrong types"
 
 let helper_multiply = function 
   | (Int (x), Int(y)) -> Int (x * y)
+  | (Float (x), Float (y)) -> Float (x *. y)
   | _ -> failwith "wrong types"
+
+let helper_mod = function 
+  | (Int (x), Int(y)) -> Int (x mod y)
+  | _ -> failwith "wrong types"
+
+let helper_floor = function
+  | Int(x) -> Int (x)
+  | Float(x) -> Int (int_of_float (floor x))
+  | _ -> failwith "wrong types"
+
+let helper_exp = function 
+  | (Int (x), Int(y)) -> Int (int_of_float (float_of_int x ** float_of_int y))
+  | (Float (x), Float (y)) -> Float (x ** y)
+  | _ -> failwith "wrong types"
+
+let helper_bool = function 
+  | (Bool (x), Bool (y), "and") -> Bool (x && y)
+  | (Bool (x), Bool (y), "or") -> Bool (x || y)
+  | (Bool (x), Bool (y), "equals") -> Bool (x = y)
+  | (Bool (x), Bool (y), "not equals") -> Bool (x != y)
+  | _ -> failwith "wrong types"
+
 
 (* AS OF PYTHON3, DIVISION RETURNS A FLOAT WHEN IT SHOULD BE A FLOAT, INT OTHERWISE *)
 let helper_divide = function 
   | (Int (x), Int(y)) -> 
     if y = 0 then raise (ZeroDivisionError "division by zero") else Int(x/y)
+  | (Float (x), Float (y)) -> Float (x /. y)
   | _ -> failwith "wrong types"
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
@@ -28,14 +54,24 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Minus -> helper_minus (eval e1 st, eval e2 st)
      | Multiply -> helper_multiply (eval e1 st, eval e2 st)
      | Divide -> helper_divide (eval e1 st, eval e2 st)
+     | And -> helper_bool (eval e1 st, eval e2 st, "and")
+     | Or -> helper_bool (eval e1 st, eval e2 st, "or")
+     | Exponent -> helper_exp (eval e1 st, eval e2 st)
+     | Equal -> helper_bool (eval e1 st, eval e2 st, "equals")
+     | Not_Equal -> helper_bool (eval e1 st, eval e2 st, "not equals")
+     | Modular -> helper_mod (eval e1 st, eval e2 st)
      | _ -> failwith "unimplemented")
   | Unary (op, e1) ->
     (match (op, eval e1 st) with 
      | (Plus, Int (x)) -> Int (x)
      | (Minus, Int (x)) -> Int (-x)
+     | (Plus, Float (x)) -> Float (x)
+     | (Minus, Float (x)) -> Float (-.x)
      (* If able, say what type was input *)
      | (Plus, _) -> raise (TypeError "bad operand type for unary +")
      | (Minus, _) -> raise (TypeError "bad operand type for unary -")
+     | (Not, Bool (x)) -> Bool (not x)
+     | (Floor_Divide, x) -> helper_floor x
      | _ -> raise (SyntaxError "invalid syntax"))
   | Variable x -> 
     (match State.find x st with 
