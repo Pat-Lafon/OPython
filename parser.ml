@@ -79,9 +79,30 @@ let parse_assignment (line:string) : string option * expr =
   let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right operators)
 
+(** [count_chars str char idx acc] returns number of [char] in [str] from [idx] to the end *)
+let rec count_chars (str: string) (char: char) (idx: int) (acc: int) =
+  if idx = String.length str then acc
+  else if String.get str idx = char then count_chars str char (idx+1) (acc+1)
+  else count_chars str char (idx+1) acc
+
+(** [paren_check str idx acc] returns true if parentheses are valid and false otherwise *)
+let rec paren_check (str: string) idx acc =
+  if idx = String.length str then acc = 0 
+  else if acc < 0 then false 
+  else if String.get str idx = '(' then paren_check str (idx+1) (acc+1)
+  else if String.get str idx = ')' then paren_check str (idx+1) (acc-1)
+  else paren_check str (idx+1) acc
+
 (* Will become some helper that raises a Syntax error if not valid
    For example, catch cases like: 'hello  *)
-let valid_line line = ()
+let valid_line line = 
+  let sing_quote_count = (count_chars line '\"' 0 0) in
+  let dbl_quote_count = (count_chars line '\'' 0 0) in
+  let parentheses_check = paren_check line 0 0 in
+  if sing_quote_count mod 2 <> 0 then raise (SyntaxError "Quotes unmatched")
+  else if dbl_quote_count mod 2 <> 0 then raise (SyntaxError "Quotes unmatched")
+  else if not parentheses_check then raise (SyntaxError "Invalid parenthesis")
+  else ()
 
 let parse_line (line : string) : string option * expr = 
   valid_line line;
