@@ -20,5 +20,5 @@ let rec main (st:State.t) : unit =
 let _ = 
   ANSITerminal.(print_string [green]   "***A Python interpreter written in Ocaml***\n");
   ANSITerminal.(print_string [cyan]    "Authors: Patrick, Zaibo, William, and Eric!\n");
-  ANSITerminal.(print_string [magenta] "-------------------OPython-----------------\n"); 
+  ANSITerminal.(print_string [magenta] "------------------OPython------------------\n"); 
   main empty
