@@ -37,6 +37,14 @@ let helper_bool = function
   | (Bool (x), Bool (y), "or") -> Bool (x || y)
   | (Bool (x), Bool (y), "equals") -> Bool (x = y)
   | (Bool (x), Bool (y), "not equals") -> Bool (x != y)
+  | (Int (x), Int (y), "and") -> Int (y)
+  | (Int (x), Int (y), "or") -> Int (x)
+  | (Int (x), Bool (y), "and") -> Bool (y)
+  | (Int (x), Bool (y), "or") -> Int (x)
+  | (Float (x), Float (y), "and") -> Float (y)
+  | (Float (x), Float (y), "or") -> Float (x)
+  | (Float (x), Bool (y), "and") -> Bool (y)
+  | (Float (x), Bool (y), "or") -> Float (x)
   | _ -> failwith "wrong types"
 
 
@@ -71,6 +79,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | (Plus, _) -> raise (TypeError "bad operand type for unary +")
      | (Minus, _) -> raise (TypeError "bad operand type for unary -")
      | (Not, Bool (x)) -> Bool (not x)
+     | (Not, Int (x)) -> Bool (false)
+     | (Not, Float (x)) -> Bool (false)
      | (Floor_Divide, x) -> helper_floor x
      | _ -> raise (SyntaxError "invalid syntax"))
   | Variable x -> 
