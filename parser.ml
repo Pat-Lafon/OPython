@@ -1,13 +1,19 @@
 open State
 open Error
 
-type op = Plus | Minus | Divide | Multiply | Modular | Exponent | Floor_Divide 
+type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | And | Or | Not | Complement
 type expr = Binary of (expr * op * expr) 
           | Unary of (op * expr) 
           | Value of State.value 
           | Variable of string
-let operators = [("+", Plus);("-", Minus);("/", Divide);("*", Multiply)]
+
+let operators = [[("+", Plus);("-", Minus);];
+                 [("%", Modular);];
+                 [("/", Divide);("//", Floor_Divide);("*", Multiply);];
+                 [("**", Exponent);];
+                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or);("not", Not)]]
+
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
   "elif";	"in";	"try"; "and";	"else";	"is";	"while"; "as"; "except"; "lambda";	
@@ -28,24 +34,35 @@ let is_var_name (s:string) : string =
                        else raise (SyntaxError "invalid syntax")) s in 
   (* Check that var is not a reserved keyword *)
   if List.mem s reserved_keywords 
-  then raise (Error.SyntaxError "can't assign to keyword") 
+  then raise (SyntaxError "can't assign to keyword") 
   else s
 
 let rec get_idx (str:string) (op:string) : int =
   if String.length str = 0 then -1
+  else if String.length str < String.length op then -1
   else if String.sub str 0 (String.length op) = op then 0
-  (* Add code here to ignore stuff in quotes and parenthesis and anything else that should be ignored *)
-  (*else if  then*)
-  else let acc = get_idx (String.sub str 1 (String.length str - 1)) op in 
-    if acc = -1 then -1 else 1 + acc
+  else if str.[0] = '(' then 
+    (match String.index str ')' with 
+     | exception Not_found -> raise (SyntaxError "Missing closing paren") 
+     | x -> get_idx_acc str (x+1) op)
+  else get_idx_acc str 1 op
+and 
+  get_idx_acc (str:string) (num:int) (op:string) : int = 
+  let acc = get_idx (String.sub str num (String.length str - num)) op in 
+  if acc = -1 then -1 else num + acc
 
-let expr_contains (line:string) (op:string) : bool = get_idx line op <> -1
+let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option * int = 
+  match op with
+  | [] -> None, max_int
+  | h :: t -> let next = expr_contains line t in 
+    let current = get_idx line (fst h) in
+    if current <> -1 && current < snd next then Some h, current else next
 
 (* Will need some kind of trim function to improve upon String.trim. 
    Handle stuff like parenthesis, example: (3 + 2) -> 3 + 2*)
 
 let is_assignment (line:string) : bool =
-  let idx = get_idx line "=" in
+  let idx = get_idx line "=" in 
   (* Check that we aren't looking at ==, >=, <=, != *)
   if idx <> -1 then 
     let prev = String.get line (idx-1) in
@@ -60,17 +77,17 @@ let rec parse_expr_helper str op: expr =
   let right = String.trim (String.sub str (idx + oplen) (String.length str - idx - oplen)) in
   Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
-  parse_expr (line:string) (oplist:(string*op)list) : expr = match oplist with
+  parse_expr (line:string) (oplist:(string*op) list list) : expr = match oplist with
   | [] -> let line = String.trim line in
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
-    else if bool_of_string_opt line <> None then Value(Bool(bool_of_string line))
+    else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
     else Variable(line)
-  | h :: t -> if expr_contains line (fst h) 
-    then parse_expr_helper line h 
-    else parse_expr line t
+  | h :: t -> match expr_contains line h with
+    | Some x, _ -> parse_expr_helper line x
+    | None, _ -> parse_expr line t
 
 (* Will have to revisit this to deal with +=, -= %=, ect. *)
 let parse_assignment (line:string) : string option * expr = 
