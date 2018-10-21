@@ -23,10 +23,10 @@ let helper_mod = function
   | _ -> failwith "wrong types"
 
 let helper_floor = function
-  | (Int(x), Int(y)) -> floor(float_of_int(x)/.float_of_int(y))
-  | (Float(x), Float(y)) -> floor(x/.y)
-  | (Int(x), Float(y)) -> floor(float_of_int(x)/.y)
-  | (Float(x), Int(y)) -> floor(x/.(float_of_int (y)))
+  | (Int(x), Int(y)) -> Int(int_of_float(floor(float_of_int(x)/.float_of_int(y))))
+  | (Float(x), Float(y)) -> Float(floor(x/.y))
+  | (Int(x), Float(y)) -> Float(floor(float_of_int(x)/.y))
+  | (Float(x), Int(y)) -> Float(floor(x/.(float_of_int (y))))
   | _ -> failwith "wrong types"
 
 let helper_exp = function 
