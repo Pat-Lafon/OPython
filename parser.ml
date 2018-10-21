@@ -34,23 +34,29 @@ let is_var_name (s:string) : string =
                        else raise (SyntaxError "invalid syntax")) s in 
   (* Check that var is not a reserved keyword *)
   if List.mem s reserved_keywords 
-  then raise (Error.SyntaxError "can't assign to keyword") 
+  then raise (SyntaxError "can't assign to keyword") 
   else s
 
 let rec get_idx (str:string) (op:string) : int =
   if String.length str = 0 then -1
+  else if String.length str > String.length op then -1
   else if String.sub str 0 (String.length op) = op then 0
-  (* Add code here to ignore stuff in quotes and parenthesis and anything else that should be ignored *)
-  (*else if  then*)
-  else let acc = get_idx (String.sub str 1 (String.length str - 1)) op in 
-    if acc = -1 then -1 else 1 + acc
+  else if str.[0] = '(' then 
+    (match String.index str ')' with 
+     | exception Not_found -> raise (SyntaxError "Missing closing paren") 
+     | x -> get_idx_acc str (x+1) op)
+  else get_idx_acc str 1 op
+and 
+  get_idx_acc (str:string) (num:int) (op:string) : int = 
+  let acc = get_idx (String.sub str num (String.length str - num)) op in 
+  if acc = -1 then -1 else num + acc
 
 let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option * int = 
   match op with
   | [] -> None, max_int
   | h :: t -> let next = expr_contains line t in 
     let current = get_idx line (fst h) in
-    if current < snd next then Some h, current else next
+    if current <> -1 && current < snd next then Some h, current else next
 
 (* Will need some kind of trim function to improve upon String.trim. 
    Handle stuff like parenthesis, example: (3 + 2) -> 3 + 2*)
