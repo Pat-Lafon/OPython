@@ -114,13 +114,13 @@ let helper_bool = function
 let helper_divide = function 
   | (Int (x), Int (y)) -> if y = 0 then raise (ZeroDivisionError "division by zero") else Float(float_of_int(x/y))
   | (Int (x), Float (y)) -> if y = 0. then raise (ZeroDivisionError "float division by zero") else Float ((float_of_int x) /. y)
-  | (Int (x), Bool (y)) -> if y = false then (ZeroDivisionError "float division by zero") else Float(float_of_int(x))
+  | (Int (x), Bool (y)) -> if y = false then raise (ZeroDivisionError "float division by zero") else Float(float_of_int(x))
   | (Float (x), Float (y)) -> if y = 0. then raise (ZeroDivisionError "float division by zero") else Float (x /. y)
   | (Float (x), Int (y)) -> if y = 0 then raise (ZeroDivisionError "float division by zero") else Float (x /. (float_of_int y))
-  | (Float (x), Bool (y)) -> if y = false then (ZeroDivisionError "float division by zero") else Float(x)
-  | (Bool (x), Bool (y)) -> if y = false then (ZeroDivisionError "float division by zero") else if x = true then Float(1.0) else Float(0.)
-  | (Bool (x), Int (y)) -> if y = 0 then (ZeroDivisionError "float division by zero") else if x = true then Float(1.0/.(float_of_int(y))) else Float(0.0)
-  | (Bool (x), Float (y)) -> if y = 0. then (ZeroDivisionError "float division by zero") else if x = true then Float(1.0/.y) else Float(0.)
+  | (Float (x), Bool (y)) -> if y = false then raise (ZeroDivisionError "float division by zero") else Float(x)
+  | (Bool (x), Bool (y)) -> if y = false then raise (ZeroDivisionError "float division by zero") else if x = true then Float(1.0) else Float(0.)
+  | (Bool (x), Int (y)) -> if y = 0 then raise (ZeroDivisionError "float division by zero") else if x = true then Float(1.0/.(float_of_int(y))) else Float(0.0)
+  | (Bool (x), Float (y)) -> if y = 0. then raise (ZeroDivisionError "float division by zero") else if x = true then Float(1.0/.y) else Float(0.)
   | _ -> failwith "wrong types"
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
@@ -148,7 +148,6 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | (Plus, _) -> raise (TypeError "bad operand type for unary +")
      | (Minus, _) -> raise (TypeError "bad operand type for unary -")
      | (Not, Bool (x)) -> Bool (not x)
-     | (Floor_Divide, x) -> helper_floor x
      | (Complement, Int (x)) -> Int (-x-1) 
      | (Complement, Bool (x)) -> if x = true then Int (-2) else Int (-1)
      | (Not, Int (x)) -> Bool (false)
