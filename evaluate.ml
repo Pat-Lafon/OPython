@@ -37,14 +37,14 @@ let helper_bool = function
   | (Bool (x), Bool (y), "or") -> Bool (x || y)
   | (Bool (x), Bool (y), "equals") -> Bool (x = y)
   | (Bool (x), Bool (y), "not equals") -> Bool (x != y)
-  | (Int (x), Int (y), "and int") -> Int (y)
-  | (Int (x), Int (y), "or int") -> Int (x)
-  | (Int (x), Bool (y), "and int-bool") -> Bool (y)
-  | (Int (x), Bool (y), "or int-bool") -> Int (x)
-  | (Float (x), Float (y), "and float") -> Float (y)
-  | (Float (x), Float (y), "or float") -> Float (x)
-  | (Float (x), Bool (y), "and float-bool") -> Bool (y)
-  | (Float (x), Bool (y), "or float-bool") -> Float (x)
+  | (Int (x), Int (y), "and") -> Int (y)
+  | (Int (x), Int (y), "or") -> Int (x)
+  | (Int (x), Bool (y), "and") -> Bool (y)
+  | (Int (x), Bool (y), "or") -> Int (x)
+  | (Float (x), Float (y), "and") -> Float (y)
+  | (Float (x), Float (y), "or") -> Float (x)
+  | (Float (x), Bool (y), "and") -> Bool (y)
+  | (Float (x), Bool (y), "or") -> Float (x)
   | _ -> failwith "wrong types"
 
 
