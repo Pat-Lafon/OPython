@@ -112,6 +112,14 @@ let helper_divide = function
     if y = 0. then raise (ZeroDivisionError "float division by zero") else Float ((float_of_int x) /. y)
   | _ -> failwith "wrong types"
 
+let if_decider = function
+  | Int(0) -> false
+  | String("") -> false
+  | Bool(false) -> false
+  | Float(0.0)  -> false
+  | VList([]) -> false
+  | _ -> true
+
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
     (match op with 
@@ -137,7 +145,6 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | (Plus, _) -> raise (TypeError "bad operand type for unary +")
      | (Minus, _) -> raise (TypeError "bad operand type for unary -")
      | (Not, Bool (x)) -> Bool (not x)
-     | (Floor_Divide, x) -> helper_floor x
      | (Complement, Int (x)) -> Int (-x-1) 
      | (Complement, Bool (x)) -> if x = true then Int (-2) else Int (-1)
      | (Not, Int (x)) -> Bool (false)
