@@ -78,6 +78,7 @@ let valid_paren str = match get_idx str ")" with
 let rec trim str : string = 
   let newstr = String.trim str in
   if newstr <> str then trim newstr
+  else if String.length newstr = 0 then str
   else if str.[0] = '(' && str.[String.length str - 1] = ')' then 
     if valid_paren (String.sub str 1 (String.length str - 2))
     then trim (String.sub str 1 (String.length str - 2))
@@ -97,7 +98,8 @@ let rec parse_expr_helper str op: expr =
   let oplen = String.length (fst op) in
   let left = String.sub str 0 idx in
   let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
-  Binary(parse_expr left operators, snd op, parse_expr right operators) 
+  if trim left = "" then Unary (snd op, parse_expr right operators) 
+  else Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
   parse_expr (line:string) (oplist:(string*op) list list) : expr = 
   let line = trim line in
