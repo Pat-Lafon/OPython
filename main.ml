@@ -14,7 +14,7 @@ let rec main (st:State.t) : unit =
   | exception (IndentationError x) -> print_endline ("IndentationError"^x); main st
   | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); main st
   | exception EmptyInput -> main st
-  | newst -> main(newst)
+  | new_st -> main(new_st)
 
 (* Execute the game engine. *)
 let _ = 
