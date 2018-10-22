@@ -53,7 +53,7 @@ let rec get_idx (str:string) (op:string) : int =
   else if str.[0] = '"' then
     (match String.index (String.sub str 1 (String.length str -1)) '"' with 
      | exception Not_found -> raise (SyntaxError "Missing closing quote") 
-     | x -> get_idx_acc str (x+1) op)
+     | x -> get_idx_acc str (x+2) op)
   else get_idx_acc str 1 op
 and 
   get_idx_acc (str:string) (num:int) (op:string) : int = 
