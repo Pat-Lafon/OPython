@@ -13,7 +13,8 @@ let operators = [[("+", Plus);("-", Minus);];
                  [("%", Modular);];
                  [("/", Divide);("//", Floor_Divide);("*", Multiply);];
                  [("**", Exponent);];
-                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or);("not", Not)]]
+                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
+                 [("not", Not)]]
 
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
