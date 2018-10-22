@@ -67,17 +67,27 @@ let helper_mod = function
   | _ -> failwith "wrong types"
 
 let helper_floor = function
-  | (Int(x), Int(y)) -> Int(int_of_float(floor(float_of_int(x)/.float_of_int(y))))
-  | (Float(x), Float(y)) -> Float(floor(x/.y))
-  | (Int(x), Float(y)) -> Float(floor(float_of_int(x)/.y))
-  | (Float(x), Int(y)) -> Float(floor(x/.(float_of_int (y))))
+  | (Int(x), Int(y)) -> if (y = 0) then raise (ZeroDivisionError "integer division or modulo by zero") else Int(int_of_float(floor(float_of_int(x)/.float_of_int(y))))
+  | (Int(x), Float(y)) -> if (y = 0.) then raise (ZeroDivisionError "integer division or modulo by zero") else Float(floor(float_of_int(x)/.y))
+  | (Int(x), Bool(y)) -> if (y = false) then raise (ZeroDivisionError "integer division or modulo by zero") else Int(x)
+  | (Float(x), Float(y)) -> if (y = 0.) then raise (ZeroDivisionError "integer division or modulo by zero") else Float(floor(x/.y))
+  | (Float(x), Int(y)) -> if (y = 0) then raise (ZeroDivisionError "integer division or modulo by zero") else Float(floor(x/.(float_of_int (y))))
+  | (Float(x), Bool(y)) -> if (y = false) then raise (ZeroDivisionError "integer division or modulo by zero") else Float(x)
+  | (Bool(x), Bool(y)) -> if (y = false) then raise (ZeroDivisionError "integer division or modulo by zero") else if (x = true) then Int(1) else Int(0)
+  | (Bool(x), Int(y)) -> if (y = 0) then raise (ZeroDivisionError "integer division or modulo by zero") else if (x = true) then Int(int_of_float(floor(1.0/.float_of_int(y)))) else Int(0)
+  | (Bool(x), Float(y)) -> if (y = 0.) then raise (ZeroDivisionError "integer division or modulo by zero") else if (x = true) then Float(floor(1.0/.y)) else Float(0.)
   | _ -> failwith "wrong types"
 
 let helper_exp = function 
-  | (Int (x), Int (y)) -> Int (int_of_float (float_of_int x ** float_of_int y))
-  | (Float (x), Float (y)) -> Float (x ** y)
+  | (Int (x), Int(y)) -> Int (int_of_float (float_of_int x ** float_of_int y))
   | (Int (x), Float(y)) -> Float ((float_of_int x) ** y)
+  | (Int (x), Bool(y)) -> if (y = true) then Int(x) else Int(1)
   | (Float (x), Int(y)) -> Float (x ** (float_of_int y))
+  | (Float (x), Float (y)) -> Float (x ** y)
+  | (Float (x), Bool(y)) -> if (y = true) then Float(x) else Float(1.)
+  | (Bool (x), Bool(y)) -> if (x = false) && (y = true) then Int(0) else Int(1)
+  | (Bool (x), Int(y)) -> if (x = true) then Int(int_of_float(1.0 ** float_of_int(y))) else Int(0)
+  | (Bool (x), Float(y)) -> if (x = true) then Float(1.0 ** y) else Float(0.)
   | _ -> failwith "wrong types"
 
 let helper_bool = function 
@@ -102,14 +112,15 @@ let helper_bool = function
 
 (* AS OF PYTHON3, DIVISION RETURNS A FLOAT WHEN IT SHOULD BE A FLOAT, INT OTHERWISE *)
 let helper_divide = function 
-  | (Int (x), Int(y)) -> 
-    if y = 0 then raise (ZeroDivisionError "division by zero") else Int(x/y)
-  | (Float (x), Float (y)) -> 
-    if y = 0. then raise (ZeroDivisionError "float division by zero") else Float (x /. y)
-  | (Float (x), Int(y)) ->
-    if y = 0 then raise (ZeroDivisionError "float division by zero") else Float (x /. (float_of_int y))
-  | Int (x), Float(y) ->
-    if y = 0. then raise (ZeroDivisionError "float division by zero") else Float ((float_of_int x) /. y)
+  | (Int (x), Int (y)) -> if y = 0 then raise (ZeroDivisionError "division by zero") else Float(float_of_int(x/y))
+  | (Int (x), Float (y)) -> if y = 0. then raise (ZeroDivisionError "float division by zero") else Float ((float_of_int x) /. y)
+  | (Int (x), Bool (y)) -> if y = false then raise (ZeroDivisionError "float division by zero") else Float(float_of_int(x))
+  | (Float (x), Float (y)) -> if y = 0. then raise (ZeroDivisionError "float division by zero") else Float (x /. y)
+  | (Float (x), Int (y)) -> if y = 0 then raise (ZeroDivisionError "float division by zero") else Float (x /. (float_of_int y))
+  | (Float (x), Bool (y)) -> if y = false then raise (ZeroDivisionError "float division by zero") else Float(x)
+  | (Bool (x), Bool (y)) -> if y = false then raise (ZeroDivisionError "float division by zero") else if x = true then Float(1.0) else Float(0.)
+  | (Bool (x), Int (y)) -> if y = 0 then raise (ZeroDivisionError "float division by zero") else if x = true then Float(1.0/.(float_of_int(y))) else Float(0.0)
+  | (Bool (x), Float (y)) -> if y = 0. then raise (ZeroDivisionError "float division by zero") else if x = true then Float(1.0/.y) else Float(0.)
   | _ -> failwith "wrong types"
 
 let if_decider = function
@@ -147,8 +158,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | (Not, Bool (x)) -> Bool (not x)
      | (Complement, Int (x)) -> Int (-x-1) 
      | (Complement, Bool (x)) -> if x = true then Int (-2) else Int (-1)
-     | (Not, Int (x)) -> Bool (false)
-     | (Not, Float (x)) -> Bool (false)
+     | (Not, Int (x)) -> if x = 0 then Bool(true) else Bool (false)
+     | (Not, Float (x)) -> if x = 0. then Bool(true) else Bool (false)
      | _ -> raise (SyntaxError "invalid syntax"))
   | Variable x -> 
     (match State.find x st with 
@@ -161,7 +172,9 @@ let print (value:State.value):unit =
    | Int x -> string_of_int x
    | Float x -> string_of_float x
    | Bool x -> string_of_bool x |> String.capitalize_ascii
-   | String x -> "'" ^ x ^ "'") |> print_endline
+   | String x -> "'" ^ x ^ "'"
+   | VList x -> "[]") |> print_endline
+
 
 let evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st

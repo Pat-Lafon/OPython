@@ -41,7 +41,7 @@ let rec get_idx (str:string) (op:string) : int =
   if String.length str = 0 then -1
   else if String.length str < String.length op then -1
   else if String.sub str 0 (String.length op) = op then 0
-  else if str.[0] = '(' then 
+  else if str.[0] = '(' then
     (match String.index str ')' with 
      | exception Not_found -> raise (SyntaxError "Missing closing paren") 
      | x -> get_idx_acc str (x+1) op)
@@ -58,12 +58,21 @@ let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option *
     let current = get_idx line (fst h) in
     if current <> -1 && current < snd next then Some h, current else next
 
-(* Will need some kind of trim function to improve upon String.trim. 
-   Handle stuff like parenthesis, example: (3 + 2) -> 3 + 2*)
+let valid_paren str = match get_idx str ")" with 
+  | exception (SyntaxError x) -> false
+  | x -> if x = -1 then true else false
+
+let rec trim str : string = 
+  let newstr = String.trim str in
+  if newstr <> str then trim newstr
+  else if str.[0] = '(' && str.[String.length str - 1] = ')' then 
+    if valid_paren (String.sub str 1 (String.length str - 2))
+    then trim (String.sub str 1 (String.length str - 2))
+    else str
+  else str
 
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in 
-  (* Check that we aren't looking at ==, >=, <=, != *)
   if idx <> -1 then 
     let prev = String.get line (idx-1) in
     let next = String.get line (idx+1) in
@@ -73,12 +82,14 @@ let is_assignment (line:string) : bool =
 let rec parse_expr_helper str op: expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
-  let left = String.trim (String.sub str 0 idx) in
-  let right = String.trim (String.sub str (idx + oplen) (String.length str - idx - oplen)) in
+  let left = String.sub str 0 idx in
+  let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
   Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
-  parse_expr (line:string) (oplist:(string*op) list list) : expr = match oplist with
-  | [] -> let line = String.trim line in
+  parse_expr (line:string) (oplist:(string*op) list list) : expr = 
+  let line = trim line in
+  match oplist with
+  | [] -> 
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
@@ -93,7 +104,7 @@ and
 let parse_assignment (line:string) : string option * expr = 
   let eq_idx = String.index line '=' in
   let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
-  let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
+  let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right operators)
 
 (** [count_chars str char idx acc] returns number of [char] in [str] from [idx] to the end *)
