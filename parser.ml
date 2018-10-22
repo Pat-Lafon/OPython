@@ -94,7 +94,7 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-let rec parse_expr_helper str op: expr = 
+let rec parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
   let left = String.sub str 0 idx in
