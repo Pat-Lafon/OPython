@@ -7,6 +7,7 @@ type expr = Binary of (expr * op * expr)
           | Unary of (op * expr) 
           | Value of State.value 
           | Variable of string
+          | List of expr list
 
 let operators = [[("+", Plus);("-", Minus);];
                  [("%", Modular);];
@@ -44,6 +45,14 @@ let rec get_idx (str:string) (op:string) : int =
   else if str.[0] = '(' then
     (match String.index str ')' with 
      | exception Not_found -> raise (SyntaxError "Missing closing paren") 
+     | x -> get_idx_acc str (x+1) op)
+  else if str.[0] = '[' then
+    (match String.index str ']' with 
+     | exception Not_found -> raise (SyntaxError "Missing closing bracket") 
+     | x -> get_idx_acc str (x+1) op)
+  else if str.[0] = '"' then
+    (match String.index (String.sub str 1 (String.length str -1)) '"' with 
+     | exception Not_found -> raise (SyntaxError "Missing closing quote") 
      | x -> get_idx_acc str (x+1) op)
   else get_idx_acc str 1 op
 and 
@@ -92,6 +101,9 @@ and
   | [] -> 
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
+    else if line.[0] = '[' || line.[0] = ']' 
+    then List(List.map (fun x -> parse_expr x operators) 
+                (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))

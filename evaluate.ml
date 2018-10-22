@@ -158,13 +158,19 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Some t -> t
      | None -> raise (NameError ("name '"^x^"' is not defined")))
   | Value x -> x
+  | List x -> failwith "Unimplemented"
+
+let rec to_string (value:State.value) : string = (match value with
+    | List x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
+                (fun x -> if String.length x = 1 then x ^ "]" 
+                  else String.sub x 0 (String.length x -2) ^ "]")
+    | Int x -> string_of_int x
+    | Float x -> string_of_float x
+    | Bool x -> string_of_bool x |> String.capitalize_ascii
+    | String x -> "'" ^ x ^ "'")
 
 let print (value:State.value):unit = 
-  (match value with
-   | Int x -> string_of_int x
-   | Float x -> string_of_float x
-   | Bool x -> string_of_bool x |> String.capitalize_ascii
-   | String x -> "'" ^ x ^ "'") |> print_endline
+  value |> to_string |> print_endline
 
 let evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
