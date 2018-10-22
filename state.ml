@@ -1,4 +1,5 @@
-type value = Int of int | Float of float | String of string | Bool of bool | List of value list
+type value = Int of int | Float of float | String of string | Bool of bool 
+           | List of value list
 type t = (string*value)list
 
 let empty : t = []
