@@ -204,7 +204,7 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | (Minus, _) -> raise (TypeError "bad operand type for unary -")
      | (Not, Bool x) -> Bool (not x)
      | (Complement, Int x) -> Int (-x-1) 
-     | (Complement, Bool x) -> if s then Int (-2) else Int (-1)
+     | (Complement, Bool x) -> if x then Int (-2) else Int (-1)
      | (Not, Int x) -> if x = 0 then Bool(true) else Bool (false)
      | (Not, Float x) -> if x = 0. then Bool(true) else Bool (false)
      | _ -> raise (SyntaxError "invalid syntax"))
