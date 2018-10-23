@@ -201,14 +201,6 @@ let rec to_string (value:State.value) : string = (match value with
     | Bool x -> string_of_bool x |> String.capitalize_ascii
     | String x -> "'" ^ x ^ "'")
 
-let print (value:State.value):unit = 
-  (match value with
-   | Int x -> string_of_int x
-   | Float x -> string_of_float x
-   | Bool x -> string_of_bool x |> String.capitalize_ascii
-   | String x -> "'" ^ x ^ "'"
-   | VList x -> "[]") |> print_endline
-
 let print (value:State.value):unit = value |> to_string |> print_endline
 
 let evaluate input st = match input with
