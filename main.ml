@@ -16,27 +16,27 @@ let rec while_multiline (cond : expr) (body : string) (lines : string list) =
   match lines with
   | [] -> print_string "... "; while_multiline cond body [read_line ()]
   | h::t -> (match parse_multiline h with
-            | Empty -> (cond, String.trim body)
-            | _ -> while_multiline cond (body ^ "\n" ^ String.trim h) t)
+      | Empty -> (cond, String.trim body)
+      | _ -> while_multiline cond (body ^ "\n" ^ String.trim h) t)
 
 let rec main (st:State.t) (lines: string list) : unit =
   match lines with
   | [] -> print_string ">>> "; main st [read_line ()]
   | h::t -> (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
-    | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); main st []
-    | exception (NameError x) -> print_endline ("NameError: "^x); main st []
-    | exception (TypeError x) -> print_endline ("TypeError: "^x); main st []
-    | exception (OverflowError x) -> print_endline ("OverflowError: "^x); main st []
-    | exception (IndentationError x) -> print_endline ("IndentationError"^x); main st []
-    | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); main st []
-    | exception EmptyInput -> main st []
-    | exception (IfMultiline (cond, body)) -> 
-      let (conds, bodies) = if_multiline [cond] [] body in main_if conds bodies st
-    | exception (WhileMultiline (cond, init_body)) -> 
-      let (while_cond, while_body) = while_multiline cond (String.trim init_body) t in
-      let while_line = h in
-      main_while while_cond while_body while_line st
-    | newst -> main newst t)
+      | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); main st []
+      | exception (NameError x) -> print_endline ("NameError: "^x); main st []
+      | exception (TypeError x) -> print_endline ("TypeError: "^x); main st []
+      | exception (OverflowError x) -> print_endline ("OverflowError: "^x); main st []
+      | exception (IndentationError x) -> print_endline ("IndentationError"^x); main st []
+      | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); main st []
+      | exception EmptyInput -> main st []
+      | exception (IfMultiline (cond, body)) -> 
+        let (conds, bodies) = if_multiline [cond] [] body in main_if conds bodies st
+      | exception (WhileMultiline (cond, init_body)) -> 
+        let (while_cond, while_body) = while_multiline cond (String.trim init_body) t in
+        let while_line = h in
+        main_while while_cond while_body while_line st
+      | newst -> main newst t)
 and main_if (conds : expr list) (bodies : string list) (st: State.t) : unit =
   match conds, bodies with
   | cond::c_t, body::b_t -> print_endline ("@" ^ body ^ "@"); (match Evaluate.eval cond st |> Evaluate.if_decider with
