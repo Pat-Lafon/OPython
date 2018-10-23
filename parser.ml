@@ -3,10 +3,11 @@ open State
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | And | Or | Not | Complement
 
-type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value | Variable of string | List of expr list
+type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
+            | Value of State.value | Variable of string | List of expr list
 
 type line_type = Assignment | Expression | If of (expr * string) 
-                | Empty | Else | Line of string | Elif of (expr * string)
+                | Empty | Else | Line of string | Elif of (expr * string) | While of (expr * string)
 
 exception SyntaxError of string
 exception TypeError of string
@@ -15,7 +16,8 @@ exception OverflowError of string
 exception IndentationError of string
 exception ZeroDivisionError of string
 exception EmptyInput
-exception Multiline of (expr * string)
+exception IfMultiline of (expr * string)
+exception WhileMultiline of (expr * string)
 
 let operators = [[("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
                  [("+", Plus);("-", Minus);];
@@ -154,10 +156,9 @@ let valid_line line =
 
 (** Matches if statement *)
 let if_regex = Str.regexp "^if \(.*\):\(.*\)"
-
 let elif_regex = Str.regexp "^elif \(.*\):\(.*\)"
-
 let else_regex = Str.regexp "^else *: *"
+let while_regex = Str.regexp "^while \(.*\):\(.*\)"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
@@ -165,6 +166,8 @@ let is_if line = Str.string_match if_regex line 0
 let is_else line = Str.string_match else_regex line 0
 
 let is_elif line = Str.string_match elif_regex line 0
+
+let is_while line = Str.string_match while_regex line 0
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
@@ -178,6 +181,7 @@ let line_type (line : string) : line_type =
   (* calling parse_if is not a typo *)
   else if is_elif line then Elif (parse_if line)
   else if is_else line then Else
+  else if is_while line then While (parse_if line)
   else Expression
 
 let parse_line (line : string) : string option * expr = 
@@ -186,11 +190,12 @@ let parse_line (line : string) : string option * expr =
   | Empty -> raise EmptyInput
   | Assignment -> parse_assignment line
   | Expression -> (None, parse_expr line operators)
-  | If (cond, body) -> raise (Multiline (cond, body))
+  | If (cond, body) -> raise (IfMultiline (cond, body))
   | Elif (cond, body) -> raise (SyntaxError "Elif statement with no if")
   | Else -> raise (SyntaxError "Else statement with no if")
   (* line type is helpful for later *)
   | Line l -> (None, parse_expr line operators)
+  | While (cond, body) -> raise (WhileMultiline (cond, body)) 
 
 let parse_multiline (line: string) : line_type =
   match line_type line with
@@ -200,4 +205,5 @@ let parse_multiline (line: string) : line_type =
   | Line line -> Line line
   | If (cond, body) -> If (cond, body)
   | Elif (cond, body) -> Elif (cond, body)
+  | While (cond, body) -> While (cond, body)
   | Else -> Else 
