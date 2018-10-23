@@ -183,7 +183,14 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
       | h::t -> eval h st :: help t
     in VList(help x)
 
-<<<<<<< HEAD
+let if_decider = function
+  | Int(0) -> false
+  | String("") -> false
+  | Bool(false) -> false
+  | Float(0.0)  -> false
+  | VList([]) -> false
+  | _ -> true
+
 let to_bool (exp : expr) (st : State.t) = 
   eval exp st |> if_decider
 
@@ -203,27 +210,9 @@ let print (value:State.value):unit =
    | Bool x -> string_of_bool x |> String.capitalize_ascii
    | String x -> "'" ^ x ^ "'"
    | VList x -> "[]") |> print_endline
-=======
-let rec to_string (value:State.value) : string = match value with
-  | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
-               (fun x -> if String.length x = 1 then x ^ "]" 
-                 else String.sub x 0 (String.length x -2) ^ "]")
-  | Int x -> string_of_int x
-  | Float x -> string_of_float x
-  | Bool x -> string_of_bool x |> String.capitalize_ascii
-  | String x -> "'" ^ x ^ "'"
->>>>>>> 89728670c6db38e24cd21f550841543b94bea60e
 
 let print (value:State.value):unit = value |> to_string |> print_endline
 
 let evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> print (eval expr st); st
-
-let if_decider = function
-  | Int(0) -> false
-  | String("") -> false
-  | Bool(false) -> false
-  | Float(0.0)  -> false
-  | VList([]) -> false
-  | _ -> true
