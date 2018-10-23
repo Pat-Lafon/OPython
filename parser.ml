@@ -170,7 +170,7 @@ let parse_if (line: string) : (expr * string) =
   (parse_expr condition operators, body)
 
 let parse_line (line : string) : string option * expr = 
-  valid_line line;
+  (*valid_line line; Testing whether get_idx is working, report to Patrick if failure*)
   match line_type line with
   | Empty -> raise EmptyInput
   | Assignment -> parse_assignment line
