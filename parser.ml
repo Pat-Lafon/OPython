@@ -1,19 +1,27 @@
 open State
-open Error
 
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | And | Or | Not | Complement
-type expr = Binary of (expr * op * expr) 
-          | Unary of (op * expr) 
-          | Value of State.value 
-          | Variable of string
-          | List of expr list
 
-let operators = [[("+", Plus);("-", Minus);];
+type line_type = Assignment | Expression | If | Empty
+(* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
+
+type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value | Variable of string | List of expr list
+
+exception SyntaxError of string
+exception TypeError of string
+exception NameError of string
+exception OverflowError of string
+exception IndentationError of string
+exception ZeroDivisionError of string
+exception EmptyInput
+exception Multiline of (expr * string)
+
+let operators = [[("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
+                 [("+", Plus);("-", Minus);];
                  [("%", Modular);];
                  [("/", Divide);("//", Floor_Divide);("*", Multiply);];
                  [("**", Exponent);];
-                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
                  [("not", Not)]]
 
 let reserved_keywords = [
@@ -144,9 +152,32 @@ let valid_line line =
   if not (paren_check line 0 0) then raise (SyntaxError "Invalid parenthesis")
   else ()
 
+(** Matches if statement *)
+let if_regex = Str.regexp "^if \(.*\):\(.*\)"
+
+(** Check if line is an if statement *)
+let is_if line = Str.string_match if_regex line 0
+
+let line_type (line : string) : line_type =
+  if String.length line = 0 then Empty
+  else if is_assignment line then Assignment
+  else if is_if line then If
+  else Expression
+
+let parse_if (line: string) : (expr * string) =
+  let condition = Str.matched_group 1 line in
+  let body = String.trim (Str.matched_group 2 line) in
+  (parse_expr condition operators, body)
+
 let parse_line (line : string) : string option * expr = 
-  (* valid_line line; *)
-  if String.length line = 0 then raise EmptyInput
-  else if is_assignment line 
-  then parse_assignment line
-  else (None, parse_expr line operators)
+  valid_line line;
+  match line_type line with
+  | Empty -> raise EmptyInput
+  | Assignment -> parse_assignment line
+  | Expression -> (None, parse_expr line operators)
+  | If -> raise (Multiline (parse_if line))
+
+let parse_multiline (line: string) =
+  match line_type line with
+  | Empty -> raise EmptyInput
+  | _ -> line

@@ -1,11 +1,11 @@
-MODULES=main state parser evaluate error
+MODULES=main state parser evaluate
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
 TEST=test.byte
 MAIN=main.byte
 OCAMLBUILD=ocamlbuild -use-ocamlfind
-PKGS=unix,oUnit,str,qcheck
+PKGS=unix,str,oUnit,qcheck
 
 default: build
 	utop
