@@ -15,8 +15,8 @@ let helper_plus = function
   | Float x, Bool y -> if y then Float (x +. float_of_int 1) else Float x
   | String x, _ -> raise (TypeError ("unsupported operand"))
   | _, String y -> raise (TypeError ("unsupported operand"))
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
 
 let helper_minus = function 
   | Int x, Int y -> Int(x-y)
@@ -30,8 +30,8 @@ let helper_minus = function
   | Float x, Bool y -> if y then Float (x -. float_of_int 1) else Float x
   | String x, _ -> raise (TypeError ("unsupported operand"))
   | _, String y -> raise (TypeError ("unsupported operand"))
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
 
 let helper_multiply = function 
   | Int x, Int y -> Int (x * y)
@@ -50,8 +50,8 @@ let helper_multiply = function
   | Bool x, Bool y -> if x && y then Int 1 else Int 0
   | Int x, String y -> raise (TypeError ("unsupported operand"))
   | String x, Int y -> raise (TypeError ("unsupported operand"))
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
 
 let helper_mod = function 
   | Int x, Int y -> if x != 0 then Int (x mod y) 
@@ -102,8 +102,8 @@ let helper_floor = function
     else if x then Int(int_of_float(floor(1.0/.float_of_int y))) else Int 0
   | Bool x, Float y -> if y = 0. then raise (ZeroDivisionError "integer division or modulo by zero") 
     else if x then Float(floor(1.0/.y)) else Float 0.
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
 
 let helper_exp = function 
@@ -116,8 +116,8 @@ let helper_exp = function
   | Bool x, Bool y -> if not x && y then Int 0 else Int 1
   | Bool x, Int y -> if x then Int(int_of_float(1.0 ** float_of_int y)) else Int 0
   | Bool x, Float y -> if x then Float(1.0 ** y) else Float 0.
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
 
 (* These are incorrect. Make sure to consider cases where bool is false or int/float is 0 *)
@@ -129,8 +129,8 @@ let helper_and = function
   | Int x, Bool  y -> Bool  y
   | Float x, Float  y -> Float  y
   | Float x, Bool  y -> Bool  y
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
 
 (* These are incorrect. Make sure to consider cases where bool is false or int/float is 0 *)
@@ -142,8 +142,8 @@ let helper_or = function
   | Int x, Bool  y -> Int x
   | Float x, Float  y -> Float x
   | Float x, Bool  y -> Float x
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
 
 (* Turn these into helper functions when there are more cases*)
@@ -173,9 +173,17 @@ let helper_divide = function
     else if x then Float(1.0/.(float_of_int y)) else Float(0.0)
   | Bool x, Float y-> if y = 0. then raise (ZeroDivisionError "float division by zero") 
     else if x then Float(1.0/.y) else Float 0.
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
+
+let if_decider = function
+  | Int(0) -> false
+  | String("") -> false
+  | Bool(false) -> false
+  | Float(0.0)  -> false
+  | VList([]) -> false
+  | _ -> true
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
@@ -192,7 +200,7 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Not_Equal -> helper_bool (eval e1 st, eval e2 st, "not equals")
      | Modular -> helper_mod (eval e1 st, eval e2 st)
      | Not -> raise (SyntaxError "invalid syntax")
-     | Complement -> failwith "unimplemented")
+     | Complement -> raise (SyntaxError "Invalid syntax"))
   | Unary (op, e1) ->
     (match op, eval e1 st with 
      | Plus, Int x -> Int x
@@ -213,16 +221,27 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Some t -> t
      | None -> raise (NameError ("name '"^x^"' is not defined")))
   | Value x -> x
-  | List x -> failwith "Unimplemented"
+  | List x -> let rec help = function 
+      | [] -> []
+      | h::t -> eval h st :: help t
+    in VList(help x)
 
 let rec to_string (value:State.value) : string = (match value with
-    | List x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
-                (fun x -> if String.length x = 1 then x ^ "]" 
-                  else String.sub x 0 (String.length x -2) ^ "]")
+    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
+                 (fun x -> if String.length x = 1 then x ^ "]" 
+                   else String.sub x 0 (String.length x -2) ^ "]")
     | Int x -> string_of_int x
     | Float x -> string_of_float x
     | Bool x -> string_of_bool x |> String.capitalize_ascii
     | String x -> "'" ^ x ^ "'")
+
+let print (value:State.value):unit = 
+  (match value with
+   | Int x -> string_of_int x
+   | Float x -> string_of_float x
+   | Bool x -> string_of_bool x |> String.capitalize_ascii
+   | String x -> "'" ^ x ^ "'"
+   | VList x -> "[]") |> print_endline
 
 let print (value:State.value):unit = 
   value |> to_string |> print_endline
