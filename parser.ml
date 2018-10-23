@@ -17,11 +17,11 @@ exception ZeroDivisionError of string
 exception EmptyInput
 exception Multiline of (expr * string)
 
-let operators = [[("+", Plus);("-", Minus);];
+let operators = [[("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
+                 [("+", Plus);("-", Minus);];
                  [("%", Modular);];
                  [("/", Divide);("//", Floor_Divide);("*", Multiply);];
                  [("**", Exponent);];
-                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
                  [("not", Not)]]
 
 let reserved_keywords = [
