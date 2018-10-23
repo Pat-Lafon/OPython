@@ -117,26 +117,11 @@ let helper_and = function
   | VList x, y -> if x = [] then VList x else y
 
 let helper_or = function 
-  | Int x, Int y -> if x=0 then Int(y) else if y=0 then Int(x) else Int(x)
-  | Int x, Float y -> failwith "unimplemented"
-  | Int x, Bool y -> if x!=0 then Int(x) else Bool(y)
-  | Int x, String y -> failwith "unimplemented"
-
-  | Float x, Int y -> failwith "unimplemented"
-  | Float x, Float y -> if x=0. then Float(y) else if y=0. then Float(x) else Float(x)
-  | Float x, Bool y -> if x!=0. then Float(x) else Bool(y)
-  | Float x, String y -> failwith "unimplemented"
-
-
-  | Bool x, Int y -> if x then Bool(x) else Int(y)
-  | Bool x, Float y -> if x then Bool(x) else Float(y)
-  | Bool x, Bool y -> Bool (x || y)
-  | Bool x, String y -> failwith "unimplemented"
-
-  | String x, _ -> failwith "unimplemented"
-
-  | _, VList x -> failwith "unimplemented"
-  | VList x, _-> failwith "unimplemented"
+  | Int x, y -> if x<>0 then Int x else y
+  | Float x, y -> if x <> 0. then Float x else y
+  | Bool x, y -> if x then Bool x else y
+  | String x, y -> if x <> "" then String x else y
+  | VList x, y -> if x <> [] then VList x else y
 
 let helper_equal = function
   | Int x, Int y -> Bool (x = y)
