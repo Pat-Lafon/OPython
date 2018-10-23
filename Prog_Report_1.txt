@@ -1,0 +1,9 @@
+Progress Report A6
+Vision: Creating a python interpreter in OCaml. This involves a text user interface, 
+a python parser, some kind of evaluation, and then return and loop.
+Summary of Progress: N/A
+Activity Breakdown: 
+Productivity Analysis:
+Coding Standards Grades:
+Scope Grade:
+Goals for Next Sprint:

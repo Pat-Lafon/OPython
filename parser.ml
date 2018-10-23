@@ -108,7 +108,7 @@ and
   | [] -> 
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
-    else if line.[0] = '[' || line.[0] = ']' 
+    else if line.[0] = '[' || line.[String.length line -1] = ']' 
     then List(List.map (fun x -> parse_expr x operators) 
                 (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
