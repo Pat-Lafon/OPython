@@ -1,13 +1,15 @@
 open State
 
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
-        | Equal | Not_Equal | And | Or | Not | Complement
+        | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Equal 
+        | Less_Equal | And | Or | Not | Complement
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
-            | Value of State.value | Variable of string | List of expr list
+          | Value of State.value | Variable of string | List of expr list
 
 type line_type = Assignment | Expression | If of (expr * string) 
-                | Empty | Else | Line of string | Elif of (expr * string) | While of (expr * string)
+               | Empty | Else | Line of string | Elif of (expr * string) 
+               | While of (expr * string)
 
 exception SyntaxError of string
 exception TypeError of string
@@ -19,12 +21,14 @@ exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
 
-let operators = [[("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
+let operators = [[("or", Or)];
+                 [("and", And);];
+                 [("==", Equal);("!=", Not_Equal)];
+                 [("<", Less_Than);("<=", Less_Equal);(">", Greater_Than);(">=", Greater_Equal);];
+                 [("not", Not)];(* Not sure if not should be higher, can't prove yet *)
                  [("+", Plus);("-", Minus);];
-                 [("%", Modular);];
-                 [("/", Divide);("//", Floor_Divide);("*", Multiply);];
-                 [("**", Exponent);];
-                 [("not", Not)]]
+                 [("%", Modular);("/", Divide);("//", Floor_Divide);("*", Multiply);];
+                 [("**", Exponent);]]
 
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
@@ -49,26 +53,35 @@ let is_var_name (s:string) : string =
   then raise (SyntaxError "can't assign to keyword") 
   else s
 
+let not_mistaken str op = 
+  let oplen = String.length op in
+  if String.length str = oplen then true
+  else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
+
 let rec get_idx (str:string) (op:string) : int =
-  if String.length str = 0 then -1
-  else if String.length str < String.length op then -1
-  else if String.sub str 0 (String.length op) = op then 0
+  let strlen = String.length str in
+  let oplen = String.length op in 
+  if strlen = 0 then -1
+  else if strlen < oplen then  -1
+  else if String.sub str 0 oplen = op then 
+    if not_mistaken str op then 0
+    else get_idx_acc str 2 op
   else if str.[0] = '(' then
-    (match get_idx (String.sub str 1 (String.length str - 1)) ")" with 
+    (match get_idx (String.sub str 1 (strlen - 1)) ")" with 
      | -1 -> raise (SyntaxError "Missing closing paren") 
      | x -> get_idx_acc str (x+2) op)
   else if str.[0] = ')' then raise (SyntaxError "Missing opening paren") 
   else if str.[0] = '[' then
-    (match get_idx (String.sub str 1 (String.length str - 1)) "]" with 
+    (match get_idx (String.sub str 1 (strlen - 1)) "]" with 
      | -1 -> raise (SyntaxError "Missing closing bracket") 
      | x -> get_idx_acc str (x+2) op)
   else if str.[0] = ']' then raise (SyntaxError "Missing opening bracket") 
   else if str.[0] = '"' then
-    (match String.index (String.sub str 1 (String.length str -1)) '"' with 
+    (match String.index (String.sub str 1 (strlen -1)) '"' with 
      | exception Not_found -> raise (SyntaxError "Missing closing quote") 
      | x -> get_idx_acc str (x+2) op)
   else if str.[0] = '\'' then
-    (match String.index (String.sub str 1 (String.length str -1)) '\'' with 
+    (match String.index (String.sub str 1 (strlen -1)) '\'' with 
      | exception Not_found -> raise (SyntaxError "Missing closing quote") 
      | x -> get_idx_acc str (x+2) op)
   else get_idx_acc str 1 op

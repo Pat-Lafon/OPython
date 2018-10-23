@@ -1,9 +1,15 @@
 open State
 
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
-        | Equal | Not_Equal | And | Or | Not | Complement
+        | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Equal 
+        | Less_Equal | And | Or | Not | Complement
 
-type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value | Variable of string | List of expr list
+type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
+          | Value of State.value | Variable of string | List of expr list
+
+type line_type = Assignment | Expression | If of (expr * string) 
+               | Empty | Else | Line of string | Elif of (expr * string) 
+               | While of (expr * string)
 
 exception SyntaxError of string
 exception TypeError of string
@@ -14,11 +20,6 @@ exception ZeroDivisionError of string
 exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
-
-type line_type = Assignment | Expression | If of (expr * string) 
-                | Empty | Else | Line of string | Elif of (expr * string) | While of (expr * string)
-(* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
-
 
 val get_idx : string -> string -> int
 
