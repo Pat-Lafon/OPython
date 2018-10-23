@@ -2,11 +2,11 @@ open State
 open Evaluate
 open Parser
 
-let rec multiline cond acc =
+let rec multiline acc =
   print_string "...";
   match parse_multiline (read_line ()) with
   | exception EmptyInput -> acc
-  | line -> multiline cond line ^ "\n" ^ acc
+  | line -> multiline line ^ "\n" ^ acc
 
 (** [main ()] prompts for the game to play, then starts it. *)
 let rec main (st:State.t) (foo: bool) : unit =
@@ -19,7 +19,8 @@ let rec main (st:State.t) (foo: bool) : unit =
   | exception (IndentationError x) -> print_endline ("IndentationError"^x); main st false
   | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); main st false
   | exception EmptyInput -> main st false
-  | exception (Multiline cond) -> let a = print_endline (multiline cond "") in main st false
+  | exception (Multiline (cond, init_body)) -> 
+    let body = multiline init_body in main st false
   | newst -> main newst false
 
 (* Execute the game engine. *)

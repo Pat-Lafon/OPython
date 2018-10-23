@@ -7,11 +7,6 @@ type line_type = Assignment | Expression | If | Empty
 (* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value | Variable of string
-(* type expr = Binary of (expr * op * expr) 
-          | Unary of (op * expr) 
-          | Value of State.value 
-<<<<<<< HEAD
-          | Variable of string *)
 
 exception SyntaxError of string
 exception TypeError of string
@@ -21,10 +16,6 @@ exception IndentationError of string
 exception ZeroDivisionError of string
 exception EmptyInput
 exception Multiline of (expr * string)
-=======
-          | Variable of string
-          | List of expr list
->>>>>>> 50eb6b4743e565c420c703474dd216b71eab0040
 
 let operators = [[("+", Plus);("-", Minus);];
                  [("%", Modular);];
@@ -184,8 +175,6 @@ let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
   let body = String.trim (Str.matched_group 2 line) in
   (parse_expr condition operators, body)
-  (* if body = "" then (parse_expr condition operators, None)
-  else (parse_expr condition operators, Some body) *)
 
 let parse_line (line : string) : string option * expr = 
   valid_line line;
@@ -199,8 +188,3 @@ let parse_multiline (line: string) =
   match line_type line with
   | Empty -> raise EmptyInput
   | _ -> line
-
-  (* if String.length line = 0 then raise EmptyInput
-  else if is_assignment line 
-  then parse_assignment line
-  else (None, parse_expr line operators) *)
