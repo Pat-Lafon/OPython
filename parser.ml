@@ -10,6 +10,7 @@ type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State
 (* type expr = Binary of (expr * op * expr) 
           | Unary of (op * expr) 
           | Value of State.value 
+<<<<<<< HEAD
           | Variable of string *)
 
 exception SyntaxError of string
@@ -20,12 +21,17 @@ exception IndentationError of string
 exception ZeroDivisionError of string
 exception EmptyInput
 exception Multiline of (expr * string)
+=======
+          | Variable of string
+          | List of expr list
+>>>>>>> 50eb6b4743e565c420c703474dd216b71eab0040
 
 let operators = [[("+", Plus);("-", Minus);];
                  [("%", Modular);];
                  [("/", Divide);("//", Floor_Divide);("*", Multiply);];
                  [("**", Exponent);];
-                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or);("not", Not)]]
+                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
+                 [("not", Not)]]
 
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
@@ -54,10 +60,22 @@ let rec get_idx (str:string) (op:string) : int =
   if String.length str = 0 then -1
   else if String.length str < String.length op then -1
   else if String.sub str 0 (String.length op) = op then 0
-  else if str.[0] = '(' then 
+  else if str.[0] = '(' then
     (match String.index str ')' with 
      | exception Not_found -> raise (SyntaxError "Missing closing paren") 
      | x -> get_idx_acc str (x+1) op)
+  else if str.[0] = '[' then
+    (match String.index str ']' with 
+     | exception Not_found -> raise (SyntaxError "Missing closing bracket") 
+     | x -> get_idx_acc str (x+1) op)
+  else if str.[0] = '"' then
+    (match String.index (String.sub str 1 (String.length str -1)) '"' with 
+     | exception Not_found -> raise (SyntaxError "Missing closing quote") 
+     | x -> get_idx_acc str (x+2) op)
+  else if str.[0] = '\'' then
+    (match String.index (String.sub str 1 (String.length str -1)) '\'' with 
+     | exception Not_found -> raise (SyntaxError "Missing closing quote") 
+     | x -> get_idx_acc str (x+2) op)
   else get_idx_acc str 1 op
 and 
   get_idx_acc (str:string) (num:int) (op:string) : int = 
@@ -71,29 +89,45 @@ let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option *
     let current = get_idx line (fst h) in
     if current <> -1 && current < snd next then Some h, current else next
 
-(* Will need some kind of trim function to improve upon String.trim. 
-   Handle stuff like parenthesis, example: (3 + 2) -> 3 + 2*)
+let valid_paren str = match get_idx str ")" with 
+  | exception (SyntaxError x) -> false
+  | x -> if x = -1 then true else false
+
+let rec trim str : string = 
+  let newstr = String.trim str in
+  if newstr <> str then trim newstr
+  else if String.length newstr = 0 then str
+  else if str.[0] = '(' && str.[String.length str - 1] = ')' then 
+    if valid_paren (String.sub str 1 (String.length str - 2))
+    then trim (String.sub str 1 (String.length str - 2))
+    else str
+  else str
 
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in 
-  (* Check that we aren't looking at ==, >=, <=, != *)
   if idx <> -1 then 
     let prev = String.get line (idx-1) in
     let next = String.get line (idx+1) in
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-let rec parse_expr_helper str op: expr = 
+let rec parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
-  let left = String.trim (String.sub str 0 idx) in
-  let right = String.trim (String.sub str (idx + oplen) (String.length str - idx - oplen)) in
-  Binary(parse_expr left operators, snd op, parse_expr right operators) 
+  let left = String.sub str 0 idx in
+  let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
+  if trim left = "" then Unary (snd op, parse_expr right operators) 
+  else Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
-  parse_expr (line:string) (oplist:(string*op) list list) : expr = match oplist with
-  | [] -> let line = String.trim line in
+  parse_expr (line:string) (oplist:(string*op) list list) : expr = 
+  let line = trim line in
+  match oplist with
+  | [] -> 
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
+    else if line.[0] = '[' || line.[String.length line -1] = ']' 
+    then List(List.map (fun x -> parse_expr x operators) 
+                (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
@@ -106,7 +140,7 @@ and
 let parse_assignment (line:string) : string option * expr = 
   let eq_idx = String.index line '=' in
   let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
-  let right = String.trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
+  let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right operators)
 
 (** [count_chars str char idx acc] returns number of [char] in [str] from [idx] to the end *)

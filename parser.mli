@@ -1,10 +1,9 @@
 open State
 
-(* type op = Plus | Minus | Divide | Multiply | Modular | Exponent | Floor_Divide 
-        | Equal | Not_Equal | And | Or | Not | Complement *)
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | And | Or | Not | Complement
 
+<<<<<<< HEAD
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value | Variable of string
 
 exception SyntaxError of string
@@ -19,6 +18,10 @@ exception Multiline of (expr * string)
 type line_type = Assignment | Expression | If | Empty
 (* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
 
+=======
+type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
+          | Value of State.value | Variable of string | List of expr list
+>>>>>>> 50eb6b4743e565c420c703474dd216b71eab0040
 (*
 val get_idx : string -> string -> int option
 
