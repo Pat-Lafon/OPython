@@ -18,21 +18,6 @@ let helper_plus = function
   | _, List x -> raise (TypeError ("unsupported operand"))
   | List x, _-> raise (TypeError ("unsupported operand"))
 
-let helper_minus = function 
-  | Int x, Int y -> Int(x-y)
-  | Float x, Float y -> Float (x -. y)
-  | Int x, Float y -> Float (float_of_int x -. y)
-  | Float x, Int y -> Float (float_of_int y -. x)
-  | Bool x, Bool y -> Int(if x then 1 else 0 - if y then 1 else 0)
-  | Bool x, Int y -> if x then Int (1-y) else Int (-y)
-  | Bool x, Float y -> if x then Float (float_of_int 1 -. y) else Float (-.y)
-  | Int x, Bool y -> if y then Int (x-1) else Int x
-  | Float x, Bool y -> if y then Float (x -. float_of_int 1) else Float x
-  | String x, _ -> raise (TypeError ("unsupported operand"))
-  | _, String y -> raise (TypeError ("unsupported operand"))
-  | _, List x -> raise (TypeError ("unsupported operand"))
-  | List x, _-> raise (TypeError ("unsupported operand"))
-
 let helper_multiply = function 
   | Int x, Int y -> Int (x * y)
   | Float x, Float y -> Float (x *. y)
@@ -181,7 +166,7 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
   | Binary (e1, op, e2) -> 
     (match op with 
      | Plus -> helper_plus (eval e1 st, eval e2 st)
-     | Minus -> helper_minus (eval e1 st, eval e2 st)
+     | Minus -> helper_plus (eval e1 st, eval (Unary (Minus, e2)) st)
      | Multiply -> helper_multiply (eval e1 st, eval e2 st)
      | Divide -> helper_divide (eval e1 st, eval e2 st)
      | Floor_Divide -> helper_floor (eval e1 st, eval e2 st)
