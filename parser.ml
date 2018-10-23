@@ -3,10 +3,10 @@ open State
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | And | Or | Not | Complement
 
-type line_type = Assignment | Expression | If | Empty
-(* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
-
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) | Value of State.value | Variable of string | List of expr list
+
+type line_type = Assignment | Expression | If of (expr * string) 
+                | Empty | Else | Line of string | Elif of (expr * string)
 
 exception SyntaxError of string
 exception TypeError of string
@@ -162,19 +162,30 @@ let valid_line line =
 (** Matches if statement *)
 let if_regex = Str.regexp "^if \(.*\):\(.*\)"
 
+let elif_regex = Str.regexp "^elif \(.*\):\(.*\)"
+
+let else_regex = Str.regexp "^else *: *"
+
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
 
-let line_type (line : string) : line_type =
-  if String.length line = 0 then Empty
-  else if is_assignment line then Assignment
-  else if is_if line then If
-  else Expression
+let is_else line = Str.string_match else_regex line 0
+
+let is_elif line = Str.string_match elif_regex line 0
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
   let body = String.trim (Str.matched_group 2 line) in
   (parse_expr condition operators, body)
+
+let line_type (line : string) : line_type =
+  if String.length line = 0 then Empty
+  else if is_assignment line then Assignment
+  else if is_if line then If (parse_if line)
+  (* calling parse_if is not a typo *)
+  else if is_elif line then Elif (parse_if line)
+  else if is_else line then Else
+  else Expression
 
 let parse_line (line : string) : string option * expr = 
   valid_line line;
@@ -182,9 +193,18 @@ let parse_line (line : string) : string option * expr =
   | Empty -> raise EmptyInput
   | Assignment -> parse_assignment line
   | Expression -> (None, parse_expr line operators)
-  | If -> raise (Multiline (parse_if line))
+  | If (cond, body) -> raise (Multiline (cond, body))
+  | Elif (cond, body) -> raise (SyntaxError "Elif statement with no if")
+  | Else -> raise (SyntaxError "Else statement with no if")
+  (* line type is helpful for later *)
+  | Line l -> (None, parse_expr line operators)
 
-let parse_multiline (line: string) =
+let parse_multiline (line: string) : line_type =
   match line_type line with
-  | Empty -> raise EmptyInput
-  | _ -> line
+  | Empty -> Empty
+  | Assignment -> Line line
+  | Expression -> Line line
+  | Line line -> Line line
+  | If (cond, body) -> If (cond, body)
+  | Elif (cond, body) -> Elif (cond, body)
+  | Else -> Else 

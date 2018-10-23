@@ -14,7 +14,8 @@ exception ZeroDivisionError of string
 exception EmptyInput
 exception Multiline of (expr * string)
 
-type line_type = Assignment | Expression | If | Empty
+type line_type = Assignment | Expression | If of (expr * string) 
+                | Empty | Else | Line of string | Elif of (expr * string)
 (* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
 
 (*
@@ -32,4 +33,4 @@ val parse_line : string -> string option * expr
 
 val line_type : string -> line_type
 
-val parse_multiline : string -> string
+val parse_multiline : string -> line_type
