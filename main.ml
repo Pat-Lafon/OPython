@@ -1,24 +1,31 @@
 open State
 open Evaluate
 open Parser
-open Error
+
+let rec multiline acc =
+  print_string "...";
+  match parse_multiline (read_line ()) with
+  | exception EmptyInput -> acc
+  | line -> multiline line ^ "\n" ^ acc
 
 (** [main ()] prompts for the game to play, then starts it. *)
-let rec main (st:State.t) : unit =
-  print_string  ">>> ";
+let rec main (st:State.t) (foo: bool) : unit =
+  if foo then print_string "... " else print_string ">>> ";
   match Parser.parse_line (read_line ()) |> (fun x -> Evaluate.evaluate x st) with
-  | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); main st
-  | exception (NameError x) -> print_endline ("NameError: "^x); main st
-  | exception (TypeError x) -> print_endline ("TypeError: "^x); main st
-  | exception (OverflowError x) -> print_endline ("OverflowError: "^x); main st
-  | exception (IndentationError x) -> print_endline ("IndentationError"^x); main st
-  | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); main st
-  | exception EmptyInput -> main st
-  | new_st -> main(new_st)
+  | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); main st false
+  | exception (NameError x) -> print_endline ("NameError: "^x); main st false
+  | exception (TypeError x) -> print_endline ("TypeError: "^x); main st false
+  | exception (OverflowError x) -> print_endline ("OverflowError: "^x); main st false
+  | exception (IndentationError x) -> print_endline ("IndentationError"^x); main st false
+  | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); main st false
+  | exception EmptyInput -> main st false
+  | exception (Multiline (cond, init_body)) -> 
+    let body = multiline init_body in main st false
+  | newst -> main newst false
 
 (* Execute the game engine. *)
 let _ = 
   ANSITerminal.(print_string [green]   "***A Python interpreter written in Ocaml***\n");
   ANSITerminal.(print_string [cyan]    "Authors: Patrick, Zaibo, William, and Eric!\n");
   ANSITerminal.(print_string [magenta] "------------------OPython------------------\n"); 
-  main empty
+  main empty false
