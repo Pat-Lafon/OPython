@@ -98,10 +98,8 @@ let helper_exp = function
   | Bool x, Int y -> if x then Int(int_of_float(1.0 ** float_of_int y)) else Int 0
   | Bool x, Float y -> if x then Float(1.0 ** y) else Float 0.
   | Bool x, Bool y -> if not x && y then Int 0 else Int 1
-  | VList x, _-> raise (TypeError "unsupported operand type for **")
-  | _, VList x -> raise (TypeError "unsupported operand type for **")
-  | String x, _ -> raise (TypeError "unsupported operand type for **")
-  | _, String x -> raise (TypeError "unsupported operand type for **")
+  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for **")
+  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for **")
 
 let helper_and = function
   | Int x, y -> if x = 0 then Int 0 else y
@@ -127,10 +125,8 @@ let helper_equal = function
   | Bool x, Int y -> if x then Bool(y=1) else Bool (y=0)
   | Bool x, Float y -> if x then Bool(y=1.0) else Bool (y=0.0)
   | Bool x, Bool y -> Bool (x = y)
-  | String x, _ -> Bool false
-  | _, String x -> Bool false
-  | VList x, _ -> Bool false
-  | _, VList x -> Bool false
+  | String x, _ | _, String x -> Bool false
+  | VList x, _ | _, VList x -> Bool false
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
