@@ -54,13 +54,15 @@ let rec get_idx (str:string) (op:string) : int =
   else if String.length str < String.length op then -1
   else if String.sub str 0 (String.length op) = op then 0
   else if str.[0] = '(' then
-    (match String.index str ')' with 
-     | exception Not_found -> raise (SyntaxError "Missing closing paren") 
-     | x -> get_idx_acc str (x+1) op)
+    (match get_idx (String.sub str 1 (String.length str - 1)) ")" with 
+     | -1 -> raise (SyntaxError "Missing closing paren") 
+     | x -> get_idx_acc str (x+2) op)
+  else if str.[0] = ')' then raise (SyntaxError "Missing opening paren") 
   else if str.[0] = '[' then
-    (match String.index str ']' with 
-     | exception Not_found -> raise (SyntaxError "Missing closing bracket") 
-     | x -> get_idx_acc str (x+1) op)
+    (match get_idx (String.sub str 1 (String.length str - 1)) "]" with 
+     | -1 -> raise (SyntaxError "Missing closing bracket") 
+     | x -> get_idx_acc str (x+2) op)
+  else if str.[0] = ']' then raise (SyntaxError "Missing opening bracket") 
   else if str.[0] = '"' then
     (match String.index (String.sub str 1 (String.length str -1)) '"' with 
      | exception Not_found -> raise (SyntaxError "Missing closing quote") 
@@ -86,7 +88,7 @@ let valid_paren str = match get_idx str ")" with
   | exception (SyntaxError x) -> false
   | x -> if x = -1 then true else false
 
-let rec trim str : string = 
+let rec trim str : string =
   let newstr = String.trim str in
   if newstr <> str then trim newstr
   else if String.length newstr = 0 then str
@@ -97,7 +99,7 @@ let rec trim str : string =
   else str
 
 let is_assignment (line:string) : bool =
-  let idx = get_idx line "=" in 
+  let idx = get_idx line "=" in
   if idx <> -1 then 
     let prev = String.get line (idx-1) in
     let next = String.get line (idx+1) in
@@ -119,8 +121,9 @@ and
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
     else if line.[0] = '[' || line.[String.length line -1] = ']' 
-    then List(List.map (fun x -> parse_expr x operators) 
-                (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
+    then if String.length line = 2 then List([])
+      else List(List.map (fun x -> parse_expr x operators) 
+                  (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
@@ -136,29 +139,19 @@ let parse_assignment (line:string) : string option * expr =
   let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right operators)
 
-(** [count_chars str char idx acc] returns number of [char] in [str] from [idx] to the end *)
-let rec count_chars (str: string) (char: char) (idx: int) (acc: int) =
-  if idx = String.length str then acc
-  else if String.get str idx = char then count_chars str char (idx+1) (acc+1)
-  else count_chars str char (idx+1) acc
-
 (** [paren_check str idx acc] returns true if parentheses are valid and false otherwise *)
 let rec paren_check (str: string) idx acc =
   if idx = String.length str then acc = 0 
   else if acc < 0 then false 
   else if String.get str idx = '(' then paren_check str (idx+1) (acc+1)
   else if String.get str idx = ')' then paren_check str (idx+1) (acc-1)
+  else if String.get str idx = '"' then paren_check str (idx+2+(get_idx (String.sub str (idx+1) (String.length str -idx-1)) "\"")) acc
   else paren_check str (idx+1) acc
 
 (* Will become some helper that raises a Syntax error if not valid
    For example, catch cases like: 'hello  *)
 let valid_line line = 
-  let sing_quote_count = (count_chars line '\"' 0 0) in
-  let dbl_quote_count = (count_chars line '\'' 0 0) in
-  let parentheses_check = paren_check line 0 0 in
-  if sing_quote_count mod 2 <> 0 then raise (SyntaxError "Quotes unmatched")
-  else if dbl_quote_count mod 2 <> 0 then raise (SyntaxError "Quotes unmatched")
-  else if not parentheses_check then raise (SyntaxError "Invalid parenthesis")
+  if not (paren_check line 0 0) then raise (SyntaxError "Invalid parenthesis")
   else ()
 
 (** Matches if statement *)
@@ -192,7 +185,7 @@ let line_type (line : string) : line_type =
   else Expression
 
 let parse_line (line : string) : string option * expr = 
-  valid_line line;
+  (*valid_line line; Testing whether get_idx is working, report to Patrick if failure*)
   match line_type line with
   | Empty -> raise EmptyInput
   | Assignment -> parse_assignment line

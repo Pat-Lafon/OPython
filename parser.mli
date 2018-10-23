@@ -19,17 +19,9 @@ type line_type = Assignment | Expression | If of (expr * string)
                 | Empty | Else | Line of string | Elif of (expr * string) | While of (expr * string)
 (* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
 
-(*
-val get_idx : string -> string -> int option
 
-val is_assignment : string -> bool
+val get_idx : string -> string -> int
 
-val parse_expr_helper : string -> char * op -> expr
-
-val parse_expr : string -> (string * op) list -> expr
-
-val parse_assignment : string -> string option * expr
-*)
 val parse_line : string -> string option * expr
 
 val line_type : string -> line_type
