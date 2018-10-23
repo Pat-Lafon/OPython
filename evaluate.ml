@@ -120,7 +120,6 @@ let helper_exp = function
   | VList x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
 
-(* These are incorrect. Make sure to consider cases where bool is false or int/float is 0 *)
 let helper_and = function
   | Bool x, Bool y -> Bool (x && y)
   | Bool x, Int  y -> if x = false then Bool(x) else if y = 0 then Int(0) else Int y
@@ -133,7 +132,6 @@ let helper_and = function
   | VList x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
 
-(* These are incorrect. Make sure to consider cases where bool is false or int/float is 0 *)
 let helper_or = function 
   | Bool x, Bool  y -> Bool (x || y)
   | Bool x, Int  y -> if x = true then Bool(x) else Int(y)
