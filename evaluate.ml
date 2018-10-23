@@ -123,12 +123,12 @@ let helper_exp = function
 (* These are incorrect. Make sure to consider cases where bool is false or int/float is 0 *)
 let helper_and = function
   | Bool x, Bool y -> Bool (x && y)
-  | Bool x, Int  y -> Int  y
-  | Bool x, Float  y -> Float  y
-  | Int x, Int  y -> Int  y
-  | Int x, Bool  y -> Bool  y
-  | Float x, Float  y -> Float  y
-  | Float x, Bool  y -> Bool  y
+  | Bool x, Int  y -> if x = false then Bool(x) else if y = 0 then Int(0) else Int y
+  | Bool x, Float  y -> if x = false then Bool(x) else if y = 0. then Int(0) else Float  y
+  | Int x, Int  y -> if (x=0)||(y=0) then Int(0) else Int  y
+  | Int x, Bool  y -> if x = 0 then Int(0) else Bool  y
+  | Float x, Float  y -> if (x=0.)||(y=0.) then Float(0.) else Float  y
+  | Float x, Bool  y -> if x = 0. then Float(0.) else Bool  y
   | _, List x -> raise (TypeError ("unsupported operand"))
   | List x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
@@ -136,12 +136,12 @@ let helper_and = function
 (* These are incorrect. Make sure to consider cases where bool is false or int/float is 0 *)
 let helper_or = function 
   | Bool x, Bool  y -> Bool (x || y)
-  | Bool x, Int  y -> Bool x
-  | Bool x, Float  y -> Bool x
-  | Int x, Int  y -> Int x
-  | Int x, Bool  y -> Int x
-  | Float x, Float  y -> Float x
-  | Float x, Bool  y -> Float x
+  | Bool x, Int  y -> if x = true then Bool(x) else Int(y)
+  | Bool x, Float  y -> if x = true then Bool(x) else Float(y)
+  | Int x, Int  y -> if x=0 then Int(y) else if y=0 then Int(x) else Int(x)
+  | Int x, Bool  y -> if x!=0 then Int(x) else Bool(y)
+  | Float x, Float  y -> if x=0. then Float(y) else if y=0. then Float(x) else Float(x)
+  | Float x, Bool  y -> if x!=0. then Float(x) else Bool(y)
   | _, List x -> raise (TypeError ("unsupported operand"))
   | List x, _-> raise (TypeError ("unsupported operand"))
   | _ -> raise (TypeError ("unsupported operand"))
