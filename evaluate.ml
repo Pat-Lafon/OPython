@@ -70,9 +70,7 @@ let helper_divide = function
 let helper_floor exp = match helper_divide exp with
   | Int x -> Int x
   | Float x -> Int (int_of_float(floor x))
-  | String x -> failwith "Not possible?"
-  | Bool x -> failwith "Not possible?"
-  | VList x -> failwith "Not possible?"
+  | _ -> failwith "Not possible?"
 
 let helper_mod = function 
   | _, Int 0 -> raise (ZeroDivisionError "modulo by zero")
@@ -87,10 +85,8 @@ let helper_mod = function
   | Bool x, Int y -> if x then Int (1 mod y) else Int 0
   | Bool x, Float y -> if x then Float (mod_float 1. y) else Float 0.
   | Bool x, Bool y -> Float 0.
-  |String x, _ -> raise (TypeError "OPython does not support string formatting")
-  | _, String x -> raise (TypeError "unsupported operand type for %")
-  | VList x, _ -> raise (TypeError "unsupported operand type for %")
-  | _, VList x -> raise (TypeError "unsupported operand type for %")
+  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for %")
+  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for %")
 
 let helper_exp = function 
   | Int x, Int y -> Int (int_of_float (float_of_int x ** float_of_int y))
