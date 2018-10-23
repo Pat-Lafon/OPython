@@ -1,6 +1,5 @@
 open Parser
 open State
-open Error
 
 let helper_plus = function 
   | (Int (x), Int(y)) -> Int(x+y)
@@ -47,6 +46,8 @@ let helper_bool = function
   | (Bool (x), Float (y), "or") -> Bool (x)
   | (Int (x), Int (y), "and") -> Int (y)
   | (Int (x), Int (y), "or") -> Int (x)
+  | (Int (x), Int (y), "equals") -> Bool (x = y)
+  | (Int (x), Int (y), "not equals") -> Bool (x <> y)
   | (Int (x), Bool (y), "and") -> Bool (y)
   | (Int (x), Bool (y), "or") -> Int (x)
   | (Float (x), Float (y), "and") -> Float (y)
@@ -54,7 +55,6 @@ let helper_bool = function
   | (Float (x), Bool (y), "and") -> Bool (y)
   | (Float (x), Bool (y), "or") -> Float (x)
   | _ -> failwith "wrong types"
-
 
 (* AS OF PYTHON3, DIVISION RETURNS A FLOAT WHEN IT SHOULD BE A FLOAT, INT OTHERWISE *)
 let helper_divide = function 

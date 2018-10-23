@@ -1,5 +1,5 @@
 type value = Int of int | Float of float | String of string | Bool of bool
-type t = (string*value)list
+type t = (string*value) list
 
 let empty : t = []
 (*
