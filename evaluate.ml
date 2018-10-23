@@ -238,6 +238,9 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
       | h::t -> eval h st :: help t
     in VList(help x)
 
+let to_bool (exp : expr) (st : State.t) = 
+  eval exp st |> if_decider
+
 let rec to_string (value:State.value) : string = (match value with
     | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
                  (fun x -> if String.length x = 1 then x ^ "]" 

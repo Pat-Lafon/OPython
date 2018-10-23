@@ -12,10 +12,11 @@ exception OverflowError of string
 exception IndentationError of string
 exception ZeroDivisionError of string
 exception EmptyInput
-exception Multiline of (expr * string)
+exception IfMultiline of (expr * string)
+exception WhileMultiline of (expr * string)
 
 type line_type = Assignment | Expression | If of (expr * string) 
-                | Empty | Else | Line of string | Elif of (expr * string)
+                | Empty | Else | Line of string | Elif of (expr * string) | While of (expr * string)
 (* type line_type = Assignment | Expression | If | While | Elif | Else | Empty *)
 
 (*

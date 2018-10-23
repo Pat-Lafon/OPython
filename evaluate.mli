@@ -6,3 +6,5 @@ val evaluate : string option * Parser.expr -> State.t -> State.t
 val eval : expr -> State.t -> State.value
 
 val if_decider : State.value -> bool
+
+val to_bool : expr -> State.t -> bool
