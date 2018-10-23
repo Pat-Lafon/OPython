@@ -64,10 +64,8 @@ let helper_divide = function
   | Bool x, Int y -> if x then Float(1.0/.(float_of_int y)) else Float(0.0)
   | Bool x, Float y-> if x then Float(1.0/.y) else Float 0.
   | Bool x, Bool y -> if x then Float 1.0 else Float 0.
-  | String x, _ -> raise (TypeError "unsupported operand type for /")
-  | _, String x -> raise (TypeError "unsupported operand type for /")
-  | VList x, _ -> raise (TypeError "unsupported operand type for /")
-  | _, VList x -> raise (TypeError "unsupported operand type for /")
+  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for /")
+  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for /")
 
 let helper_floor exp = match helper_divide exp with
   | Int x -> Int x
