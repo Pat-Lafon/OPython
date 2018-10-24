@@ -170,10 +170,10 @@ let valid_line line =
   else ()
 
 (** Matches if statement *)
-let if_regex = Str.regexp "^if \(.*\):\(.*\)"
-let elif_regex = Str.regexp "^elif \(.*\):\(.*\)"
+let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
+let elif_regex = Str.regexp "^elif \\(.*\\):\\(.*\\)"
 let else_regex = Str.regexp "^else *: *"
-let while_regex = Str.regexp "^while \(.*\):\(.*\)"
+let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
