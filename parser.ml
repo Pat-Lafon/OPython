@@ -114,8 +114,8 @@ let rec trim str : string =
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in
   if idx <> -1 then 
-    let prev = String.get line (idx-1) in
-    let next = String.get line (idx+1) in
+    let prev = if idx - 1 = -1 then ' ' else String.get line (idx-1) in
+    let next = if idx + 1 = String.length line then ' ' else String.get line (idx+1) in
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
