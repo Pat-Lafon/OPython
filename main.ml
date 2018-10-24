@@ -27,21 +27,21 @@ let rec main (st:State.t) (lines: string list) : unit =
       | exception (NameError x) -> print_endline ("NameError: "^x); main st []
       | exception (TypeError x) -> print_endline ("TypeError: "^x); main st []
       | exception (OverflowError x) -> print_endline ("OverflowError: "^x); main st []
-      | exception (IndentationError x) -> print_endline ("IndentationError"^x); main st []
+      | exception (IndentationError x) -> print_endline ("IndentationError: "^x); main st []
       | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); main st []
       | exception EmptyInput -> main st []
       | exception (IfMultiline (cond, body)) -> 
         let (conds, bodies) = if_multiline [cond] [] body in main_if conds bodies st
       | exception (WhileMultiline (cond, init_body)) -> 
         let (while_cond, while_body) = while_multiline cond (String.trim init_body) t in
-        let while_line = h in
-        main_while while_cond while_body while_line st
+        let while_line = h in main_while while_cond while_body while_line st
       | newst -> main newst t)
 and main_if (conds : expr list) (bodies : string list) (st: State.t) : unit =
   match conds, bodies with
-  | cond::c_t, body::b_t -> print_endline ("@" ^ body ^ "@"); (match Evaluate.eval cond st |> Evaluate.if_decider with
-      | true -> main st (String.split_on_char '\n' body)
-      | false -> main_if c_t b_t st)
+  | cond::c_t, body::b_t -> print_endline ("@" ^ body ^ "@"); 
+    (match Evaluate.eval cond st |> Evaluate.if_decider with
+     | true -> main st (String.split_on_char '\n' body)
+     | false -> main_if c_t b_t st)
   | _, _ -> raise (SyntaxError "Conditional statements and bodies mismatched")
 and main_while (cond : expr) (body : string) (while_line) (st: State.t) : unit = 
   match Evaluate.to_bool cond st with
@@ -49,8 +49,14 @@ and main_while (cond : expr) (body : string) (while_line) (st: State.t) : unit =
   | false -> main st []
 
 (* Execute the game engine. *)
+let term = Unix.tcgetattr Unix.stdin
+let y = term.c_parenb <- false
+let () = Unix.tcsetattr Unix.stdin TCSANOW term
+
 let _ = 
   ANSITerminal.(print_string [green]   "***A Python interpreter written in Ocaml***\n");
   ANSITerminal.(print_string [cyan]    "Authors: Patrick, Zaibo, William, and Eric!\n");
   ANSITerminal.(print_string [magenta] "------------------OPython------------------\n"); 
   main empty ([])
+
+
