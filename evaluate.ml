@@ -64,17 +64,13 @@ let helper_divide = function
   | Bool x, Int y -> if x then Float(1.0/.(float_of_int y)) else Float(0.0)
   | Bool x, Float y-> if x then Float(1.0/.y) else Float 0.
   | Bool x, Bool y -> if x then Float 1.0 else Float 0.
-  | String x, _ -> raise (TypeError "unsupported operand type for /")
-  | _, String x -> raise (TypeError "unsupported operand type for /")
-  | VList x, _ -> raise (TypeError "unsupported operand type for /")
-  | _, VList x -> raise (TypeError "unsupported operand type for /")
+  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for /")
+  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for /")
 
 let helper_floor exp = match helper_divide exp with
   | Int x -> Int x
   | Float x -> Int (int_of_float(floor x))
-  | String x -> failwith "Not possible?"
-  | Bool x -> failwith "Not possible?"
-  | VList x -> failwith "Not possible?"
+  | _ -> failwith "Not possible?"
 
 let helper_mod = function 
   | _, Int 0 -> raise (ZeroDivisionError "modulo by zero")
@@ -89,10 +85,8 @@ let helper_mod = function
   | Bool x, Int y -> if x then Int (1 mod y) else Int 0
   | Bool x, Float y -> if x then Float (mod_float 1. y) else Float 0.
   | Bool x, Bool y -> Float 0.
-  |String x, _ -> raise (TypeError "OPython does not support string formatting")
-  | _, String x -> raise (TypeError "unsupported operand type for %")
-  | VList x, _ -> raise (TypeError "unsupported operand type for %")
-  | _, VList x -> raise (TypeError "unsupported operand type for %")
+  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for %")
+  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for %")
 
 let helper_exp = function 
   | Int x, Int y -> Int (int_of_float (float_of_int x ** float_of_int y))
@@ -104,10 +98,8 @@ let helper_exp = function
   | Bool x, Int y -> if x then Int(int_of_float(1.0 ** float_of_int y)) else Int 0
   | Bool x, Float y -> if x then Float(1.0 ** y) else Float 0.
   | Bool x, Bool y -> if not x && y then Int 0 else Int 1
-  | VList x, _-> raise (TypeError "unsupported operand type for **")
-  | _, VList x -> raise (TypeError "unsupported operand type for **")
-  | String x, _ -> raise (TypeError "unsupported operand type for **")
-  | _, String x -> raise (TypeError "unsupported operand type for **")
+  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for **")
+  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for **")
 
 let helper_and = function
   | Int x, y -> if x = 0 then Int 0 else y
@@ -133,10 +125,8 @@ let helper_equal = function
   | Bool x, Int y -> if x then Bool(y=1) else Bool (y=0)
   | Bool x, Float y -> if x then Bool(y=1.0) else Bool (y=0.0)
   | Bool x, Bool y -> Bool (x = y)
-  | String x, _ -> Bool false
-  | _, String x -> Bool false
-  | VList x, _ -> Bool false
-  | _, VList x -> Bool false
+  | String x, _ | _, String x -> Bool false
+  | VList x, _ | _, VList x -> Bool false
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
@@ -202,14 +192,6 @@ let rec to_string (value:State.value) : string = (match value with
     | Float x -> string_of_float x
     | Bool x -> string_of_bool x |> String.capitalize_ascii
     | String x -> "'" ^ x ^ "'")
-
-let print (value:State.value):unit = 
-  (match value with
-   | Int x -> string_of_int x
-   | Float x -> string_of_float x
-   | Bool x -> string_of_bool x |> String.capitalize_ascii
-   | String x -> "'" ^ x ^ "'"
-   | VList x -> "[]") |> print_endline
 
 let print (value:State.value):unit = value |> to_string |> print_endline
 
