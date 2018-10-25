@@ -49,10 +49,6 @@ and main_while (cond : expr) (body : string) (while_line) (st: State.t) : unit =
   | false -> main st []
 
 (* Execute the game engine. *)
-let term = Unix.tcgetattr Unix.stdin
-let y = term.c_parenb <- false
-let () = Unix.tcsetattr Unix.stdin TCSANOW term
-
 let _ = 
   ANSITerminal.(print_string [green]   "***A Python interpreter written in Ocaml***\n");
   ANSITerminal.(print_string [cyan]    "Authors: Patrick, Zaibo, William, and Eric!\n");
