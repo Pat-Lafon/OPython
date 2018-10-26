@@ -1,20 +1,34 @@
 open State
-open Error
 
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
-        | Equal | Not_Equal | And | Or | Not | Complement
-type expr = Binary of (expr * op * expr) 
-          | Unary of (op * expr) 
-          | Value of State.value 
-          | Variable of string
-          | List of expr list
+        | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Equal 
+        | Less_Equal | And | Or | Not | Complement
 
-let operators = [[("+", Plus);("-", Minus);];
-                 [("%", Modular);];
-                 [("/", Divide);("//", Floor_Divide);("*", Multiply);];
-                 [("**", Exponent);];
-                 [("==", Equal);("!=", Not_Equal);("and", And);("or", Or)];
-                 [("not", Not)]]
+type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
+          | Value of State.value | Variable of string | List of expr list
+
+type line_type = Assignment | Expression | If of (expr * string) 
+               | Empty | Else | Line of string | Elif of (expr * string) 
+               | While of (expr * string)
+
+exception SyntaxError of string
+exception TypeError of string
+exception NameError of string
+exception OverflowError of string
+exception IndentationError of string
+exception ZeroDivisionError of string
+exception EmptyInput
+exception IfMultiline of (expr * string)
+exception WhileMultiline of (expr * string)
+
+let operators = [[("or", Or)];
+                 [("and", And);];
+                 [("==", Equal);("!=", Not_Equal)];
+                 [("<", Less_Than);("<=", Less_Equal);(">", Greater_Than);(">=", Greater_Equal);];
+                 [("not", Not)];(* Not sure if not should be higher, can't prove yet *)
+                 [("+", Plus);("-", Minus);];
+                 [("%", Modular);("/", Divide);("//", Floor_Divide);("*", Multiply);];
+                 [("**", Exponent);]]
 
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
@@ -39,24 +53,35 @@ let is_var_name (s:string) : string =
   then raise (SyntaxError "can't assign to keyword") 
   else s
 
+let not_mistaken str op = 
+  let oplen = String.length op in
+  if String.length str = oplen then true
+  else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
+
 let rec get_idx (str:string) (op:string) : int =
-  if String.length str = 0 then -1
-  else if String.length str < String.length op then -1
-  else if String.sub str 0 (String.length op) = op then 0
+  let strlen = String.length str in
+  let oplen = String.length op in 
+  if strlen = 0 then -1
+  else if strlen < oplen then  -1
+  else if String.sub str 0 oplen = op then 
+    if not_mistaken str op then 0
+    else get_idx_acc str 2 op
   else if str.[0] = '(' then
-    (match String.index str ')' with 
-     | exception Not_found -> raise (SyntaxError "Missing closing paren") 
-     | x -> get_idx_acc str (x+1) op)
+    (match get_idx (String.sub str 1 (strlen - 1)) ")" with 
+     | -1 -> raise (SyntaxError "Missing closing paren") 
+     | x -> get_idx_acc str (x+2) op)
+  else if str.[0] = ')' then raise (SyntaxError "Missing opening paren") 
   else if str.[0] = '[' then
-    (match String.index str ']' with 
-     | exception Not_found -> raise (SyntaxError "Missing closing bracket") 
-     | x -> get_idx_acc str (x+1) op)
+    (match get_idx (String.sub str 1 (strlen - 1)) "]" with 
+     | -1 -> raise (SyntaxError "Missing closing bracket") 
+     | x -> get_idx_acc str (x+2) op)
+  else if str.[0] = ']' then raise (SyntaxError "Missing opening bracket") 
   else if str.[0] = '"' then
-    (match String.index (String.sub str 1 (String.length str -1)) '"' with 
+    (match String.index (String.sub str 1 (strlen -1)) '"' with 
      | exception Not_found -> raise (SyntaxError "Missing closing quote") 
      | x -> get_idx_acc str (x+2) op)
   else if str.[0] = '\'' then
-    (match String.index (String.sub str 1 (String.length str -1)) '\'' with 
+    (match String.index (String.sub str 1 (strlen -1)) '\'' with 
      | exception Not_found -> raise (SyntaxError "Missing closing quote") 
      | x -> get_idx_acc str (x+2) op)
   else get_idx_acc str 1 op
@@ -76,7 +101,7 @@ let valid_paren str = match get_idx str ")" with
   | exception (SyntaxError x) -> false
   | x -> if x = -1 then true else false
 
-let rec trim str : string = 
+let rec trim str : string =
   let newstr = String.trim str in
   if newstr <> str then trim newstr
   else if String.length newstr = 0 then str
@@ -87,10 +112,12 @@ let rec trim str : string =
   else str
 
 let is_assignment (line:string) : bool =
-  let idx = get_idx line "=" in 
+  let idx = get_idx line "=" in
   if idx <> -1 then 
-    let prev = String.get line (idx-1) in
-    let next = String.get line (idx+1) in
+    let prev = if idx - 1 = -1 then raise (SyntaxError "invalid syntax")
+      else String.get line (idx-1) in
+    let next = if idx + 1 = String.length line then raise (SyntaxError "invalid syntax")
+      else String.get line (idx+1) in
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
@@ -109,8 +136,9 @@ and
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
     else if line.[0] = '[' || line.[String.length line -1] = ']' 
-    then List(List.map (fun x -> parse_expr x operators) 
-                (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
+    then if String.length line = 2 then List([])
+      else List(List.map (fun x -> parse_expr x operators) 
+                  (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
@@ -126,34 +154,71 @@ let parse_assignment (line:string) : string option * expr =
   let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
   (Some left, parse_expr right operators)
 
-(** [count_chars str char idx acc] returns number of [char] in [str] from [idx] to the end *)
-let rec count_chars (str: string) (char: char) (idx: int) (acc: int) =
-  if idx = String.length str then acc
-  else if String.get str idx = char then count_chars str char (idx+1) (acc+1)
-  else count_chars str char (idx+1) acc
-
 (** [paren_check str idx acc] returns true if parentheses are valid and false otherwise *)
 let rec paren_check (str: string) idx acc =
   if idx = String.length str then acc = 0 
   else if acc < 0 then false 
   else if String.get str idx = '(' then paren_check str (idx+1) (acc+1)
   else if String.get str idx = ')' then paren_check str (idx+1) (acc-1)
+  else if String.get str idx = '"' then paren_check str (idx+2+(get_idx (String.sub str (idx+1) (String.length str -idx-1)) "\"")) acc
   else paren_check str (idx+1) acc
 
 (* Will become some helper that raises a Syntax error if not valid
    For example, catch cases like: 'hello  *)
 let valid_line line = 
-  let sing_quote_count = (count_chars line '\"' 0 0) in
-  let dbl_quote_count = (count_chars line '\'' 0 0) in
-  let parentheses_check = paren_check line 0 0 in
-  if sing_quote_count mod 2 <> 0 then raise (SyntaxError "Quotes unmatched")
-  else if dbl_quote_count mod 2 <> 0 then raise (SyntaxError "Quotes unmatched")
-  else if not parentheses_check then raise (SyntaxError "Invalid parenthesis")
+  if not (paren_check line 0 0) then raise (SyntaxError "Invalid parenthesis")
   else ()
 
+(** Matches if statement *)
+let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
+let elif_regex = Str.regexp "^elif \\(.*\\):\\(.*\\)"
+let else_regex = Str.regexp "^else *: *"
+let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
+
+(** Check if line is an if statement *)
+let is_if line = Str.string_match if_regex line 0
+
+let is_else line = Str.string_match else_regex line 0
+
+let is_elif line = Str.string_match elif_regex line 0
+
+let is_while line = Str.string_match while_regex line 0
+
+let parse_if (line: string) : (expr * string) =
+  let condition = Str.matched_group 1 line in
+  let body = String.trim (Str.matched_group 2 line) in
+  (parse_expr condition operators, body)
+
+let line_type (line : string) : line_type =
+  if String.length line = 0 then Empty
+  else if is_assignment line then Assignment
+  else if is_if line then If (parse_if line)
+  (* calling parse_if is not a typo *)
+  else if is_elif line then Elif (parse_if line)
+  else if is_else line then Else
+  else if is_while line then While (parse_if line)
+  else Expression
+
 let parse_line (line : string) : string option * expr = 
-  valid_line line;
-  if String.length line = 0 then raise EmptyInput
-  else if is_assignment line 
-  then parse_assignment line
-  else (None, parse_expr line operators)
+  (*valid_line line; Testing whether get_idx is working, report to Patrick if failure*)
+  match line_type line with
+  | Empty -> raise EmptyInput
+  | Assignment -> parse_assignment line
+  | Expression -> (None, parse_expr line operators)
+  | If (cond, body) -> raise (IfMultiline (cond, body))
+  | Elif (cond, body) -> raise (SyntaxError "Elif statement with no if")
+  | Else -> raise (SyntaxError "Else statement with no if")
+  (* line type is helpful for later *)
+  | Line l -> (None, parse_expr line operators)
+  | While (cond, body) -> raise (WhileMultiline (cond, body)) 
+
+let parse_multiline (line: string) : line_type =
+  match line_type line with
+  | Empty -> Empty
+  | Assignment -> Line line
+  | Expression -> Line line
+  | Line line -> Line line
+  | If (cond, body) -> If (cond, body)
+  | Elif (cond, body) -> Elif (cond, body)
+  | While (cond, body) -> While (cond, body)
+  | Else -> Else 
