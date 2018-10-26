@@ -2,7 +2,9 @@ open Parser
 open State
 open Evaluate
 
-let append (exp : expr) = 
-  match exp with
-  | Function (s,explist) -> 
-  | _ -> failwith("wrong data type")
+let append (lst : expr list) : State.value = 
+  VList([])
+
+let length (lst): State.value = VList([])
+
+let range lst = VList([])

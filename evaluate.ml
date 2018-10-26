@@ -1,5 +1,6 @@
 open Parser
 open State
+open Builtin
 
 let rec mul x y acc op = if y = 0 then acc else mul x (y-1) (op acc x) op
 
@@ -204,8 +205,6 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Or -> helper_or (eval e1 st, eval e2 st)
      | And -> helper_and (eval e1 st, eval e2 st)
      | Exponent -> helper_exp (eval e1 st, eval e2 st)
-     | Equal -> helper_equals (eval e1 st, eval e2 st)
-     | Not_Equal -> helper_not_equals (eval e1 st, eval e2 st)
      | Equal -> helper_equal (eval e1 st, eval e2 st)
      | Not_Equal -> eval (Unary (Not, Binary(e1, Equal, e2) )) st
      | Modular -> helper_mod (eval e1 st, eval e2 st)
@@ -243,7 +242,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
       | [] -> []
       | h::t -> eval h st :: help t
     in VList(help x)
-  | Function (f, lst) -> match f with
+  | Function (f, lst) -> let values = List.map eval lst in
+    match f with
     | "length" -> 
     | "append" -> 
     | "range" ->
