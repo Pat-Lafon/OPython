@@ -211,8 +211,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Complement -> raise (SyntaxError "invalid syntax")
      | Greater_Than -> helper_greater_than (eval e1 st, eval e2 st)
      | Less_Than -> helper_less_than (eval e1 st, eval e2 st)
-     | Greater_Equal -> 
-     | Less_Equal -> )
+     | Greater_Equal -> helper_greater_equal (eval e1 st, eval e2 st)
+     | Less_Equal -> helper_less_equal (eval e1 st, eval e2 st))
   | Unary (op, e1) ->
     (match op, eval e1 st with 
      | Plus, Int x -> Int x
