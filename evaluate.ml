@@ -72,6 +72,8 @@ let helper_mod = function
     else raise (ZeroDivisionError ("modulo by zero"))
   | Int x, Bool y ->  if y then Int 0
     else raise (ZeroDivisionError ("modulo by zero"))
+  | Bool x, Bool y -> if y then Int 0 
+    else raise (ZeroDivisionError ("modulo by zero"))
   | Bool x, Int y -> if x 
     then Int (1 mod y) 
     else Int (0)
@@ -81,7 +83,10 @@ let helper_mod = function
     else if y < 0.0 then if x then Float (y +. float_of_int 1 -. y *. floor (float_of_int 1/. y))
       else Float (y +. float_of_int 0 -. y *. floor (float_of_int 0/. y))
     else raise (ZeroDivisionError ("modulo by zero"))
-  | _ -> failwith "wrong types"
+  | _, VList x -> raise (TypeError ("unsupported operand"))
+  | VList x, _-> raise (TypeError ("unsupported operand"))
+  | String x, _-> raise (TypeError ("unsupported operand"))
+  | _, String x -> raise (TypeError ("unsupported operand"))
 
 let helper_floor = function
   | Int x, Int y -> if y = 0 then raise (ZeroDivisionError "integer division or modulo by zero") 
@@ -104,7 +109,8 @@ let helper_floor = function
     else if x then Float(floor(1.0/.y)) else Float 0.
   | _, VList x -> raise (TypeError ("unsupported operand"))
   | VList x, _-> raise (TypeError ("unsupported operand"))
-  | _ -> raise (TypeError ("unsupported operand"))
+  | String x, _-> raise (TypeError ("unsupported operand"))
+  | _, String x -> raise (TypeError ("unsupported operand"))
 
 let helper_exp = function 
   | Int x, Int y -> Int (int_of_float (float_of_int x ** float_of_int y))
@@ -118,19 +124,23 @@ let helper_exp = function
   | Bool x, Float y -> if x then Float(1.0 ** y) else Float 0.
   | _, VList x -> raise (TypeError ("unsupported operand"))
   | VList x, _-> raise (TypeError ("unsupported operand"))
-  | _ -> raise (TypeError ("unsupported operand"))
+  | String x, _-> raise (TypeError ("unsupported operand"))
+  | _, String x -> raise (TypeError ("unsupported operand"))
 
 let helper_and = function
   | Bool x, Bool y -> Bool (x && y)
   | Bool x, Int  y -> if x = false then Bool(x) else if y = 0 then Int(0) else Int y
   | Bool x, Float  y -> if x = false then Bool(x) else if y = 0. then Int(0) else Float  y
   | Int x, Int  y -> if (x=0)||(y=0) then Int(0) else Int  y
-  | Int x, Bool  y -> if x = 0 then Int(0) else Bool  y
+  | Int x, Bool  y -> if x = 0 then Int(0) else Bool y
+  | Int x, Float y -> if x = 0 then Int(0) else Float(y)
   | Float x, Float  y -> if (x=0.)||(y=0.) then Float(0.) else Float  y
   | Float x, Bool  y -> if x = 0. then Float(0.) else Bool  y
+  | Float x, Int y -> if x = 0. then Float(0.) else Int(y)
   | _, VList x -> raise (TypeError ("unsupported operand"))
   | VList x, _-> raise (TypeError ("unsupported operand"))
-  | _ -> raise (TypeError ("unsupported operand"))
+  | String x, _-> raise (TypeError ("unsupported operand"))
+  | _, String x -> raise (TypeError ("unsupported operand"))
 
 let helper_or = function 
   | Bool x, Bool  y -> Bool (x || y)
@@ -138,17 +148,23 @@ let helper_or = function
   | Bool x, Float  y -> if x = true then Bool(x) else Float(y)
   | Int x, Int  y -> if x=0 then Int(y) else if y=0 then Int(x) else Int(x)
   | Int x, Bool  y -> if x!=0 then Int(x) else Bool(y)
+  | Int x, Float y -> if x=0 then Float(y) else Int(x)
   | Float x, Float  y -> if x=0. then Float(y) else if y=0. then Float(x) else Float(x)
   | Float x, Bool  y -> if x!=0. then Float(x) else Bool(y)
+  | Float x, Int y -> if x=0. then Int(y) else Float(x)
   | _, VList x -> raise (TypeError ("unsupported operand"))
   | VList x, _-> raise (TypeError ("unsupported operand"))
-  | _ -> raise (TypeError ("unsupported operand"))
+  | String x, _-> raise (TypeError ("unsupported operand"))
+  | _, String x -> raise (TypeError ("unsupported operand"))
 
-(* Turn these into helper functions when there are more cases*)
-let helper_bool = function 
-  | Bool x, Bool  y, "equals" -> Bool (x = y)
-  | Bool x, Bool  y, "not equals" -> Bool (x != y)
-  | _ -> failwith "wrong types"
+(* both of these have tons of crosstypes, *)
+let helper_equals = function
+  | Bool x, Bool  y -> Bool (x = y)
+  | _ -> failwith"not done"
+
+let helper_not_equals = function
+  | Bool x, Bool  y -> Bool (x != y)
+  | _ -> failwith"not done"
 
 
 (* AS OF PYTHON3, DIVISION RETURNS A FLOAT WHEN IT SHOULD BE A FLOAT, INT OTHERWISE *)
@@ -157,7 +173,7 @@ let helper_divide = function
     else Float(float_of_int(x/y))
   | Int x, Float y -> if y = 0. then raise (ZeroDivisionError "float division by zero") 
     else Float ((float_of_int x) /. y)
-  | Int x, Bool y -> if y = false then raise (ZeroDivisionError "float division by zero") 
+  | Int x, Bool y -> if y = false then raise (ZeroDivisionError "division by zero") 
     else Float(float_of_int x)
   | Float x, Float y -> if y = 0. then raise (ZeroDivisionError "float division by zero")
     else Float (x /. y)
@@ -165,15 +181,16 @@ let helper_divide = function
     else Float (x /. (float_of_int y))
   | Float x, Bool y -> if y = false then raise (ZeroDivisionError "float division by zero") 
     else Float x
-  | Bool x, Bool y -> if y = false then raise (ZeroDivisionError "float division by zero") 
+  | Bool x, Bool y -> if y = false then raise (ZeroDivisionError "division by zero") 
     else if x then Float(1.0) else Float 0.
-  | Bool x, Int y -> if y = 0 then raise (ZeroDivisionError "float division by zero") 
+  | Bool x, Int y -> if y = 0 then raise (ZeroDivisionError "division by zero") 
     else if x then Float(1.0/.(float_of_int y)) else Float(0.0)
   | Bool x, Float y-> if y = 0. then raise (ZeroDivisionError "float division by zero") 
     else if x then Float(1.0/.y) else Float 0.
   | _, VList x -> raise (TypeError ("unsupported operand"))
   | VList x, _-> raise (TypeError ("unsupported operand"))
-  | _ -> raise (TypeError ("unsupported operand"))
+  | String x, _-> raise (TypeError ("unsupported operand"))
+  | _, String x -> raise (TypeError ("unsupported operand"))
 
 let if_decider = function
   | Int(0) -> false
@@ -194,8 +211,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | And -> helper_and (eval e1 st, eval e2 st)
      | Or -> helper_or (eval e1 st, eval e2 st)
      | Exponent -> helper_exp (eval e1 st, eval e2 st)
-     | Equal -> helper_bool (eval e1 st, eval e2 st, "equals")
-     | Not_Equal -> helper_bool (eval e1 st, eval e2 st, "not equals")
+     | Equal -> helper_equals (eval e1 st, eval e2 st)
+     | Not_Equal -> helper_not_equals (eval e1 st, eval e2 st)
      | Modular -> helper_mod (eval e1 st, eval e2 st)
      | Not -> raise (SyntaxError "invalid syntax")
      | Complement -> raise (SyntaxError "Invalid syntax"))
