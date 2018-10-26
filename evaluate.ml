@@ -142,6 +142,71 @@ let helper_equal = function
   | Function (args1, body1), Function (args2, body2) -> Bool (body1 = body2)
   | _, _ -> Bool false
 
+let helper_greater_than = function
+  | Int x, Int y -> Bool (x > y)
+  | Int x, Float y -> Bool (float_of_int x > y)
+  | Int x, Bool y -> if y then Bool(x>1) else Bool (x>0)
+  | Float x, Int y -> Bool (x > float_of_int y)
+  | Float x, Float y -> Bool (x > y)
+  | Float x, Bool y -> if y then Bool(x>1.0) else Bool (x>0.0)
+  | Bool x, Int y -> if x then Bool(y<1) else Bool (y<0)
+  | Bool x, Float y -> if x then Bool(y<1.0) else Bool (y<0.0)
+  | Bool x, Bool y -> if x then Bool(not y) else Bool (false)
+  | String x, _ | _, String x -> Bool false
+  | VList x, _ | _, VList x -> Bool false
+
+let helper_greater_equal = function
+  | Int x, Int y -> Bool (x >= y)
+  | Int x, Float y -> Bool (float_of_int x >= y)
+  | Int x, Bool y -> if y then Bool(x>=1) else Bool (x>=0)
+  | Float x, Int y -> Bool (x >= float_of_int y)
+  | Float x, Float y -> Bool (x >= y)
+  | Float x, Bool y -> if y then Bool(x>=1.0) else Bool (x>=0.0)
+  | Bool x, Int y -> if x then Bool(y<=1) else Bool (y<=0)
+  | Bool x, Float y -> if x then Bool(y<=1.0) else Bool (y<=0.0)
+  | Bool x, Bool y -> if x then Bool(true) else Bool (not y)
+  | String x, _ | _, String x -> Bool false
+  | VList x, _ | _, VList x -> Bool false
+
+let helper_greater_equal = function
+  | Int x, Int y -> Bool (x >= y)
+  | Int x, Float y -> Bool (float_of_int x >= y)
+  | Int x, Bool y -> if y then Bool(x>=1) else Bool (x>=0)
+  | Float x, Int y -> Bool (x >= float_of_int y)
+  | Float x, Float y -> Bool (x >= y)
+  | Float x, Bool y -> if y then Bool(x>=1.0) else Bool (x>=0.0)
+  | Bool x, Int y -> if x then Bool(y<=1) else Bool (y<=0)
+  | Bool x, Float y -> if x then Bool(y<=1.0) else Bool (y<=0.0)
+  | Bool x, Bool y -> if x then Bool(true) else Bool (not y)
+  | String x, _ | _, String x -> Bool false
+  | VList x, _ | _, VList x -> Bool false
+
+let helper_less_than = function
+  | Int x, Int y -> Bool (x < y)
+  | Int x, Float y -> Bool (float_of_int x < y)
+  | Int x, Bool y -> if y then Bool(x<1) else Bool (x<0)
+  | Float x, Int y -> Bool (x < float_of_int y)
+  | Float x, Float y -> Bool (x < y)
+  | Float x, Bool y -> if y then Bool(x<1.0) else Bool (x<0.0)
+  | Bool x, Int y -> if x then Bool(y>1) else Bool (y>0)
+  | Bool x, Float y -> if x then Bool(y>1.0) else Bool (y>0.0)
+  | Bool x, Bool y -> if not x then Bool(true) else Bool (y)
+  | String x, _ | _, String x -> Bool false
+  | VList x, _ | _, VList x -> Bool false
+
+let helper_less_equal = function
+  | Int x, Int y -> Bool (x <= y)
+  | Int x, Float y -> Bool (float_of_int x <= y)
+  | Int x, Bool y -> if y then Bool(x<=1) else Bool (x<=0)
+  | Float x, Int y -> Bool (x <= float_of_int y)
+  | Float x, Float y -> Bool (x <= y)
+  | Float x, Bool y -> if y then Bool(x<=1.0) else Bool (x<=0.0)
+  | Bool x, Int y -> if x then Bool(y>=1) else Bool (y>=0)
+  | Bool x, Float y -> if x then Bool(y>=1.0) else Bool (y>=0.0)
+  | Bool x, Bool y -> if not x then Bool(y) else Bool (false)
+  | String x, _ | _, String x -> Bool false
+  | VList x, _ | _, VList x -> Bool false
+
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
     (match op with 
@@ -153,11 +218,17 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Or -> helper_or (eval e1 st, eval e2 st)
      | And -> helper_and (eval e1 st, eval e2 st)
      | Exponent -> helper_exp (eval e1 st, eval e2 st)
+     | Equal -> helper_equals (eval e1 st, eval e2 st)
+     | Not_Equal -> helper_not_equals (eval e1 st, eval e2 st)
      | Equal -> helper_equal (eval e1 st, eval e2 st)
      | Not_Equal -> eval (Unary (Not, Binary(e1, Equal, e2) )) st
      | Modular -> helper_mod (eval e1 st, eval e2 st)
      | Not -> raise (SyntaxError "invalid syntax")
-     | Complement -> raise (SyntaxError "invalid syntax"))
+     | Complement -> raise (SyntaxError "invalid syntax")
+     | Greater_Than -> helper_greater_than (eval e1 st, eval e2 st)
+     | Less_Than -> helper_less_than (eval e1 st, eval e2 st)
+     | Greater_Equal -> helper_greater_equal (eval e1 st, eval e2 st)
+     | Less_Equal -> helper_less_equal (eval e1 st, eval e2 st))
   | Unary (op, e1) ->
     (match op, eval e1 st with 
      | Plus, Int x -> Int x
