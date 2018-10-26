@@ -1,5 +1,6 @@
 open Parser
 open State
+open Builtin
 
 let rec mul x y acc op = if y = 0 then acc else mul x (y-1) (op acc x) op
 
@@ -154,6 +155,7 @@ let helper_greater_than = function
   | Bool x, Bool y -> if x then Bool(not y) else Bool (false)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
+  | _ -> raise (NameError ("Operation not defined for functions"))
 
 let helper_greater_equal = function
   | Int x, Int y -> Bool (x >= y)
@@ -167,6 +169,7 @@ let helper_greater_equal = function
   | Bool x, Bool y -> if x then Bool(true) else Bool (not y)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
+  | _ -> raise (NameError ("Operation not defined for functions"))
 
 let helper_greater_equal = function
   | Int x, Int y -> Bool (x >= y)
@@ -180,6 +183,7 @@ let helper_greater_equal = function
   | Bool x, Bool y -> if x then Bool(true) else Bool (not y)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
+  | _ -> raise (NameError ("Operation not defined for functions"))
 
 let helper_less_than = function
   | Int x, Int y -> Bool (x < y)
@@ -193,6 +197,7 @@ let helper_less_than = function
   | Bool x, Bool y -> if not x then Bool(true) else Bool (y)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
+  | _ -> raise (NameError ("Operation not defined for given types"))
 
 let helper_less_equal = function
   | Int x, Int y -> Bool (x <= y)
@@ -206,6 +211,7 @@ let helper_less_equal = function
   | Bool x, Bool y -> if not x then Bool(y) else Bool (false)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
+  | _ -> raise (NameError ("Operation not defined for given types"))
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
@@ -218,8 +224,6 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Or -> helper_or (eval e1 st, eval e2 st)
      | And -> helper_and (eval e1 st, eval e2 st)
      | Exponent -> helper_exp (eval e1 st, eval e2 st)
-     | Equal -> helper_equals (eval e1 st, eval e2 st)
-     | Not_Equal -> helper_not_equals (eval e1 st, eval e2 st)
      | Equal -> helper_equal (eval e1 st, eval e2 st)
      | Not_Equal -> eval (Unary (Not, Binary(e1, Equal, e2) )) st
      | Modular -> helper_mod (eval e1 st, eval e2 st)
@@ -257,6 +261,12 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
       | [] -> []
       | h::t -> eval h st :: help t
     in VList(help x)
+  | Function (f, lst) -> let values = List.map (fun x -> eval x st) lst in
+    match f with
+    | "length" -> Int(0)
+    | "append" -> Int(0)
+    | "range" -> Int(0)
+    | x -> raise (NameError ("name " ^ x ^ " is not defined"))
 
 let if_decider = function
   | Int(0) -> false
