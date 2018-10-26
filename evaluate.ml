@@ -269,8 +269,3 @@ let print (value:State.value):unit = value |> to_string |> print_endline
 let evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> print (eval expr st); st
-
-let append (expList : expr) (exp : expr) = 
-  match expList, exp with
-  | VList list, _ -> 
-  | _ -> failwith("wrong data type")
