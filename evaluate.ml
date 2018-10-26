@@ -23,6 +23,8 @@ let helper_plus = function
   | String x, _ -> raise (TypeError "can only concatenate str to str")
   | VList x, VList y -> VList (x @ y)
   | VList x, _-> raise (TypeError "can only concatenate list to list")
+  | Function t, _-> raise (TypeError "unsupported operand type function for +")
+  | _, Function t-> raise (TypeError "unsupported operand type function for +")
 
 let helper_multiply = function 
   | Int x, Int y -> Int (x * y)
@@ -50,6 +52,8 @@ let helper_multiply = function
   | VList x, Bool y -> if y then VList x else VList []
   | VList x, String y -> raise (TypeError "can't multiply sequence by non-int")
   | VList x, VList y -> raise (TypeError "can't multiply sequence by non-int")
+  | Function t, _-> raise (TypeError "unsupported operand type function for *")
+  | _, Function t-> raise (TypeError "unsupported operand type function for *")
 
 let helper_divide = function 
   | _, Int 0 -> raise (ZeroDivisionError "division by zero")
@@ -66,6 +70,8 @@ let helper_divide = function
   | Bool x, Bool y -> if x then Float 1.0 else Float 0.
   | String x, _ | _, String x -> raise (TypeError "unsupported operand type for /")
   | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for /")
+  | Function t, _-> raise (TypeError "unsupported operand type function for /")
+  | _, Function t-> raise (TypeError "unsupported operand type function for /")
 
 let helper_floor exp = match helper_divide exp with
   | Int x -> Int x
@@ -87,6 +93,8 @@ let helper_mod = function
   | Bool x, Bool y -> Float 0.
   | String x, _ | _, String x -> raise (TypeError "unsupported operand type for %")
   | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for %")
+  | Function t, _-> raise (TypeError "unsupported operand type function for %")
+  | _, Function t-> raise (TypeError "unsupported operand type function for %")
 
 let helper_exp = function 
   | Int x, Int y -> Int (int_of_float (float_of_int x ** float_of_int y))
@@ -100,6 +108,8 @@ let helper_exp = function
   | Bool x, Bool y -> if not x && y then Int 0 else Int 1
   | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for **")
   | String x, _ | _, String x -> raise (TypeError "unsupported operand type for **")
+  | Function t, _-> raise (TypeError "unsupported operand type function for **")
+  | _, Function t-> raise (TypeError "unsupported operand type function for **")
 
 let helper_and = function
   | Int x, y -> if x = 0 then Int 0 else y
@@ -107,6 +117,7 @@ let helper_and = function
   | Bool x, y -> if not x then Bool(x) else y
   | String x, y -> if x = "" then String "" else y
   | VList x, y -> if x = [] then VList x else y
+  | Function x, y -> y
 
 let helper_or = function 
   | Int x, y -> if x<>0 then Int x else y
@@ -114,6 +125,7 @@ let helper_or = function
   | Bool x, y -> if x then Bool x else y
   | String x, y -> if x <> "" then String x else y
   | VList x, y -> if x <> [] then VList x else y
+  | Function x, y -> Function x
 
 let helper_equal = function
   | Int x, Int y -> Bool (x = y)
@@ -127,6 +139,8 @@ let helper_equal = function
   | Bool x, Bool y -> Bool (x = y)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
+  | Function (args1, body1), Function (args2, body2) -> Bool (body1 = body2)
+  | _, _ -> Bool false
 
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
@@ -184,6 +198,9 @@ let if_decider = function
 let to_bool (exp : expr) (st : State.t) = 
   eval exp st |> if_decider
 
+let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
+  let func = Function(args, body) in insert fnc_name func st
+
 let rec to_string (value:State.value) : string = (match value with
     | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
                  (fun x -> if String.length x = 1 then x ^ "]" 
@@ -191,6 +208,7 @@ let rec to_string (value:State.value) : string = (match value with
     | Int x -> string_of_int x
     | Float x -> string_of_float x
     | Bool x -> string_of_bool x |> String.capitalize_ascii
+    | Function x -> "Not sure how to print out functions right now"
     | String x -> "'" ^ x ^ "'")
 
 let print (value:State.value):unit = value |> to_string |> print_endline

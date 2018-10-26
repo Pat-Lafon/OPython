@@ -19,6 +19,13 @@ let rec read_while (cond : expr) (body : string) (lines : string list) =
             | Empty -> (cond, String.trim body)
             | _ -> read_while cond (body ^ "\n" ^ String.trim h) t)
 
+let rec read_function (body : string) =
+  print_string "... ";
+  let line = read_line () in
+  match parse_multiline line with
+  | Empty -> body
+  | _ -> read_function (body ^ "\n" ^ String.trim line)
+
 let rec interpret (st:State.t) (lines: string list) : unit =
   match lines with
   | [] -> print_string ">>> "; interpret st [read_line ()]
@@ -38,6 +45,11 @@ let rec interpret (st:State.t) (lines: string list) : unit =
       let (while_cond, while_body) = read_while cond (String.trim init_body) t in
       let while_line = h in
       interpret_while while_cond while_body while_line st
+    | exception (DefMultiline (name, args, init_body)) -> 
+      (* Parse the body of the function *)
+      let function_body = read_function (String.trim init_body) in
+      let new_st  = Evaluate.evaluate (Some name, Value(Function(args, function_body))) st
+        in interpret new_st []
     | newst -> interpret newst t)
 and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : unit =
   (* Go through [conds] and respective [bodies] in order. If any condition evaluates to true,
@@ -49,7 +61,8 @@ and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : unit
   | _, _ -> raise (SyntaxError "Conditional statements and bodies mismatched")
 and interpret_while (cond : expr) (body : string) (while_line) (st: State.t) : unit = 
   match Evaluate.to_bool cond st with
-  | true -> (* If while conditional is true, then we want to interpret the body, and after that,
+  | true -> 
+    (* If while conditional is true, then we want to interpret the body, and after that,
     interpret the loop condition until it's false *)
     let split_body = String.split_on_char '\n' body in
     let new_lines = split_body @ [while_line] @ split_body @ [""] in
