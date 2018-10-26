@@ -241,6 +241,11 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
       | [] -> []
       | h::t -> eval h st :: help t
     in VList(help x)
+  | Function (f, lst) -> match f with
+    | "length" -> 
+    | "append" -> 
+    | "range" ->
+    | x -> raise (NameError ("name " ^ x ^ " is not defined"))
 
 let if_decider = function
   | Int(0) -> false
