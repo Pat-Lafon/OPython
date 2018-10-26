@@ -204,6 +204,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Or -> helper_or (eval e1 st, eval e2 st)
      | And -> helper_and (eval e1 st, eval e2 st)
      | Exponent -> helper_exp (eval e1 st, eval e2 st)
+     | Equal -> helper_equals (eval e1 st, eval e2 st)
+     | Not_Equal -> helper_not_equals (eval e1 st, eval e2 st)
      | Equal -> helper_equal (eval e1 st, eval e2 st)
      | Not_Equal -> eval (Unary (Not, Binary(e1, Equal, e2) )) st
      | Modular -> helper_mod (eval e1 st, eval e2 st)
