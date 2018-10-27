@@ -5,11 +5,11 @@ type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent
         | Less_Equal | And | Or | Not | Complement
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
-          | Value of State.value | Variable of string | List of expr list
+          | Value of State.value | Variable of string | List of expr list | Function of (string * expr list)
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
-               | While of (expr * string)
+               | While of (expr * string) | Def of (string * string list * string)
 
 exception SyntaxError of string
 exception TypeError of string
@@ -20,6 +20,7 @@ exception ZeroDivisionError of string
 exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
+exception DefMultiline of (string * string list * string)
 
 let operators = [[("or", Or)];
                  [("and", And);];
@@ -174,20 +175,25 @@ let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
 let elif_regex = Str.regexp "^elif \\(.*\\):\\(.*\\)"
 let else_regex = Str.regexp "^else *: *"
 let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
+let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
-
 let is_else line = Str.string_match else_regex line 0
-
 let is_elif line = Str.string_match elif_regex line 0
-
 let is_while line = Str.string_match while_regex line 0
+let is_def line = Str.string_match def_regex line 0
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
   let body = String.trim (Str.matched_group 2 line) in
   (parse_expr condition operators, body)
+
+let parse_def (line: string) : (string * string list * string) =
+  let fn_name = Str.matched_group 1 line in
+  let args = List.map String.trim (String.split_on_char ',' (Str.matched_group 2 line)) in
+  let body = String.trim (Str.matched_group 3 line) in
+  (fn_name, args, body)
 
 let line_type (line : string) : line_type =
   if String.length line = 0 then Empty
@@ -197,15 +203,16 @@ let line_type (line : string) : line_type =
   else if is_elif line then Elif (parse_if line)
   else if is_else line then Else
   else if is_while line then While (parse_if line)
+  else if is_def line then Def (parse_def line)
   else Expression
 
 let parse_line (line : string) : string option * expr = 
-  (*valid_line line; Testing whether get_idx is working, report to Patrick if failure*)
   match line_type line with
   | Empty -> raise EmptyInput
   | Assignment -> parse_assignment line
   | Expression -> (None, parse_expr line operators)
   | If (cond, body) -> raise (IfMultiline (cond, body))
+  | Def (name, args, body) -> raise (DefMultiline (name, args, body))
   | Elif (cond, body) -> raise (SyntaxError "Elif statement with no if")
   | Else -> raise (SyntaxError "Else statement with no if")
   (* line type is helpful for later *)
@@ -221,4 +228,5 @@ let parse_multiline (line: string) : line_type =
   | If (cond, body) -> If (cond, body)
   | Elif (cond, body) -> Elif (cond, body)
   | While (cond, body) -> While (cond, body)
+  | Def (name, args, body) -> Def (name, args, body)
   | Else -> Else 
