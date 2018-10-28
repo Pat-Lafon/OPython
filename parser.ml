@@ -154,11 +154,13 @@ and
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
-    else if args != -1 && fstarg != -1 
+    else if args <> -1 && fstarg <> -1 
     then Function(String.sub line (fstarg+1) (args-fstarg-1), 
                   exprlst(String.sub line 0 (fstarg) ^","^ String.sub line (args+1) (String.length line - args - 2)))
-    else if args != -1 
+    else if args <> -1 
     then Function(String.sub line 0 (args), exprlst (String.sub line (args+1) (String.length line - (args + 2))))
+    else if line.[String.length line -1] = ']' then 
+      Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2))))
     else Variable(line)
   | h :: t -> match expr_contains line h with
     | Some x, _ -> parse_expr_helper line x
