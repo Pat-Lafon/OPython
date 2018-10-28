@@ -261,12 +261,9 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
       | [] -> []
       | h::t -> eval h st :: help t
     in VList(help x)
-  | Function (f, lst) -> let values = List.map (fun x -> eval x st) lst in
-    match f with
-    | "length" -> Int(0)
-    | "append" -> Int(0)
-    | "range" -> Int(0)
-    | x -> raise (NameError ("name " ^ x ^ " is not defined"))
+  | Function (f, lst) -> 
+    if (List.mem f Builtin.built_in_function_names) then (List.assoc f Builtin.built_in_functions) lst st else
+      raise (NameError ("name " ^ f ^ " is not defined"))
 
 let if_decider = function
   | Int(0) -> false
