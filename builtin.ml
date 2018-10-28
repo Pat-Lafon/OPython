@@ -13,6 +13,10 @@ let append (explist : expr list) (st : State.t) =
     )
   | _ -> failwith("not enough args")
 
+let print (explist : expr list) (st : State.t) =
+  let vallist = List.map (fun x -> eval x st) explist in
+  match vallist with
+  | h::t -> to_string(h)
 
 let length (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match Evaluate.eval h st with 
