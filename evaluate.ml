@@ -17,7 +17,7 @@ let helper_plus = function
   | Float x, VList y -> raise (TypeError "unsupported operand type for +")
   | Bool x, Int y -> if x then Int (y+1) else Int  y
   | Bool x, Float y -> if x then Float (y +. float_of_int 1) else Float y
-  | Bool x, Bool y -> Int(if x then 1 else 0 + if y then 1 else 0)
+  | Bool x, Bool y -> Int(if x then 1 + (if y then 1 else 0) else 0 + (if y then 1 else 0))
   | Bool x , String y -> raise (TypeError "unsupported operand type for +")
   | Bool x, VList y -> raise (TypeError "unsupported operand type for +")
   | String x, String y -> String (x ^ y)
