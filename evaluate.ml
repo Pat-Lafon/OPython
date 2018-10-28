@@ -10,7 +10,7 @@ let rec to_string (value:State.value) : string = (match value with
     | Int x -> string_of_int x
     | Float x -> string_of_float x
     | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function x -> "Not sure how to print out functions right now"
+    | Function x -> "<function 3110 at 0x10b026268>"
     | String x -> "'" ^ x ^ "'")
 
 let helper_plus = function 
@@ -331,7 +331,7 @@ and chr (explist : expr list) (st: State.t) =
   match vallist with
   | h::[] ->(
       match h with 
-      | Int(x) -> if (x>=0) && (x<=1114111) then Uchar.to_char(Uchar.of_int(x)) else failwith("int out of bounds")
+      | Int(x) -> if (x>=0) && (x<=1114111) then String(Char.escaped((Uchar.to_char(Uchar.of_int(x))))) else failwith("int out of bounds")
       | _ -> failwith("requires int")
     )
   | _ -> failwith("needs 1 arg, this is not 1 arg")
@@ -379,9 +379,9 @@ and int (explist: expr list) (st: State.t) =
   | _ -> failwith("neither empty nor 1 arg")
 
 
-and built_in_function_names = ["append"; "length"; "range"; "printt"]
+and built_in_function_names = ["append"; "length"; "range"; "printt"; "chr"; "bool"; "float"; "int"]
 
-and built_in_functions = [("append", append); ("len", len); ("range", range); ("printt", printt)]
+and built_in_functions = [("append", append); ("len", len); ("range", range); ("printt", printt); ("chr", chr); ("bool", bool); ("float", float); ("int",int)]
 
 let if_decider = function
   | Int(0) -> false
@@ -396,16 +396,6 @@ let to_bool (exp : expr) (st : State.t) =
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
   let func = Function(args, body) in insert fnc_name func st
-
-let rec to_string (value:State.value) : string = (match value with
-    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
-                 (fun x -> if String.length x = 1 then x ^ "]" 
-                   else String.sub x 0 (String.length x -2) ^ "]")
-    | Int x -> string_of_int x
-    | Float x -> string_of_float x
-    | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function x -> "<function 3110 at 0x10b026268>"
-    | String x -> "'" ^ x ^ "'")
 
 let print (value:State.value):unit = value |> to_string |> print_endline
 
