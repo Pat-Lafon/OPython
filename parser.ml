@@ -5,7 +5,8 @@ type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent
         | Less_Equal | And | Or | Not | Complement
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
-          | Value of State.value | Variable of string | List of expr list | Function of (string * expr list)
+          | Value of State.value | Variable of string | List of expr list 
+          | Function of (string * expr list)
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
@@ -122,7 +123,9 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-let rec parse_expr_helper (str:string) (op:string*op) : expr = 
+let rec exprlst (line:string): expr list = 
+  List.map (fun x -> parse_expr x operators) (String.split_on_char ',' line)
+and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
   let left = String.sub str 0 idx in
@@ -131,7 +134,7 @@ let rec parse_expr_helper (str:string) (op:string*op) : expr =
   else Binary(parse_expr left operators, snd op, parse_expr right operators) 
 and
   parse_expr (line:string) (oplist:(string*op) list list) : expr = 
-  let line = trim line in
+  let line = trim line in let args = get_idx line "(" in let fstarg =  get_idx line "." in 
   match oplist with
   | [] -> 
     if line.[0] = '"' || line.[0] = '\'' 
@@ -143,6 +146,10 @@ and
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
+    else if args != -1 && fstarg != -1 
+    then Function(String.sub line 0 (args-1), exprlst (String.sub line (args+1) (String.length line - (args + 2))))
+    else if args != -1 
+    then Function(String.sub line fstarg (args-fstarg), exprlst ((String.sub line 0 (fstarg-1)) ^ String.sub line (args+1) (String.length line - (args + 2))))
     else Variable(line)
   | h :: t -> match expr_contains line h with
     | Some x, _ -> parse_expr_helper line x
