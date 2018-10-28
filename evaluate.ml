@@ -10,7 +10,7 @@ let rec to_string (value:State.value) : string = (match value with
     | Int x -> string_of_int x
     | Float x -> string_of_float x
     | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function x -> "Not sure how to print out functions right now"
+    | Function x -> "<function 3110 at 0x10b026268>"
     | String x -> "'" ^ x ^ "'")
 
 let helper_plus = function 
@@ -272,14 +272,10 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
     in VList(help x)
   | Function (f, lst) -> 
     if (List.mem f built_in_function_names) then 
-      (List.assoc f built_in_functions) lst st 
-    else if (List.mem_assoc f st) then VList([]) (* TO DO *) else raise (NameError ("name '"^f^"' is not defined"))
+      (List.assoc f built_in_functions) lst st else 
+    if (List.mem_assoc f st) then VList([]) (* TO DO *) else raise (NameError ("name '"^f^"' is not defined"))
 
-and create_function_state exprs args func_st global_st = 
-  match exprs, args with
-  | expr::e_t, arg::a_t -> 
-    let value = eval expr global_st in create_function_state e_t a_t (State.insert arg value func_st) global_st
-  | _, _ -> raise (NameError ("Arguments in function do not match"))
+
 
 and append (explist : expr list) (st : State.t) = 
 
@@ -346,16 +342,6 @@ let to_bool (exp : expr) (st : State.t) =
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
   let func = Function(args, body) in insert fnc_name func st
-
-let rec to_string (value:State.value) : string = (match value with
-    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
-                 (fun x -> if String.length x = 1 then x ^ "]" 
-                   else String.sub x 0 (String.length x -2) ^ "]")
-    | Int x -> string_of_int x
-    | Float x -> string_of_float x
-    | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function (args, body) -> "<function " ^ body ^ " at 0x10b026268>"
-    | String x -> "'" ^ x ^ "'")
 
 let print (value:State.value):unit = value |> to_string |> print_endline
 
