@@ -294,7 +294,7 @@ and helper_printt (explist : expr list) (st : State.t)=
   | h::t -> to_string(eval h st) ^ " " ^ helper_printt t st
 
 and printt (explist : expr list) (st: State.t) =
-  helper_printt explist st |> print_endline
+  String(helper_printt explist st) (*|> print_endline *)
 
 and len (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
@@ -325,9 +325,63 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
     end
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
-and built_in_function_names = ["append"; "length"; "range"]
+(** Type casts *)
+and chr (explist : expr list) (st: State.t) =
+  let vallist = List.map (fun x -> eval x st) explist in
+  match vallist with
+  | h::[] ->(
+      match h with 
+      | Int(x) -> if (x>=0) && (x<=1114111) then Uchar.to_char(Uchar.of_int(x)) else failwith("int out of bounds")
+      | _ -> failwith("requires int")
+    )
+  | _ -> failwith("needs 1 arg, this is not 1 arg")
 
-and built_in_functions = [("append", append); ("len", len); ("range", range)]
+
+and bool (explist: expr list) (st: State.t) = 
+  let vallist = List.map (fun x -> eval x st) explist in
+  match vallist with
+  | h::[] ->(
+      match h with 
+      | Bool(x) -> if x then Bool true else Bool false
+      | Int(x) -> if x = 0 then Bool false else Bool true
+      | Float(x) -> if x = 0. then Bool false else Bool true
+      | String(x) -> if x = "" then Bool false else Bool true
+      | VList(x) -> if x = [] then Bool false else Bool true
+      | _ -> failwith("not really sure what to do with Function")
+    )
+  | [] -> Bool(false)
+  | _ -> failwith("neither empty nor 1 arg")
+
+and float (explist: expr list) (st: State.t) = 
+  let vallist = List.map (fun x -> eval x st) explist in
+  match vallist with
+  | h::[] ->(
+      match h with 
+      | Int(x) -> Float(float_of_int(x))
+      | Float(x) -> Float(x)
+      | String(x) -> if float_of_string_opt(x) <> None then Float(float_of_string(x)) else failwith("can't do that")
+      | _ -> failwith("not really sure what to do with Function")
+    )
+  | [] -> Float(0.0)
+  | _ -> failwith("neither empty nor 1 arg")
+
+and int (explist: expr list) (st: State.t) = 
+  let vallist = List.map (fun x -> eval x st) explist in
+  match vallist with
+  | h::[] ->(
+      match h with 
+      | Int(x) -> Int(x)
+      | Float(x) -> Int(int_of_float(x))
+      | String(x) -> if int_of_string_opt(x) <> None then Int(int_of_string(x)) else failwith("can't do that")
+      | _ -> failwith("not really sure what to do with Function")
+    )
+  | [] -> Int(0)
+  | _ -> failwith("neither empty nor 1 arg")
+
+
+and built_in_function_names = ["append"; "length"; "range"; "printt"]
+
+and built_in_functions = [("append", append); ("len", len); ("range", range); ("printt", printt)]
 
 let if_decider = function
   | Int(0) -> false
