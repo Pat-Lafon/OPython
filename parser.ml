@@ -114,6 +114,11 @@ let rec trim str : string =
     else str
   else str
 
+let rec split_on_char (chr:char) (line:string) : string list = 
+  match get_idx line (Char.escaped chr) with
+  | -1 -> line::[]
+  | num -> (String.sub line 0 num)::(split_on_char chr (String.sub line (num+1) (String.length line - num -1))) 
+
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in
   if idx <> -1 then 
@@ -124,8 +129,8 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-let rec exprlst (line:string): expr list = 
-  List.map (fun x -> parse_expr x operators) (String.split_on_char ',' line)
+let rec exprlst (line:string): expr list =
+  List.map (fun x -> parse_expr x operators) (split_on_char ',' line)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
@@ -140,17 +145,18 @@ and
   | [] -> 
     if line.[0] = '"' || line.[0] = '\'' 
     then Value(String(String.sub line 1 (String.length line-2)))
-    else if line.[0] = '[' || line.[String.length line -1] = ']' 
+    else if line.[0] = '[' && line.[String.length line-1] = ']'
     then if String.length line = 2 then List([])
       else List(List.map (fun x -> parse_expr x operators) 
-                  (String.split_on_char ',' (String.sub line 1 (String.length line - 2))))
+                  (split_on_char ',' (String.sub line 1 (String.length line - 2))))
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
     else if args != -1 && fstarg != -1 
-    then Function(String.sub line 0 (args-1), exprlst (String.sub line (args+1) (String.length line - (args + 2))))
+    then Function(String.sub line fstarg (args-fstarg), 
+                  exprlst(String.sub line 0 (fstarg-1) ^ String.sub line (args+1) (String.length line - args - 2)))
     else if args != -1 
-    then Function(String.sub line fstarg (args-fstarg), exprlst ((String.sub line 0 (fstarg-1)) ^ String.sub line (args+1) (String.length line - (args + 2))))
+    then Function(String.sub line 0 (args), exprlst (String.sub line (args+1) (String.length line - (args + 2))))
     else Variable(line)
   | h :: t -> match expr_contains line h with
     | Some x, _ -> parse_expr_helper line x

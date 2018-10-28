@@ -288,7 +288,7 @@ and len (lst : expr list) (st : State.t) : State.value = match lst with
   | _ -> raise (TypeError("Length takes exactly one argument"))
 
 and helper_range s f i = if i = 0 then 
-    raise (ValueError ("Third argument must not be zero")) else 
+    raise (ValueError "Third argument must not be zero") else 
   if s >= f then [] else 
     Int(s) :: helper_range (s+i) f i 
 
@@ -333,7 +333,7 @@ let rec to_string (value:State.value) : string = (match value with
     | Int x -> string_of_int x
     | Float x -> string_of_float x
     | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function x -> "Not sure how to print out functions right now"
+    | Function x -> "<function 3110 at 0x10b026268>"
     | String x -> "'" ^ x ^ "'")
 
 let print (value:State.value):unit = value |> to_string |> print_endline
