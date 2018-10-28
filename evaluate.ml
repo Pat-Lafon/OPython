@@ -327,7 +327,7 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
 
 and built_in_function_names = ["append"; "length"; "range"]
 
-and built_in_functions = [("append", append); ("length", len); ("range", range)]
+and built_in_functions = [("append", append); ("len", len); ("range", range)]
 
 let if_decider = function
   | Int(0) -> false
