@@ -14,7 +14,6 @@ let append (explist : expr list) (st : State.t) =
   | _ -> failwith("not enough args")
 
 
-
 let length (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match Evaluate.eval h st with 
       | VList(l) -> Int(List.length l)
