@@ -282,6 +282,7 @@ and append (explist : expr list) (st : State.t) =
 and len (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
       | VList(l) -> Int(List.length l)
+      | String(s) -> Int (String.length s)
       | _ -> raise (TypeError ("Object of that type has no len()"))
     end
   | _ -> raise (TypeError("Length takes exactly one argument"))
