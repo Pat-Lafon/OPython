@@ -1,8 +1,8 @@
 open Parser
 open State
-open Builtin
 
 let rec mul x y acc op = if y = 0 then acc else mul x (y-1) (op acc x) op
+
 
 let helper_plus = function 
   | Int x, Int y -> Int(x+y)
@@ -262,8 +262,52 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
       | h::t -> eval h st :: help t
     in VList(help x)
   | Function (f, lst) -> 
-    if (List.mem f Builtin.built_in_function_names) then (List.assoc f Builtin.built_in_functions) lst st else
+    if (List.mem f built_in_function_names) then 
+      (List.assoc f built_in_functions) lst st else
       raise (NameError ("name " ^ f ^ " is not defined"))
+
+and append (explist : expr list) (st : State.t) = 
+
+  let vallist = List.map (fun x -> eval x st) explist in
+  match vallist with
+  | lst::valu::[] -> 
+    (match lst with
+     | VList x -> VList(List.rev(valu::List.rev(x)))
+     | _ -> failwith("not a list")
+    )
+  | _ -> failwith("not enough args")
+
+and length (lst : expr list) (st : State.t) : State.value = match lst with
+  | h::[] -> begin match eval h st with 
+      | VList(l) -> Int(List.length l)
+      | _ -> raise (TypeError ("Object of that type has no len()"))
+    end
+  | _ -> raise (TypeError("Length takes exactly one argument"))
+
+and helper_range s f i = if i = 0 then 
+    raise (ValueError ("Third argument must not be zero")) else 
+  if s >= f then [] else 
+    Int(s) :: helper_range (s+i) f i 
+
+and range (lst : expr list) (st : State.t) : State.value = match lst with
+  | h::[] -> begin match eval h st with 
+      | Int(a) -> VList (helper_range 0 a 1)
+      | _ -> raise (TypeError ("Unsupported type for this operation"))
+    end
+  | h1::h2::[] -> begin match (eval h1 st,eval h2 st) with 
+      | (Int(a),Int(b)) -> VList (helper_range a b 1)
+      | _ -> raise (TypeError ("Unsupported type for this operation"))
+    end
+  | h1::h2::h3::[] -> begin 
+      match (eval h1 st, eval h2 st, eval h3 st) with 
+      | (Int(a),Int(b),Int(c)) -> VList (helper_range a b c)
+      | _ -> raise (TypeError ("Unsupported type for this operation"))
+    end
+  | _ -> raise (TypeError("Range takes at most three arguments"))
+
+and built_in_function_names = ["append"; "length"; "range"]
+
+and built_in_functions = [("append", append); ("length", length); ("range", length)]
 
 let if_decider = function
   | Int(0) -> false
