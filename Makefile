@@ -1,4 +1,4 @@
-MODULES=main state parser evaluate
+MODULES=main state parser evaluate builtin
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
