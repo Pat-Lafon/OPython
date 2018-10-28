@@ -3,6 +3,15 @@ open State
 
 let rec mul x y acc op = if y = 0 then acc else mul x (y-1) (op acc x) op
 
+let rec to_string (value:State.value) : string = (match value with
+    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
+                 (fun x -> if String.length x = 1 then x ^ "]" 
+                   else String.sub x 0 (String.length x -2) ^ "]")
+    | Int x -> string_of_int x
+    | Float x -> string_of_float x
+    | Bool x -> string_of_bool x |> String.capitalize_ascii
+    | Function x -> "Not sure how to print out functions right now"
+    | String x -> "'" ^ x ^ "'")
 
 let helper_plus = function 
   | Int x, Int y -> Int(x+y)
@@ -17,7 +26,7 @@ let helper_plus = function
   | Float x, VList y -> raise (TypeError "unsupported operand type for +")
   | Bool x, Int y -> if x then Int (y+1) else Int  y
   | Bool x, Float y -> if x then Float (y +. float_of_int 1) else Float y
-  | Bool x, Bool y -> Int(if x then 1 else 0 + if y then 1 else 0)
+  | Bool x, Bool y -> Int(if x then 1 + (if y then 1 else 0) else 0 + (if y then 1 else 0))
   | Bool x , String y -> raise (TypeError "unsupported operand type for +")
   | Bool x, VList y -> raise (TypeError "unsupported operand type for +")
   | String x, String y -> String (x ^ y)
@@ -283,9 +292,18 @@ and append (explist : expr list) (st : State.t) =
     )
   | _ -> failwith("not enough args")
 
+and helper_printt (explist : expr list) (st : State.t)=
+  match explist with
+  | [] -> ""
+  | h::t -> to_string(eval h st) ^ " " ^ helper_printt t st
+
+and printt (explist : expr list) (st: State.t) =
+  helper_printt explist st |> print_endline
+
 and len (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
       | VList(l) -> Int(List.length l)
+      | String(s) -> Int (String.length s)
       | _ -> raise (TypeError ("Object of that type has no len()"))
     end
   | _ -> raise (TypeError("Length takes exactly one argument"))
@@ -311,9 +329,9 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
     end
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
-and built_in_function_names = ["append"; "length"; "range"]
+and built_in_function_names = ["append"; "len"; "range"]
 
-and built_in_functions = [("append", append); ("length", len); ("range", range)]
+and built_in_functions = [("append", append); ("len", len); ("range", range)]
 
 let if_decider = function
   | Int(0) -> false
