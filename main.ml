@@ -2,17 +2,28 @@ open State
 open Evaluate
 open Parser
 
-let rec read_if (conds : expr list) (bodies : string list) (acc : string) =
-  print_string "... ";
-  match parse_multiline (read_line ()) with
+let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
+  if new_line then
+  let () = print_string "... " in
+  (match parse_multiline (read_line ()) with
   | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
-  | Line line -> read_if conds bodies (acc ^ "\n" ^ line)
-  | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body
-  | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body
-  | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) ""
-  | _ -> raise EmptyInput
+  | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
+  | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+  | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+  | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
+  | _ -> raise EmptyInput)
+  else (match lines with
+  | [] -> List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies))
+  | h::t -> (match parse_multiline h with
+  | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
+  | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t
+  | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+  | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+  | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
+  | _ -> raise EmptyInput))
 
 let rec read_while (cond : expr) (body : string) (lines : string list) =
+  (* print_endline (string_of_bool (lines = [])); *)
   match lines with
   | [] -> print_string "... "; read_while cond body [read_line ()]
   | h::t -> (match parse_multiline h with
@@ -39,7 +50,7 @@ let rec interpret (st:State.t) (lines: string list) : unit =
       | exception EmptyInput -> interpret st []
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
-        let (conds, bodies) = read_if [cond] [] body in interpret_if conds bodies st
+        let (conds, bodies) = read_if [cond] [] body (t = []) t in interpret_if conds bodies st
       | exception (WhileMultiline (cond, init_body)) -> 
         (* Parse out the loop condition and body, process them in [interpret_while] *)
         let (while_cond, while_body) = read_while cond (String.trim init_body) t in
@@ -73,4 +84,8 @@ let _ =
   ANSITerminal.(print_string [green]   "***A Python interpreter written in Ocaml***\n");
   ANSITerminal.(print_string [cyan]    "Authors: Patrick, Zaibo, William, and Eric!\n");
   ANSITerminal.(print_string [magenta] "------------------OPython------------------\n"); 
+  (* test if statement *)
+  (* interpret empty ["y=0"; "if y == 0:"; "x = 1"; "y = 1"; "else:"; "x = 2"; "y=2"] *)
+  (* test while statement *)
+  (* interpret empty ["x = 0"; "while x < 3:"; "if x == 0:"; "x = x + 2"; "else:"; "x = x + 1"; ""] *)
   interpret empty []
