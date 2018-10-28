@@ -263,8 +263,10 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
     in VList(help x)
   | Function (f, lst) -> 
     if (List.mem f built_in_function_names) then 
-      (List.assoc f built_in_functions) lst st else
-      raise (NameError ("name " ^ f ^ " is not defined"))
+      (List.assoc f built_in_functions) lst st else 
+    if (List.mem_assoc f st) then VList([]) (* TO DO *) else raise (NameError ("name '"^f^"' is not defined"))
+
+
 
 and append (explist : expr list) (st : State.t) = 
 
@@ -277,7 +279,7 @@ and append (explist : expr list) (st : State.t) =
     )
   | _ -> failwith("not enough args")
 
-and length (lst : expr list) (st : State.t) : State.value = match lst with
+and len (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
       | VList(l) -> Int(List.length l)
       | _ -> raise (TypeError ("Object of that type has no len()"))
@@ -307,7 +309,7 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
 
 and built_in_function_names = ["append"; "length"; "range"]
 
-and built_in_functions = [("append", append); ("length", length); ("range", length)]
+and built_in_functions = [("append", append); ("length", len); ("range", range)]
 
 let if_decider = function
   | Int(0) -> false
