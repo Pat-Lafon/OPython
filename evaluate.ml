@@ -272,8 +272,10 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
     in VList(help x)
   | Function (f, lst) -> 
     if (List.mem f built_in_function_names) then 
-      (List.assoc f built_in_functions) lst st else
-      raise (NameError ("name " ^ f ^ " is not defined"))
+      (List.assoc f built_in_functions) lst st else 
+    if (List.mem_assoc f st) then VList([]) (* TO DO *) else raise (NameError ("name '"^f^"' is not defined"))
+
+
 
 and append (explist : expr list) (st : State.t) = 
 
@@ -294,15 +296,16 @@ and helper_printt (explist : expr list) (st : State.t)=
 and printt (explist : expr list) (st: State.t) =
   helper_printt explist st |> print_endline
 
-and length (lst : expr list) (st : State.t) : State.value = match lst with
+and len (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
       | VList(l) -> Int(List.length l)
+      | String(s) -> Int (String.length s)
       | _ -> raise (TypeError ("Object of that type has no len()"))
     end
   | _ -> raise (TypeError("Length takes exactly one argument"))
 
 and helper_range s f i = if i = 0 then 
-    raise (ValueError ("Third argument must not be zero")) else 
+    raise (ValueError "Third argument must not be zero") else 
   if s >= f then [] else 
     Int(s) :: helper_range (s+i) f i 
 
@@ -324,7 +327,7 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
 
 and built_in_function_names = ["append"; "length"; "range"]
 
-and built_in_functions = [("append", append); ("length", length); ("range", length)]
+and built_in_functions = [("append", append); ("length", len); ("range", range)]
 
 let if_decider = function
   | Int(0) -> false
@@ -339,6 +342,16 @@ let to_bool (exp : expr) (st : State.t) =
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
   let func = Function(args, body) in insert fnc_name func st
+
+let rec to_string (value:State.value) : string = (match value with
+    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
+                 (fun x -> if String.length x = 1 then x ^ "]" 
+                   else String.sub x 0 (String.length x -2) ^ "]")
+    | Int x -> string_of_int x
+    | Float x -> string_of_float x
+    | Bool x -> string_of_bool x |> String.capitalize_ascii
+    | Function x -> "<function 3110 at 0x10b026268>"
+    | String x -> "'" ^ x ^ "'")
 
 let print (value:State.value):unit = value |> to_string |> print_endline
 

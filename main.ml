@@ -29,7 +29,7 @@ let rec read_function (body : string) =
 let rec interpret (st:State.t) (lines: string list) : unit =
   match lines with
   | [] -> print_string ">>> "; interpret st [read_line ()]
-  | h::t -> (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
+  | h::t -> print_endline h; (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
       | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); interpret st []
       | exception (NameError x) -> print_endline ("NameError: "^x); interpret st []
       | exception (TypeError x) -> print_endline ("TypeError: "^x); interpret st []
