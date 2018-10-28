@@ -308,7 +308,7 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
     end
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
-and built_in_function_names = ["append"; "length"; "range"]
+and built_in_function_names = ["append"; "len"; "range"]
 
 and built_in_functions = [("append", append); ("len", len); ("range", range)]
 
