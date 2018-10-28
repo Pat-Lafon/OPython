@@ -132,7 +132,9 @@ let is_assignment (line:string) : bool =
   else false
 
 let rec exprlst (line:string): expr list =
-  List.map (fun x -> parse_expr x operators) (split_on_char ',' line)
+  if line = "" then []
+  else 
+    List.map (fun x -> parse_expr x operators) (split_on_char ',' line)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
@@ -154,11 +156,13 @@ and
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
-    else if args != -1 && fstarg != -1 
+    else if args <> -1 && fstarg <> -1 
     then Function(String.sub line (fstarg+1) (args-fstarg-1), 
                   exprlst(String.sub line 0 (fstarg) ^","^ String.sub line (args+1) (String.length line - args - 2)))
-    else if args != -1 
+    else if args <> -1 
     then Function(String.sub line 0 (args), exprlst (String.sub line (args+1) (String.length line - (args + 2))))
+    else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
+      Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2))))
     else Variable(line)
   | h :: t -> match expr_contains line h with
     | Some x, _ -> parse_expr_helper line x
@@ -179,12 +183,6 @@ let rec paren_check (str: string) idx acc =
   else if String.get str idx = ')' then paren_check str (idx+1) (acc-1)
   else if String.get str idx = '"' then paren_check str (idx+2+(get_idx (String.sub str (idx+1) (String.length str -idx-1)) "\"")) acc
   else paren_check str (idx+1) acc
-
-(* Will become some helper that raises a Syntax error if not valid
-   For example, catch cases like: 'hello  *)
-let valid_line line = 
-  if not (paren_check line 0 0) then raise (SyntaxError "Invalid parenthesis")
-  else ()
 
 (** Matches if statement *)
 let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
