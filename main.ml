@@ -23,7 +23,6 @@ let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_l
   | _ -> raise EmptyInput))
 
 let rec read_while (cond : expr) (body : string) (lines : string list) =
-  (* print_endline (string_of_bool (lines = [])); *)
   match lines with
   | [] -> print_string "... "; read_while cond body [read_line ()]
   | h::t -> (match parse_multiline h with
@@ -40,7 +39,7 @@ let rec read_function (body : string) =
 let rec interpret (st:State.t) (lines: string list) : unit =
   match lines with
   | [] -> print_string ">>> "; interpret st [read_line ()]
-  | h::t -> print_endline h; (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
+  | h::t -> (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
       | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); interpret st []
       | exception (NameError x) -> print_endline ("NameError: "^x); interpret st []
       | exception (TypeError x) -> print_endline ("TypeError: "^x); interpret st []
@@ -88,4 +87,6 @@ let _ =
   (* interpret empty ["y=0"; "if y == 0:"; "x = 1"; "y = 1"; "else:"; "x = 2"; "y=2"] *)
   (* test while statement *)
   (* interpret empty ["x = 0"; "while x < 3:"; "if x == 0:"; "x = x + 2"; "else:"; "x = x + 1"; ""] *)
+  (* interpret empty [] *)
   interpret empty []
+  (* interpret empty ["def f(a, b):"; "if a:"; "return b"] *)
