@@ -180,12 +180,6 @@ let rec paren_check (str: string) idx acc =
   else if String.get str idx = '"' then paren_check str (idx+2+(get_idx (String.sub str (idx+1) (String.length str -idx-1)) "\"")) acc
   else paren_check str (idx+1) acc
 
-(* Will become some helper that raises a Syntax error if not valid
-   For example, catch cases like: 'hello  *)
-let valid_line line = 
-  if not (paren_check line 0 0) then raise (SyntaxError "Invalid parenthesis")
-  else ()
-
 (** Matches if statement *)
 let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
 let elif_regex = Str.regexp "^elif \\(.*\\):\\(.*\\)"
