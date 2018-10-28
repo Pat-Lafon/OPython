@@ -285,7 +285,7 @@ and length (lst : expr list) (st : State.t) : State.value = match lst with
   | _ -> raise (TypeError("Length takes exactly one argument"))
 
 and helper_range s f i = if i = 0 then 
-    raise (ValueError ("Third argument must not be zero")) else 
+    raise (ValueError "Third argument must not be zero") else 
   if s >= f then [] else 
     Int(s) :: helper_range (s+i) f i 
 
