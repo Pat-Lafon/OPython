@@ -130,7 +130,9 @@ let is_assignment (line:string) : bool =
   else false
 
 let rec exprlst (line:string): expr list =
-  List.map (fun x -> parse_expr x operators) (split_on_char ',' line)
+  if line = "" then []
+  else 
+    List.map (fun x -> parse_expr x operators) (split_on_char ',' line)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
