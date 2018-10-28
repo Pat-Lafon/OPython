@@ -1,6 +1,6 @@
 open Parser
 open State
-open Builtin
+(* open Builtin *)
 
 let rec mul x y acc op = if y = 0 then acc else mul x (y-1) (op acc x) op
 
