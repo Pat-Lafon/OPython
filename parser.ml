@@ -188,7 +188,9 @@ and
     | Some x, _ -> parse_expr_helper line x
     | None, _ -> parse_expr line t
 
-(* Will have to revisit this to deal with +=, -= %=, ect. *)
+(** [parse_assignment line] is Some string, expr where the string option contains 
+    the variable name that is being assigned to and expr is the rest of [line] parsed 
+    into an expr. *)
 let parse_assignment (line:string) : string option * expr = 
   let eq_idx = get_idx line "=" in
   let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
