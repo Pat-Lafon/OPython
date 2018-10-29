@@ -192,11 +192,13 @@ and
 let parse_assignment (line:string) : string option * expr = 
   let eq_idx = get_idx line "=" in
   let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
-  match expr_contains (String.sub line (eq_idx - 2) 2) (List.flatten operators) with 
-  | Some x, _ -> let left = is_var_name (String.trim (String.sub line 0 (eq_idx-(String.length (fst x))))) in
-    Some left, Binary(Variable left, snd x, parse_expr right operators)
-  | None, _ -> let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
-    Some left, parse_expr right operators
+  if eq_idx = 1 then Some (is_var_name (Char.escaped (line.[0]))), parse_expr right operators
+  else
+    match expr_contains (String.sub line (eq_idx - 2) 2) (List.flatten operators) with 
+    | Some x, _ -> let left = is_var_name (String.trim (String.sub line 0 (eq_idx-(String.length (fst x))))) in
+      Some left, Binary(Variable left, snd x, parse_expr right operators)
+    | None, _ -> let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
+      Some left, parse_expr right operators
 
 (** [paren_check str idx acc] returns true if parentheses are valid and false otherwise *)
 let rec paren_check (str: string) idx acc =
