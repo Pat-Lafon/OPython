@@ -383,7 +383,7 @@ and int (explist: expr list) (st: State.t) =
   | _ -> failwith("neither empty nor 1 arg")
 
 
-and built_in_function_names = ["append"; "length"; "range"; "printt"; "chr"; "bool"; "float"; "int"]
+and built_in_function_names = ["append"; "len"; "range"; "printt"; "chr"; "bool"; "float"; "int"]
 
 and built_in_functions = [("append", append); ("len", len); ("range", range); ("printt", printt); ("chr", chr); ("bool", bool); ("float", float); ("int",int)]
 
