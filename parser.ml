@@ -132,7 +132,8 @@ let rec trim str : string =
 let rec split_on_char (chr:char) (line:string) : string list = 
   match get_idx line (Char.escaped chr) with
   | -1 -> line::[]
-  | num -> (String.sub line 0 num)::(split_on_char chr (String.sub line (num+1) (String.length line - num -1))) 
+  | num -> String.sub line 0 num::
+           split_on_char chr (String.sub line (num+1) (String.length line - num -1))
 
 (** [is_assignment line] is true if [line] is an assignment statement, false otherwise. *)
 let is_assignment (line:string) : bool =
@@ -145,10 +146,12 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
+(** [exprlst line chr] is an expr list of [line] partitioned into elements by [chr] *)
 let rec exprlst (line:string) (chr:char): expr list =
   if line = "" then []
   else 
     List.map (fun x -> parse_expr x operators) (split_on_char chr line)
+(** [parse_expr_helper] is an expr made from [str] based on [op] *)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
@@ -156,6 +159,7 @@ and parse_expr_helper (str:string) (op:string*op) : expr =
   let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
   if trim left = "" then Unary (snd op, parse_expr right operators) 
   else Binary(parse_expr left operators, snd op, parse_expr right operators) 
+(** [parse_expr line oplist] is an expr made up of [line] and the operations in [oplist] *)
 and
   parse_expr (line:string) (oplist:(string*op) list list) : expr = 
   let line = trim line in let args = get_idx line "(" in let fstarg =  get_idx line "." in 
@@ -172,9 +176,11 @@ and
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
     else if args <> -1 && fstarg <> -1 
     then Function(String.sub line (fstarg+1) (args-fstarg-1), 
-                  exprlst(String.sub line 0 (fstarg) ^","^ String.sub line (args+1) (String.length line - args - 2))',')
+                  exprlst(String.sub line 0 (fstarg) ^","^ 
+                          String.sub line (args+1) (String.length line - args - 2))',')
     else if args <> -1 
-    then Function(String.sub line 0 (args), exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
+    then Function(String.sub line 0 (args), 
+                  exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
     else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
       Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2)))':')
     else Variable(line)
@@ -184,10 +190,13 @@ and
 
 (* Will have to revisit this to deal with +=, -= %=, ect. *)
 let parse_assignment (line:string) : string option * expr = 
-  let eq_idx = String.index line '=' in
-  let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
+  let eq_idx = get_idx line "=" in
   let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
-  (Some left, parse_expr right operators)
+  match expr_contains (String.sub line (eq_idx - 2) 2) (List.flatten operators) with 
+  | Some x, _ -> let left = is_var_name (String.trim (String.sub line 0 (eq_idx-(String.length (fst x))))) in
+    Some left, Binary(Variable left, snd x, parse_expr right operators)
+  | None, _ -> let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
+    Some left, parse_expr right operators
 
 (** [paren_check str idx acc] returns true if parentheses are valid and false otherwise *)
 let rec paren_check (str: string) idx acc =
