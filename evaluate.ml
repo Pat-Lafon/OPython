@@ -21,7 +21,7 @@ let helper_plus = function
   | Bool x, VList y -> raise (TypeError "unsupported operand type for +")
   | String x, String y -> String (x ^ y)
   | String x, _ -> raise (TypeError "can only concatenate str to str")
-  | VList x, VList y -> VList (x @ y)
+  | VList x, VList y -> VList (ref(!x @ !y))
   | VList x, _-> raise (TypeError "can only concatenate list to list")
   | Function t, _-> raise (TypeError "unsupported operand type function for +")
   | _, Function t-> raise (TypeError "unsupported operand type function for +")
@@ -31,7 +31,7 @@ let helper_multiply = function
   | Int x, Float y -> Float (float_of_int x *. y)
   | Int x, Bool y -> if y then Int x else Int 0
   | Int x, String y -> raise (TypeError ("unsupported operand type for *"))
-  | Int x, VList y -> VList (mul y x [] (@))
+  | Int x, VList y -> VList (ref(mul !y x [] (@)))
   | Float x, Int y -> Float (float_of_int y *. x)
   | Float x, Float y -> Float (x *. y)
   | Float x, Bool y -> if y then Float (x *. float_of_int 1) else Float 0.0
@@ -41,15 +41,15 @@ let helper_multiply = function
   | Bool x, Float y -> if x then Float (y *. float_of_int 1) else Float 0.0
   | Bool x, Bool y -> if x && y then Int 1 else Int 0
   | Bool x, String y -> if x then String y else String ""
-  | Bool x, VList y -> if x then VList y else VList []
+  | Bool x, VList y -> if x then VList y else VList (ref([]))
   | String x, Int y ->  String (mul x y "" (^))
   | String x, Float y -> raise (TypeError "can't multiply sequence by non-int of type 'float'")
   | String x, Bool  y -> if y then String x else String ""
   | String x, String y -> raise (TypeError "can't multiply sequence by non-int of type 'str'")
   | String x, VList y -> raise (TypeError "can't multiply sequence by non-int")
-  | VList x, Int y -> VList (mul x y [] (@))
+  | VList x, Int y -> VList (ref(mul !x y [] (@)))
   | VList x, Float y -> raise (TypeError "can't multiply sequence by non-int")
-  | VList x, Bool y -> if y then VList x else VList []
+  | VList x, Bool y -> if y then VList x else VList (ref([]))
   | VList x, String y -> raise (TypeError "can't multiply sequence by non-int")
   | VList x, VList y -> raise (TypeError "can't multiply sequence by non-int")
   | Function t, _-> raise (TypeError "unsupported operand type function for *")
@@ -116,7 +116,7 @@ let helper_and = function
   | Float x, y-> if x = 0. then Float 0. else y
   | Bool x, y -> if not x then Bool(x) else y
   | String x, y -> if x = "" then String "" else y
-  | VList x, y -> if x = [] then VList x else y
+  | VList x, y -> if !x = [] then VList x else y
   | Function x, y -> y
 
 let helper_or = function 
@@ -124,7 +124,7 @@ let helper_or = function
   | Float x, y -> if x <> 0. then Float x else y
   | Bool x, y -> if x then Bool x else y
   | String x, y -> if x <> "" then String x else y
-  | VList x, y -> if x <> [] then VList x else y
+  | VList x, y -> if !x <> [] then VList x else y
   | Function x, y -> Function x
 
 let helper_equal = function
@@ -246,7 +246,7 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Not, Float x -> if x = 0. then Bool true else Bool false
      | Not, Bool x -> Bool (not x)
      | Not, String x -> if String.length x = 0 then Bool true else Bool false
-     | Not, VList x -> if x = [] then Bool true else Bool false
+     | Not, VList x -> if !x = [] then Bool true else Bool false
      | Complement, Int x -> Int (-x-1)
      | Complement, Bool x -> if x then Int (-2) else Int (-1)
      | Complement, _ -> raise (TypeError "bad operand type for unary ~")
@@ -259,7 +259,7 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
   | List x -> let rec help = function 
       | [] -> []
       | h::t -> eval h st :: help t
-    in VList(help x)
+    in let rf = ref (help x) in VList(rf)
   | Function (f, lst) -> 
     if (List.mem f built_in_function_names) then 
       (List.assoc f built_in_functions) lst st 
@@ -287,7 +287,7 @@ and append (explist : expr list) (st : State.t) =
   match vallist with
   | lst::valu::[] -> 
     (match lst with
-     | VList x -> VList(List.rev(valu::List.rev(x)))
+     | VList x -> x := List.rev(valu::List.rev(!x)); VList(x)
      | _ -> failwith("not a list")
     )
   | _ -> failwith("not enough args")
@@ -302,7 +302,7 @@ and printt (explist : expr list) (st: State.t) =
 
 and len (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
-      | VList(l) -> Int(List.length l)
+      | VList(l) -> Int(List.length !l)
       | String(s) -> Int (String.length s)
       | _ -> raise (TypeError ("Object of that type has no len()"))
     end
@@ -315,16 +315,16 @@ and helper_range s f i = if i = 0 then
 
 and range (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
-      | Int(a) -> VList (helper_range 0 a 1)
+      | Int(a) -> VList (ref(helper_range 0 a 1))
       | _ -> raise (TypeError ("Unsupported type for this operation"))
     end
   | h1::h2::[] -> begin match (eval h1 st,eval h2 st) with 
-      | (Int(a),Int(b)) -> VList (helper_range a b 1)
+      | (Int(a),Int(b)) -> VList (ref(helper_range a b 1))
       | _ -> raise (TypeError ("Unsupported type for this operation"))
     end
   | h1::h2::h3::[] -> begin 
       match (eval h1 st, eval h2 st, eval h3 st) with 
-      | (Int(a),Int(b),Int(c)) -> VList (helper_range a b c)
+      | (Int(a),Int(b),Int(c)) -> VList (ref(helper_range a b c))
       | _ -> raise (TypeError ("Unsupported type for this operation"))
     end
   | _ -> raise (TypeError("Range takes at most three arguments"))
@@ -350,7 +350,7 @@ and bool (explist: expr list) (st: State.t) =
       | Int(x) -> if x = 0 then Bool false else Bool true
       | Float(x) -> if x = 0. then Bool false else Bool true
       | String(x) -> if x = "" then Bool false else Bool true
-      | VList(x) -> if x = [] then Bool false else Bool true
+      | VList(x) -> if !x = [] then Bool false else Bool true
       | _ -> failwith("not really sure what to do with Function")
     )
   | [] -> Bool(false)
@@ -393,34 +393,34 @@ and evaluate input st = match input with
 
 and read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
   if new_line then
-  let () = print_string "... " in
-  let line = read_line () in
-  let depth = indent_depth line in
-  if depth = 0 then
-  (match parse_multiline line with
-  | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
-  | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
-  | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-  | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-  | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
-  | _ -> raise EmptyInput)
-  else let indented_line = add_depth (String.trim line) (depth - 1) in
-  read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines
+    let () = print_string "... " in
+    let line = read_line () in
+    let depth = indent_depth line in
+    if depth = 0 then
+      (match parse_multiline line with
+       | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
+       | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
+       | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+       | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+       | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
+       | _ -> raise EmptyInput)
+    else let indented_line = add_depth (String.trim line) (depth - 1) in
+      read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines
   else (match lines with
-  | [] -> List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies))
-  | h::t -> 
-  let depth = indent_depth h in
-  if depth = 0 then
-  (match parse_multiline h with
-  | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
-  | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t
-  | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-  | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-  | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
-  | _ -> raise EmptyInput)
-  else let line = add_depth (String.trim h) (depth - 1) in
-  read_if conds bodies (acc ^ "\n" ^ line) new_line t
-  )
+      | [] -> List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies))
+      | h::t -> 
+        let depth = indent_depth h in
+        if depth = 0 then
+          (match parse_multiline h with
+           | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
+           | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t
+           | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+           | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+           | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
+           | _ -> raise EmptyInput)
+        else let line = add_depth (String.trim h) (depth - 1) in
+          read_if conds bodies (acc ^ "\n" ^ line) new_line t
+    )
 and read_while (cond : expr) (body : string) (lines : string list) =
   match lines with
   | [] -> read_while cond body [read_line ()]
@@ -482,14 +482,14 @@ and if_decider = function
   | String("") -> false
   | Bool(false) -> false
   | Float(0.0)  -> false
-  | VList([]) -> false
+  | VList(a) -> if !a = [] then false else true
   | _ -> true
 
 and to_bool (exp : expr) (st : State.t) = 
   eval exp st |> if_decider
 
 and to_string (value:State.value) : string = (match value with
-    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" x |> 
+    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
                  (fun x -> if String.length x = 1 then x ^ "]" 
                    else String.sub x 0 (String.length x -2) ^ "]")
     | Int x -> string_of_int x
