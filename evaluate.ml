@@ -394,22 +394,33 @@ and evaluate input st = match input with
 and read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
   if new_line then
   let () = print_string "... " in
-  (match parse_multiline (read_line ()) with
+  let line = read_line () in
+  let depth = indent_depth line in
+  if depth = 0 then
+  (match parse_multiline line with
   | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
   | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
   | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
   | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
   | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
   | _ -> raise EmptyInput)
+  else let indented_line = add_depth (String.trim line) (depth - 1) in
+  read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines
   else (match lines with
   | [] -> List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies))
-  | h::t -> (match parse_multiline h with
+  | h::t -> 
+  let depth = indent_depth h in
+  if depth = 0 then
+  (match parse_multiline h with
   | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)))
   | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t
   | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
   | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
   | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
-  | _ -> raise EmptyInput))
+  | _ -> raise EmptyInput)
+  else let line = add_depth (String.trim h) (depth - 1) in
+  read_if conds bodies (acc ^ "\n" ^ line) new_line t
+  )
 and read_while (cond : expr) (body : string) (lines : string list) =
   match lines with
   | [] -> read_while cond body [read_line ()]

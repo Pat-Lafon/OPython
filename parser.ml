@@ -241,6 +241,28 @@ let parse_line (line : string) : string option * expr =
   | While (cond, body) -> raise (WhileMultiline (cond, body)) 
   | Return (expr) -> raise (ReturnExpr (expr))
 
+let get_str_idx s char =
+  try String.index s char with
+  | Not_found -> -1
+
+let rec space_depth (line : string) (acc : int) : int =
+  if String.length line = 0 then acc
+  else if get_str_idx line '\t' = 0 
+    then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 4)
+  else if get_str_idx line ' ' = 0
+    then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 1)
+  else acc
+
+let indent_depth (line : string) = 
+  let spaces = space_depth line 0 in
+  if (mod) spaces 4 = 0 then spaces / 4
+  else raise (SyntaxError "Must use tab or four spaces for indents")
+
+let rec add_depth (line : string) (depth : int) = 
+  match depth with 
+  | 0 -> line
+  | x -> add_depth ("\t" ^ line) (depth - 1)
+
 let parse_multiline (line: string) : line_type =
   match line_type line with
   | Empty -> Empty

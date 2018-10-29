@@ -32,3 +32,7 @@ val parse_line : string -> string option * expr
 val line_type : string -> line_type
 
 val parse_multiline : string -> line_type
+
+val indent_depth : string -> int
+
+val add_depth : string -> int -> string
