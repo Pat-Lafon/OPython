@@ -41,28 +41,31 @@ let reserved_keywords = [
   "with"; "assert";	"finally"; "nonlocal"; "yield"; "break"; "for"; "not"; 
   "class"; "from"; "or"; "continue"; "global"; "pass"]
 
+(** [is_var_name s] is [s] if [s] is a valid variable name.
+    Raises SyntaxError otherwise *)
 let is_var_name (s:string) : string = 
-  (* Check that the first letter is not an integer*)
   let _ = let num = Char.code s.[0] in 
     if (48 <= num && num <= 57) 
     then raise (SyntaxError "invalid syntax")
     else () in
-  (* Check that every character in the string is a valid name character*)
   let _ = String.map (fun x -> let num = Char.code x in 
                        if (48 <= num && num <= 57) || (65 <= num && num <= 90) 
                           || (97 <= num && num <= 122) || (num = 95) 
                        then x 
                        else raise (SyntaxError "invalid syntax")) s in 
-  (* Check that var is not a reserved keyword *)
   if List.mem s reserved_keywords 
   then raise (SyntaxError "can't assign to keyword") 
   else s
 
+(** [not_mistaken str op] is true if [str] has not been confused to a similar 
+    operator with more characters and is in fact [op]. false otherwise.*)
 let not_mistaken str op = 
   let oplen = String.length op in
   if String.length str = oplen then true
   else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
 
+(** [get_idx str op] is the index number of the first occurrence of [op] in [str]
+    that is not enclosed in quotes, brackets, or parenthesis. *)
 let rec get_idx (str:string) (op:string) : int =
   let strlen = String.length str in
   let oplen = String.length op in 
@@ -91,10 +94,15 @@ let rec get_idx (str:string) (op:string) : int =
      | x -> get_idx_acc str (x+2) op)
   else get_idx_acc str 1 op
 and 
+  (** [get_idx_acc str num op] is the index number of the first occurrence of [op] in [str]
+      that is not enclosed in quotes, brackets, or parenthesis added to num. *)
   get_idx_acc (str:string) (num:int) (op:string) : int = 
   let acc = get_idx (String.sub str num (String.length str - num)) op in 
   if acc = -1 then -1 else num + acc
 
+(** [expr_contains line op] is None, max_int if none of the elements of [op] are
+    in [line] or Some (string, op), int is the earliest element from [op] in [line]
+    at the int index. *)
 let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option * int = 
   match op with
   | [] -> None, max_int
@@ -102,6 +110,8 @@ let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option *
     let current = get_idx line (fst h) in
     if current <> -1 && current < snd next then Some h, current else next
 
+(** [valid_paren str] is true if [str] has every open parenthesis closed, false 
+    otherwise *)
 let valid_paren str = match get_idx str ")" with 
   | exception (SyntaxError x) -> false
   | x -> if x = -1 then true else false
@@ -248,9 +258,9 @@ let get_str_idx s char =
 let rec space_depth (line : string) (acc : int) : int =
   if String.length line = 0 then acc
   else if get_str_idx line '\t' = 0 
-    then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 4)
+  then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 4)
   else if get_str_idx line ' ' = 0
-    then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 1)
+  then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 1)
   else acc
 
 let indent_depth (line : string) = 
