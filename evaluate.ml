@@ -377,10 +377,13 @@ and int (explist: expr list) (st: State.t) =
       | Int(x) -> Int(x)
       | Float(x) -> Int(int_of_float(x))
       | String(x) -> if int_of_string_opt(x) <> None then Int(int_of_string(x)) else failwith("can't do that")
-      | _ -> failwith("not really sure what to do with Function")
+      | Bool x -> if x then Int 1 else Int 0
+      | VList _ -> raise (TypeError "int() argument must be a string, a bytes-like object or a number, not 'list'")
+      | Function _ -> failwith "Should not be possible"
     )
   | [] -> Int(0)
-  | _ -> failwith("neither empty nor 1 arg")
+  | _ -> raise (TypeError "int() can't convert more than one argument")
+
 
 
 and built_in_function_names = ["append"; "len"; "range"; "printt"; "chr"; "bool"; "float"; "int"]
