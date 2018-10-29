@@ -145,10 +145,10 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-let rec exprlst (line:string): expr list =
+let rec exprlst (line:string) (chr:char): expr list =
   if line = "" then []
   else 
-    List.map (fun x -> parse_expr x operators) (split_on_char ',' line)
+    List.map (fun x -> parse_expr x operators) (split_on_char chr line)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
@@ -172,11 +172,11 @@ and
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
     else if args <> -1 && fstarg <> -1 
     then Function(String.sub line (fstarg+1) (args-fstarg-1), 
-                  exprlst(String.sub line 0 (fstarg) ^","^ String.sub line (args+1) (String.length line - args - 2)))
+                  exprlst(String.sub line 0 (fstarg) ^","^ String.sub line (args+1) (String.length line - args - 2))',')
     else if args <> -1 
-    then Function(String.sub line 0 (args), exprlst (String.sub line (args+1) (String.length line - (args + 2))))
+    then Function(String.sub line 0 (args), exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
     else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
-      Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2))))
+      Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2)))':')
     else Variable(line)
   | h :: t -> match expr_contains line h with
     | Some x, _ -> parse_expr_helper line x
