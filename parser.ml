@@ -116,6 +116,7 @@ let valid_paren str = match get_idx str ")" with
   | exception (SyntaxError x) -> false
   | x -> if x = -1 then true else false
 
+(** [trim str] is [str] with shell spaces and paren removed. *)
 let rec trim str : string =
   let newstr = String.trim str in
   if newstr <> str then trim newstr
@@ -126,11 +127,14 @@ let rec trim str : string =
     else str
   else str
 
+(** [split_on_char chr line] is [line] split into a list partitioned on each [chr]
+    not enclosed in parenthesis, brackets, or quotes. *)
 let rec split_on_char (chr:char) (line:string) : string list = 
   match get_idx line (Char.escaped chr) with
   | -1 -> line::[]
   | num -> (String.sub line 0 num)::(split_on_char chr (String.sub line (num+1) (String.length line - num -1))) 
 
+(** [is_assignment line] is true if [line] is an assignment statement, false otherwise. *)
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in
   if idx <> -1 then 
