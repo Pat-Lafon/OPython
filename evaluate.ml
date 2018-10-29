@@ -495,7 +495,7 @@ and to_string (value:State.value) : string = (match value with
     | Int x -> string_of_int x
     | Float x -> string_of_float x
     | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function (args, body) -> "<function " ^ body ^ " at 0x10b026268>"
+    | Function (args, body) -> "<function 3100 at 0x10b026268>"
     | String x -> "'" ^ x ^ "'")
 
 and print (value:State.value):unit = value |> to_string |> print_endline
