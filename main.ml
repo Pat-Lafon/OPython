@@ -64,7 +64,7 @@ let rec interpret (st:State.t) (lines: string list) (new_line : bool) : State.t 
       | exception (OverflowError x) -> print_endline ("OverflowError: "^x); interpret st [] true
       | exception (IndentationError x) -> print_endline ("IndentationError"^x); interpret st [] true
       | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); interpret st [] true
-      | exception EmptyInput -> print_endline "??"; interpret st [] true
+      | exception EmptyInput -> interpret st [] true
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
         let (conds, bodies) = read_if [cond] [] body (t = []) t in interpret_if conds bodies st
