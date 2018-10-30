@@ -458,7 +458,9 @@ and int (explist: expr list) (st: State.t) =
 
 
 
-and built_in_functions = [("append", append); ("len", len); ("range", range); ("printt", printt); ("chr", chr); ("bool", bool); ("float", float); ("int",int)]
+and built_in_functions = [("append", append); ("len", len); ("range", range); 
+                          ("printt", printt); ("chr", chr); ("bool", bool); ("float", float); 
+                          ("int",int); ("range", range); ("splice", splice)]
 
 
 (** [evaluate input st] determines whether or not [input] is an assignment statement;
