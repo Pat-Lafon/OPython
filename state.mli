@@ -1,5 +1,6 @@
 type value = Int of int | Float of float | String of string 
-           | Bool of bool | VList of value list | Function of (string list * string)
+           | Bool of bool | VList of value list ref | Function of (string list * string)
+
 type t = (string*value) list
 
 val empty : t 

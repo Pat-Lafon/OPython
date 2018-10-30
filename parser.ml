@@ -11,6 +11,7 @@ type expr = Binary of (expr * op * expr) | Unary of (op * expr)
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
                | While of (expr * string) | Def of (string * string list * string)
+               | Return of (expr) 
 
 exception SyntaxError of string
 exception TypeError of string
@@ -23,6 +24,7 @@ exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
 exception DefMultiline of (string * string list * string)
+exception ReturnExpr of expr
 
 let operators = [[("or", Or)];
                  [("and", And);];
@@ -39,28 +41,31 @@ let reserved_keywords = [
   "with"; "assert";	"finally"; "nonlocal"; "yield"; "break"; "for"; "not"; 
   "class"; "from"; "or"; "continue"; "global"; "pass"]
 
+(** [is_var_name s] is [s] if [s] is a valid variable name.
+    Raises SyntaxError otherwise *)
 let is_var_name (s:string) : string = 
-  (* Check that the first letter is not an integer*)
   let _ = let num = Char.code s.[0] in 
     if (48 <= num && num <= 57) 
     then raise (SyntaxError "invalid syntax")
     else () in
-  (* Check that every character in the string is a valid name character*)
   let _ = String.map (fun x -> let num = Char.code x in 
                        if (48 <= num && num <= 57) || (65 <= num && num <= 90) 
                           || (97 <= num && num <= 122) || (num = 95) 
                        then x 
                        else raise (SyntaxError "invalid syntax")) s in 
-  (* Check that var is not a reserved keyword *)
   if List.mem s reserved_keywords 
   then raise (SyntaxError "can't assign to keyword") 
   else s
 
+(** [not_mistaken str op] is true if [str] has not been confused to a similar 
+    operator with more characters and is in fact [op]. false otherwise.*)
 let not_mistaken str op = 
   let oplen = String.length op in
   if String.length str = oplen then true
   else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
 
+(** [get_idx str op] is the index number of the first occurrence of [op] in [str]
+    that is not enclosed in quotes, brackets, or parenthesis. *)
 let rec get_idx (str:string) (op:string) : int =
   let strlen = String.length str in
   let oplen = String.length op in 
@@ -89,10 +94,15 @@ let rec get_idx (str:string) (op:string) : int =
      | x -> get_idx_acc str (x+2) op)
   else get_idx_acc str 1 op
 and 
+  (** [get_idx_acc str num op] is the index number of the first occurrence of [op] in [str]
+      that is not enclosed in quotes, brackets, or parenthesis added to num. *)
   get_idx_acc (str:string) (num:int) (op:string) : int = 
   let acc = get_idx (String.sub str num (String.length str - num)) op in 
   if acc = -1 then -1 else num + acc
 
+(** [expr_contains line op] is None, max_int if none of the elements of [op] are
+    in [line] or Some (string, op), int is the earliest element from [op] in [line]
+    at the int index. *)
 let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option * int = 
   match op with
   | [] -> None, max_int
@@ -100,10 +110,13 @@ let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option *
     let current = get_idx line (fst h) in
     if current <> -1 && current < snd next then Some h, current else next
 
+(** [valid_paren str] is true if [str] has every open parenthesis closed, false 
+    otherwise *)
 let valid_paren str = match get_idx str ")" with 
   | exception (SyntaxError x) -> false
   | x -> if x = -1 then true else false
 
+(** [trim str] is [str] with shell spaces and paren removed. *)
 let rec trim str : string =
   let newstr = String.trim str in
   if newstr <> str then trim newstr
@@ -114,11 +127,15 @@ let rec trim str : string =
     else str
   else str
 
+(** [split_on_char chr line] is [line] split into a list partitioned on each [chr]
+    not enclosed in parenthesis, brackets, or quotes. *)
 let rec split_on_char (chr:char) (line:string) : string list = 
   match get_idx line (Char.escaped chr) with
   | -1 -> line::[]
-  | num -> (String.sub line 0 num)::(split_on_char chr (String.sub line (num+1) (String.length line - num -1))) 
+  | num -> String.sub line 0 num::
+           split_on_char chr (String.sub line (num+1) (String.length line - num -1))
 
+(** [is_assignment line] is true if [line] is an assignment statement, false otherwise. *)
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in
   if idx <> -1 then 
@@ -129,8 +146,12 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-let rec exprlst (line:string): expr list =
-  List.map (fun x -> parse_expr x operators) (split_on_char ',' line)
+(** [exprlst line chr] is an expr list of [line] partitioned into elements by [chr] *)
+let rec exprlst (line:string) (chr:char): expr list =
+  if line = "" then []
+  else 
+    List.map (fun x -> parse_expr x operators) (split_on_char chr line)
+(** [parse_expr_helper] is an expr made from [str] based on [op] *)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
@@ -138,6 +159,7 @@ and parse_expr_helper (str:string) (op:string*op) : expr =
   let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
   if trim left = "" then Unary (snd op, parse_expr right operators) 
   else Binary(parse_expr left operators, snd op, parse_expr right operators) 
+(** [parse_expr line oplist] is an expr made up of [line] and the operations in [oplist] *)
 and
   parse_expr (line:string) (oplist:(string*op) list list) : expr = 
   let line = trim line in let args = get_idx line "(" in let fstarg =  get_idx line "." in 
@@ -152,22 +174,33 @@ and
     else if int_of_string_opt line <> None then Value(Int(int_of_string line))
     else if float_of_string_opt line <> None then Value(Float(float_of_string line))
     else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
-    else if args != -1 && fstarg != -1 
-    then Function(String.sub line fstarg (args-fstarg), 
-                  exprlst(String.sub line 0 (fstarg-1) ^ String.sub line (args+1) (String.length line - args - 2)))
-    else if args != -1 
-    then Function(String.sub line 0 (args), exprlst (String.sub line (args+1) (String.length line - (args + 2))))
+    else if args <> -1 && fstarg <> -1 
+    then Function(String.sub line (fstarg+1) (args-fstarg-1), 
+                  exprlst(String.sub line 0 (fstarg) ^","^ 
+                          String.sub line (args+1) (String.length line - args - 2))',')
+    else if args <> -1 
+    then Function(String.sub line 0 (args), 
+                  exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
+    else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
+      Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2)))':')
     else Variable(line)
   | h :: t -> match expr_contains line h with
     | Some x, _ -> parse_expr_helper line x
     | None, _ -> parse_expr line t
 
-(* Will have to revisit this to deal with +=, -= %=, ect. *)
+(** [parse_assignment line] is Some string, expr where the string option contains 
+    the variable name that is being assigned to and expr is the rest of [line] parsed 
+    into an expr. *)
 let parse_assignment (line:string) : string option * expr = 
-  let eq_idx = String.index line '=' in
-  let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
+  let eq_idx = get_idx line "=" in
   let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
-  (Some left, parse_expr right operators)
+  if eq_idx = 1 then Some (is_var_name (Char.escaped (line.[0]))), parse_expr right operators
+  else
+    match expr_contains (String.sub line (eq_idx - 2) 2) (List.flatten operators) with 
+    | Some x, _ -> let left = is_var_name (String.trim (String.sub line 0 (eq_idx-(String.length (fst x))))) in
+      Some left, Binary(Variable left, snd x, parse_expr right operators)
+    | None, _ -> let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
+      Some left, parse_expr right operators
 
 (** [paren_check str idx acc] returns true if parentheses are valid and false otherwise *)
 let rec paren_check (str: string) idx acc =
@@ -178,18 +211,13 @@ let rec paren_check (str: string) idx acc =
   else if String.get str idx = '"' then paren_check str (idx+2+(get_idx (String.sub str (idx+1) (String.length str -idx-1)) "\"")) acc
   else paren_check str (idx+1) acc
 
-(* Will become some helper that raises a Syntax error if not valid
-   For example, catch cases like: 'hello  *)
-let valid_line line = 
-  if not (paren_check line 0 0) then raise (SyntaxError "Invalid parenthesis")
-  else ()
-
 (** Matches if statement *)
 let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
 let elif_regex = Str.regexp "^elif \\(.*\\):\\(.*\\)"
 let else_regex = Str.regexp "^else *: *"
 let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
 let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
+let return_regex = Str.regexp "^return \\(.*\\)"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
@@ -197,11 +225,16 @@ let is_else line = Str.string_match else_regex line 0
 let is_elif line = Str.string_match elif_regex line 0
 let is_while line = Str.string_match while_regex line 0
 let is_def line = Str.string_match def_regex line 0
+let is_return line = Str.string_match return_regex line 0
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
   let body = String.trim (Str.matched_group 2 line) in
   (parse_expr condition operators, body)
+
+let parse_return (line: string) : (expr) =
+  let return_expr = Str.matched_group 1 line in
+  (parse_expr return_expr operators)
 
 let parse_def (line: string) : (string * string list * string) =
   let fn_name = Str.matched_group 1 line in
@@ -218,6 +251,7 @@ let line_type (line : string) : line_type =
   else if is_else line then Else
   else if is_while line then While (parse_if line)
   else if is_def line then Def (parse_def line)
+  else if is_return line then Return (parse_return line)
   else Expression
 
 let parse_line (line : string) : string option * expr = 
@@ -232,6 +266,29 @@ let parse_line (line : string) : string option * expr =
   (* line type is helpful for later *)
   | Line l -> (None, parse_expr line operators)
   | While (cond, body) -> raise (WhileMultiline (cond, body)) 
+  | Return (expr) -> raise (ReturnExpr (expr))
+
+let get_str_idx s char =
+  try String.index s char with
+  | Not_found -> -1
+
+let rec space_depth (line : string) (acc : int) : int =
+  if String.length line = 0 then acc
+  else if get_str_idx line '\t' = 0 
+  then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 4)
+  else if get_str_idx line ' ' = 0
+  then space_depth (String.sub line 1 ((String.length line) - 1)) (acc + 1)
+  else acc
+
+let indent_depth (line : string) = 
+  let spaces = space_depth line 0 in
+  if (mod) spaces 4 = 0 then spaces / 4
+  else raise (SyntaxError "Must use tab or four spaces for indents")
+
+let rec add_depth (line : string) (depth : int) = 
+  match depth with 
+  | 0 -> line
+  | x -> add_depth ("\t" ^ line) (depth - 1)
 
 let parse_multiline (line: string) : line_type =
   match line_type line with
@@ -239,6 +296,7 @@ let parse_multiline (line: string) : line_type =
   | Assignment -> Line line
   | Expression -> Line line
   | Line line -> Line line
+  | Return (expr) -> Line line
   | If (cond, body) -> If (cond, body)
   | Elif (cond, body) -> Elif (cond, body)
   | While (cond, body) -> While (cond, body)
