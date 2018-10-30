@@ -291,7 +291,7 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
     | _, _ -> false
   in let idx value l = List.find (fun x -> func (x,value)) l 
   in match List.map (fun x -> eval x st) lst with
-  | h::VList(t)::[] -> idx h t
+  | h::VList(t)::[] -> idx h !t
   | String(s1)::String(s)::[] -> 
     let rec search sub str = if (String.length sub > String.length str) then 
         String.length sub else 
@@ -313,20 +313,20 @@ and splice (lst : expr list) (st : State.t) : State.value =
   | h1::h2::h3::[] -> begin match (eval h1 st, eval h2 st, eval h3 st) with 
       | String(s), String(""), String("") -> String(s)
       | VList(l), String(""), String("") -> VList(l)
-      | VList(l), String(""), Int(x) -> VList(splice_helper l 0 x 1)
-      | VList(l), Int(x), String("") -> VList(splice_helper l x (List.length l) 1)
-      | VList(l), Int(x), Int(y) -> VList(splice_helper l x y 1)
+      | VList(l), String(""), Int(x) -> VList(ref(splice_helper !l 0 x 1))
+      | VList(l), Int(x), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
+      | VList(l), Int(x), Int(y) -> VList(ref(splice_helper !l x y 1))
       | _ -> raise (TypeError ("Operation not supported"))
     end
   | h1::h2::h3::h4::[] -> begin match (eval h1 st,eval h2 st, eval h3 st, eval h4 st) with 
       | VList(l), String(""), String(""), String("") -> VList(l)
-      | VList(l), String(""), String(""), Int(x) -> VList(splice_helper l 0 (List.length l) x)
-      | VList(l), String(""), Int(x), String("") -> VList(splice_helper l 0 x 1)
-      | VList(l), Int(x), String(""), String("") -> VList(splice_helper l x (List.length l) 1)
-      | VList(l), Int(x), Int(y), String("") -> VList(splice_helper l x y 1)
-      | VList(l), Int(x), String(""), Int(y) -> VList(splice_helper l x (List.length l) y)
-      | VList(l), String(""), Int(x), Int(y) -> VList(splice_helper l 0 x y)
-      | VList(l), Int(x), Int(y), Int(z) -> VList(splice_helper l x y z)
+      | VList(l), String(""), String(""), Int(x) -> VList(ref(splice_helper !l 0 (List.length !l) x))
+      | VList(l), String(""), Int(x), String("") -> VList(ref(splice_helper !l 0 x 1))
+      | VList(l), Int(x), String(""), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
+      | VList(l), Int(x), Int(y), String("") -> VList(ref(splice_helper !l x y 1))
+      | VList(l), Int(x), String(""), Int(y) -> VList(ref(splice_helper !l x (List.length !l) y))
+      | VList(l), String(""), Int(x), Int(y) -> VList(ref(splice_helper !l 0 x y))
+      | VList(l), Int(x), Int(y), Int(z) -> VList(ref(splice_helper !l x y z))
       | _ -> raise (TypeError ("Operation not supported"))
     end 
   | _ -> raise (TypeError ("Operation not supported"))
@@ -456,7 +456,7 @@ and int (explist: expr list) (st: State.t) =
 
 
 
-and built_in_function_names = ["append"; "len"; "range"; "printt"; "chr"; "bool"; "float"; "int"]
+
 
 and built_in_functions = [("append", append); ("len", len); ("range", range); ("printt", printt); ("chr", chr); ("bool", bool); ("float", float); ("int",int)]
 
