@@ -3,6 +3,7 @@ open Evaluate
 open Parser
 open Utils
 
+(** Read next lines that are part of the if conditional block *)
 let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
   if new_line then
     let () = print_string "... " in
@@ -37,6 +38,7 @@ let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_l
       read_if conds bodies (acc ^ "\n" ^ line) new_line t
     )
 
+(** Read next lines that are part of the while loop *)
 let rec read_while (cond : expr) (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; read_while cond body [read_line ()] new_line)
@@ -50,6 +52,7 @@ let rec read_while (cond : expr) (body : string) (lines : string list) (new_line
         | Empty -> (cond, String.trim body, lines)
         | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
 
+(** Read the next lines as part of the body of the function *)
 let rec read_function (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; read_function body [read_line ()] new_line)
@@ -62,6 +65,8 @@ let rec read_function (body : string) (lines : string list) (new_line : bool) =
       | Empty -> (String.trim body, lines)
       | _ -> read_function (body ^ "\n" ^ indent_line) t new_line)
 
+(** [interpret st lines new_line] runs python [lines] to create a new state. 
+If [new_line] is true, then interface prompts uses for new lines. *)
 let rec interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
   match lines with
   | [] -> if new_line then (print_string ">>> "; interpret st [read_line ()] new_line) else st
@@ -87,7 +92,7 @@ let rec interpret (st:State.t) (lines: string list) (new_line : bool) : State.t 
         (* Parse the body of the function *)
         let (function_body, remaining_lines) = read_function (String.trim init_body) t new_line in
         (* Assign function definition to function name in global state *)
-        let new_st  = Evaluate.evaluate (Some name, Value(Function(args, function_body))) st in
+        let new_st  = Evaluate.evaluate (Some name, Value(Function(name, args, function_body))) st in
         interpret new_st remaining_lines new_line
       | newst -> interpret newst t new_line)
 and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : State.t =
