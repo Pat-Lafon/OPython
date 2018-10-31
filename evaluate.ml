@@ -398,7 +398,7 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
 
 
 
-and built_in_function_names = ["append"; "length"; "range"]
+
 (** Type casts *)
 and chr (explist : expr list) (st: State.t) =
   let vallist = List.map (fun x -> eval x st) explist in
@@ -456,11 +456,13 @@ and int (explist: expr list) (st: State.t) =
 
 
 
-
+and built_in_function_names = ["append"; "len"; "range"; 
+                               "printt"; "chr"; "bool"; "float"; 
+                               "int"; "range"; "splice"; "index"]
 
 and built_in_functions = [("append", append); ("len", len); ("range", range); 
                           ("printt", printt); ("chr", chr); ("bool", bool); ("float", float); 
-                          ("int",int); ("range", range); ("splice", splice)]
+                          ("int",int); ("range", range); ("splice", splice); ("index", index)]
 
 
 (** [evaluate input st] determines whether or not [input] is an assignment statement;
