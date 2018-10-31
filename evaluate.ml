@@ -316,10 +316,10 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
     in if (search s1 s >= String.length s) then Int(-1) else Int(search s1 s)
   | _ -> raise (TypeError ("Operation not supported"))
 
-and splice (lst : expr list) (st : State.t) : State.value = 
+and splice (lst : expr list) (st : State.t) : State.value = (* error when a[:<length>:], error in helper *)
   let rec helper lst x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
-    if y >= List.length lst then helper lst x (List.length lst) z else 
+    if y > List.length lst then helper lst x (List.length lst) z else 
     if x >= y then [] else List.nth lst x :: helper lst (x+z) y z in
   let decider x len = if x < - len then 0 else 
     if x < 0 then x + len else if x > len then len else x in
@@ -327,7 +327,7 @@ and splice (lst : expr list) (st : State.t) : State.value =
     helper lst (decider x (List.length lst)) (decider y (List.length lst)) (decider z (List.length lst)) in
   let rec helper_str str x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
-    if y >= String.length str then helper_str str x (List.length lst) z else 
+    if y > String.length str then helper_str str x (List.length lst) z else 
     if x >= y then "" else String.concat "" ([String.sub str x 1;  helper_str str (x+z) y z]) in
   let splice_str str x y z =
     helper_str str (decider x (String.length str)) 
@@ -347,7 +347,7 @@ and splice (lst : expr list) (st : State.t) : State.value =
       | String(s), Int(x), Int(y) -> String(splice_str s x y 1)
       | VList(l), String(""), String("") -> VList(l)
       | VList(l), String(""), Int(x) -> VList(ref(splice_helper !l 0 x 1))
-      | VList(l), Int(x), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
+      | VList(l), Int(x), String("") -> VList(ref(splice_helper !l x (List.length !l) 1)) 
       | VList(l), Int(x), Int(y) -> VList(ref(splice_helper !l x y 1))
       | _ -> raise (TypeError ("Operation not supported"))
     end
@@ -361,7 +361,7 @@ and splice (lst : expr list) (st : State.t) : State.value =
       | String(s), String(""), Int(x), Int(y) -> String(splice_str s 0 x y)  
       | String(s), Int(x), Int(y), Int(z) -> String(splice_str s x y z) 
       | VList(l), String(""), String(""), String("") -> VList(l)
-      | VList(l), String(""), String(""), Int(x) -> VList(ref(splice_helper !l 0 (List.length !l) x))
+      | VList(l), String(""), String(""), Int(x) -> VList(ref(splice_helper !l 0 (List.length !l) x)) 
       | VList(l), String(""), Int(x), String("") -> VList(ref(splice_helper !l 0 x 1))
       | VList(l), Int(x), String(""), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
       | VList(l), Int(x), Int(y), String("") -> VList(ref(splice_helper !l x y 1))
