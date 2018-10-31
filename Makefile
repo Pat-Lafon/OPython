@@ -21,7 +21,7 @@ run:
 	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
 
 all:
-	$(OCAMLBUILD) opython.byte && mv opython.byte opython && alias opython="./opython"
+	$(OCAMLBUILD) opython.byte && mv opython.byte opython && alias OPython="./opython"
 
 check:
 	bash checkenv.sh
