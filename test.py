@@ -1,3 +1,7 @@
 def f(x):
-    return x * 2
+    while x < 5:
+        x = x + 1
+    if True:
+        return 15
+    return 20
 f(2)
