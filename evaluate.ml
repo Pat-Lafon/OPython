@@ -307,8 +307,8 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
     | _, _ -> false
   in let idx value l = List.find (fun x -> func (x,value)) l 
   in match List.map (fun x -> eval x st) lst with
-  | h::VList(t)::[] -> idx h !t
-  | String(s1)::String(s)::[] -> 
+  | VList(t)::h::[] -> idx h !t
+  | String(s)::String(s1)::[] -> 
     let rec search sub str = if (String.length sub > String.length str) then 
         String.length sub else 
       if String.sub str 0 (String.length sub) = sub then
@@ -333,6 +333,13 @@ and splice (lst : expr list) (st : State.t) : State.value =
     helper_str str (decider x (String.length str)) 
       (decider y (String.length str)) (decider z (String.length str)) in
   match lst with
+  | h1::h2::[] -> begin match (eval h1 st, eval h2 st) with
+      | String(s), Int(x) -> String(String.sub s x 1)
+      | VList(l), Int(x) -> begin match List.nth !l x with
+          | x -> x
+        end
+      | _ -> raise (TypeError ("Operation not supported"))
+    end
   | h1::h2::h3::[] -> begin match (eval h1 st, eval h2 st, eval h3 st) with 
       | String(s), String(""), String("") -> String(s)
       | String(s), String(""), Int(x) -> String(splice_str s 0 x 1)
@@ -499,57 +506,57 @@ and read_if (conds : expr list) (bodies : string list) (acc : string) (new_line 
     let depth = indent_depth line in
     if depth = 0 then
       (match parse_multiline line with
-      | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
-      | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
-      | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-      | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-      | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
-      | _ -> raise EmptyInput)
+       | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
+       | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
+       | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+       | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+       | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
+       | _ -> raise EmptyInput)
     else 
       let indented_line = add_depth (String.trim line) (depth - 1) in
       read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines
   else (match lines with
-    | [] -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
-    | h::t -> 
-    let depth = indent_depth h in
-    if depth = 0 then
-      (match parse_multiline h with
-      | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
-      | Line line -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
-      (* | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t *)
-      | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-      | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-      | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
-      | _ -> raise EmptyInput)
-    else 
-      let line = add_depth (String.trim h) (depth - 1) in
-      read_if conds bodies (acc ^ "\n" ^ line) new_line t
+      | [] -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
+      | h::t -> 
+        let depth = indent_depth h in
+        if depth = 0 then
+          (match parse_multiline h with
+           | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
+           | Line line -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
+           (* | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t *)
+           | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+           | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+           | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
+           | _ -> raise EmptyInput)
+        else 
+          let line = add_depth (String.trim h) (depth - 1) in
+          read_if conds bodies (acc ^ "\n" ^ line) new_line t
     )
 
 and read_while (cond : expr) (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; read_while cond body [read_line ()] new_line)
-          else (cond, String.trim body, [])
+    else (cond, String.trim body, [])
   | line::t -> 
     let depth = indent_depth line in
     if depth = 0 then
       (cond, String.trim body, lines)
     else let indent_line = add_depth (String.trim line) (depth - 1) in
       (match parse_multiline indent_line with
-        | Empty -> (cond, String.trim body, lines)
-        | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
+       | Empty -> (cond, String.trim body, lines)
+       | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
 
 and read_function (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; read_function body [read_line ()] new_line)
-          else (String.trim body, [])
+    else (String.trim body, [])
   | line::t -> 
     let depth = indent_depth line in
     if depth = 0 then (String.trim body, lines)
     else let indent_line = add_depth (String.trim line) (depth - 1) in
       (match parse_multiline line with
-      | Empty -> (String.trim body, lines)
-      | _ -> read_function (body ^ "\n" ^ indent_line) t new_line)
+       | Empty -> (String.trim body, lines)
+       | _ -> read_function (body ^ "\n" ^ indent_line) t new_line)
 
 and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
   match lines with
@@ -605,10 +612,10 @@ and run_function f_name expr_args global_st =
   | Function(name, string_args, body) as f -> 
     let func_st = create_function_state expr_args string_args State.empty global_st f_name f in
     let new_state = (try interpret func_st (String.split_on_char '\n' (String.trim body)) false with
-    | EarlyReturn st -> st) in
+        | EarlyReturn st -> st) in
     (match State.find "return" new_state with
-    | None -> NoneVal
-    | Some x -> x)
+     | None -> NoneVal
+     | Some x -> x)
   | _ -> raise (NameError (f_name ^ " cannot be called"))
 
 (** Initialize a function scope using arguments passed in*)
@@ -638,6 +645,7 @@ and to_bool (exp : expr) (st : State.t) =
 (**[to_string] returns the string of a value*)
 and to_string (value:State.value) : string = 
   match value with
+<<<<<<< HEAD
     | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
                  (fun x -> if String.length x = 1 then x ^ "]" 
                    else String.sub x 0 (String.length x -2) ^ "]")
@@ -650,6 +658,17 @@ and to_string (value:State.value) : string =
       "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
     | String x -> "'" ^ x ^ "'"
     | NoneVal -> "None"
+=======
+  | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
+               (fun x -> if String.length x = 1 then x ^ "]" 
+                 else String.sub x 0 (String.length x -2) ^ "]")
+  | Int x -> string_of_int x
+  | Float x -> string_of_float x
+  | Bool x -> string_of_bool x |> String.capitalize_ascii
+  | Function (args, body) -> "<function 3100 at 0x10b026268>"
+  | String x -> "'" ^ x ^ "'"
+  | NoneVal -> "None"
+>>>>>>> 8fe24846eb381859243a12ea332d3757a5de961c
 
 and print (value:State.value):unit = value |> to_string |> print_endline
 
