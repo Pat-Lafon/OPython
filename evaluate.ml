@@ -291,14 +291,14 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
     | _, _ -> false
   in let idx value l = List.find (fun x -> func (x,value)) l 
   in match List.map (fun x -> eval x st) lst with
-  | h::VList(t)::[] -> idx h !t
-  | String(s1)::String(s)::[] -> 
+  | VList(t)::h::[] -> idx h !t
+  | String(s)::String(s1)::[] -> 
     let rec search sub str = if (String.length sub > String.length str) then 
         String.length sub else 
       if String.sub str 0 (String.length sub) = sub then
         0 else (1 + search sub (String.sub str 1 (String.length sub)))
     in if (search s1 s >= String.length s) then Int(-1) else Int(search s1 s)
-  | _ -> raise (TypeError ("Operation not supported"))
+  | _ -> raise (TypeError ("Operation not supported 111"))
 
 and splice (lst : expr list) (st : State.t) : State.value = 
   let rec helper lst x y z = if z = 0 then 
@@ -317,6 +317,13 @@ and splice (lst : expr list) (st : State.t) : State.value =
     helper_str str (decider x (String.length str)) 
       (decider y (String.length str)) (decider z (String.length str)) in
   match lst with
+  | h1::h2::[] -> begin match (eval h1 st, eval h2 st) with
+      | String(s), Int(x) -> String(String.sub s x 1)
+      | VList(l), Int(x) -> begin match List.nth !l x with
+          | x -> x
+        end
+      | _ -> raise (TypeError ("Operation not supported 2"))
+    end
   | h1::h2::h3::[] -> begin match (eval h1 st, eval h2 st, eval h3 st) with 
       | String(s), String(""), String("") -> String(s)
       | String(s), String(""), Int(x) -> String(splice_str s 0 x 1)
@@ -326,7 +333,7 @@ and splice (lst : expr list) (st : State.t) : State.value =
       | VList(l), String(""), Int(x) -> VList(ref(splice_helper !l 0 x 1))
       | VList(l), Int(x), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
       | VList(l), Int(x), Int(y) -> VList(ref(splice_helper !l x y 1))
-      | _ -> raise (TypeError ("Operation not supported"))
+      | _ -> raise (TypeError ("Operation not supported 1"))
     end
   | h1::h2::h3::h4::[] -> begin match (eval h1 st,eval h2 st, eval h3 st, eval h4 st) with 
       | String(s), String(""), String(""), String("") -> String(s)
@@ -345,9 +352,9 @@ and splice (lst : expr list) (st : State.t) : State.value =
       | VList(l), Int(x), String(""), Int(y) -> VList(ref(splice_helper !l x (List.length !l) y))
       | VList(l), String(""), Int(x), Int(y) -> VList(ref(splice_helper !l 0 x y))
       | VList(l), Int(x), Int(y), Int(z) -> VList(ref(splice_helper !l x y z))
-      | _ -> raise (TypeError ("Operation not supported"))
+      | _ -> raise (TypeError ("Operation not supported 2"))
     end 
-  | _ -> raise (TypeError ("Operation not supported"))
+  | _ -> raise (TypeError ("Operation not supported 3"))
 
 
 and run_function f_name expr_args global_st = 
