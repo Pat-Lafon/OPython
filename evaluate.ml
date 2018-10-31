@@ -384,13 +384,14 @@ and append (explist : expr list) (st : State.t) =
     )
   | _ -> failwith("not enough args")
 
-and helper_printt (explist : expr list) (st : State.t)=
+and helper_print (explist : expr list) (st : State.t)=
   match explist with
   | [] -> ""
-  | h::t -> to_string(eval h st) ^ " " ^ helper_printt t st
+  | h::t -> to_string(eval h st) ^ " " ^ helper_print t st
 
-and printt (explist : expr list) (st: State.t) =
-  String(helper_printt explist st) (*|> print_endline *)
+and print (explist : expr list) (st: State.t) =
+  print_endline(helper_print explist st);
+  NoneVal (*|> print_endline *)
 
 and len (lst : expr list) (st : State.t) : State.value = match lst with
   | h::[] -> begin match eval h st with 
@@ -485,11 +486,11 @@ and int (explist: expr list) (st: State.t) =
 
 
 and built_in_function_names = ["append"; "len"; "range"; 
-                               "printt"; "chr"; "bool"; "float"; 
+                               "print"; "chr"; "bool"; "float"; 
                                "int"; "range"; "splice"; "index"]
 
 and built_in_functions = [("append", append); ("len", len); ("range", range); 
-                          ("printt", printt); ("chr", chr); ("bool", bool); ("float", float); 
+                          ("print", print); ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); ("index", index)]
 
 
@@ -500,7 +501,7 @@ and built_in_functions = [("append", append); ("len", len); ("range", range);
     occur.*)
 and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
-  | None, expr -> print (eval expr st); st
+  | None, expr -> printt (eval expr st); st
 
 and read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
   if new_line then
@@ -651,9 +652,11 @@ and to_string (value:State.value) : string =
   | Bool x -> string_of_bool x |> String.capitalize_ascii
   | Function (args, body) -> "<function 3100 at 0x10b026268>"
   | String x -> "'" ^ x ^ "'"
-  | NoneVal -> "None"
+  | NoneVal -> "NoneVal"
 
-and print (value:State.value):unit = value |> to_string |> print_endline
+and printt (value:State.value):unit = match to_string value with
+  | "NoneVal" -> ()
+  | s -> print_endline s
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
   let func = Function(args, body) in insert fnc_name func st
