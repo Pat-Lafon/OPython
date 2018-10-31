@@ -1,6 +1,7 @@
 open State
 open Evaluate
 open Parser
+open Utils
 
 let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
   if new_line then
@@ -49,11 +50,6 @@ let rec read_while (cond : expr) (body : string) (lines : string list) (new_line
         | Empty -> (cond, String.trim body, lines)
         | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
 
-let rec p_list lst =
-  match lst with
-  | [] -> "END" 
-  | h::t -> (h ^ "," ^ (p_list t))
-
 let rec read_function (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; read_function body [read_line ()] new_line)
@@ -90,6 +86,7 @@ let rec interpret (st:State.t) (lines: string list) (new_line : bool) : State.t 
       | exception (DefMultiline (name, args, init_body)) -> 
         (* Parse the body of the function *)
         let (function_body, remaining_lines) = read_function (String.trim init_body) t new_line in
+        (* Assign function definition to function name in global state *)
         let new_st  = Evaluate.evaluate (Some name, Value(Function(args, function_body))) st in
         interpret new_st remaining_lines new_line
       | newst -> interpret newst t new_line)
