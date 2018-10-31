@@ -163,30 +163,32 @@ and parse_expr_helper (str:string) (op:string*op) : expr =
 and
   parse_expr (line:string) (oplist:(string*op) list list) : expr = 
   let line = trim line in let args = get_idx line "(" in let fstarg =  get_idx line "." in 
-  match oplist with
-  | [] -> 
-    if line.[0] = '"' || line.[0] = '\'' 
-    then Value(String(String.sub line 1 (String.length line-2)))
-    else if line.[0] = '[' && line.[String.length line-1] = ']'
-    then if String.length line = 2 then List([])
-      else List(List.map (fun x -> parse_expr x operators) 
-                  (split_on_char ',' (String.sub line 1 (String.length line - 2))))
-    else if int_of_string_opt line <> None then Value(Int(int_of_string line))
-    else if float_of_string_opt line <> None then Value(Float(float_of_string line))
-    else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
-    else if args <> -1 && fstarg <> -1 
-    then Function(String.sub line (fstarg+1) (args-fstarg-1), 
-                  exprlst(String.sub line 0 (fstarg) ^","^ 
-                          String.sub line (args+1) (String.length line - args - 2))',')
-    else if args <> -1 
-    then Function(String.sub line 0 (args), 
-                  exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
-    else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
-      Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2)))':')
-    else Variable(line)
-  | h :: t -> match expr_contains line h with
-    | Some x, _ -> parse_expr_helper line x
-    | None, _ -> parse_expr line t
+  if line = "" then Value(String(""))
+  else
+    match oplist with
+    | [] -> 
+      if line.[0] = '"' || line.[0] = '\'' 
+      then Value(String(String.sub line 1 (String.length line-2)))
+      else if line.[0] = '[' && line.[String.length line-1] = ']'
+      then if String.length line = 2 then List([])
+        else List(List.map (fun x -> parse_expr x operators) 
+                    (split_on_char ',' (String.sub line 1 (String.length line - 2))))
+      else if int_of_string_opt line <> None then Value(Int(int_of_string line))
+      else if float_of_string_opt line <> None then Value(Float(float_of_string line))
+      else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
+      else if args <> -1 && fstarg <> -1 
+      then Function(String.sub line (fstarg+1) (args-fstarg-1), 
+                    exprlst(String.sub line 0 (fstarg) ^","^ 
+                            String.sub line (args+1) (String.length line - args - 2))',')
+      else if args <> -1 
+      then Function(String.sub line 0 (args), 
+                    exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
+      else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
+        Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2)))':')
+      else Variable(line)
+    | h :: t -> match expr_contains line h with
+      | Some x, _ -> parse_expr_helper line x
+      | None, _ -> parse_expr line t
 
 (** [parse_assignment line] is Some string, expr where the string option contains 
     the variable name that is being assigned to and expr is the rest of [line] parsed 
