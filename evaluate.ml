@@ -301,6 +301,7 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
   | _ -> raise (TypeError ("Operation not supported"))
 
 and splice (lst : expr list) (st : State.t) : State.value = 
+  let () = print (eval(List.hd lst) st) in 
   let rec helper lst x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y >= List.length lst then helper lst x (List.length lst) z else 
