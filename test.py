@@ -1,7 +1,9 @@
 def f(x):
-    while x < 5:
-        x = x + 1
-    if True:
-        return 15
-    return 20
-f(2)
+    if x == 0 or x == 1:
+        return 1
+    return f(x-2) + f(x-1)
+
+x = 0
+while x < 10:
+    f(x)
+    x = x + 1
