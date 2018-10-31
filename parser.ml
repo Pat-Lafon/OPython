@@ -42,7 +42,7 @@ let reserved_keywords = [
   "class"; "from"; "or"; "continue"; "global"; "pass"]
 
 (** [is_var_name s] is [s] if [s] is a valid variable name.
-    Raises SyntaxError otherwise *)
+    Raises SyntaxError otherwise *) 
 let is_var_name (s:string) : string = 
   let _ = let num = Char.code s.[0] in 
     if (48 <= num && num <= 57) 
@@ -100,6 +100,32 @@ and
   let acc = get_idx (String.sub str num (String.length str - num)) op in 
   if acc = -1 then -1 else num + acc
 
+(** [valid_paren str] is true if [str] has every open parenthesis closed, false 
+    otherwise *)
+let valid_paren str = match get_idx str ")" with 
+  | exception (SyntaxError x) -> false
+  | x -> if x = -1 then true else false
+
+(** [valid_bracket str] is true if [str] has every open bracket closed, false 
+    otherwise *)
+let valid_bracket str = match get_idx str "]" with 
+  | exception (SyntaxError x) -> false
+  | x -> if x = -1 then true else false
+
+(** [rev_get_idx line op] is the index of the first occurrence of [op] in [line]
+    Requires: [op] does not contain parenthesis or brackets. *)
+let rev_get_idx (line:string) (op:string) : int = 
+  let rev_line = (fun int _ -> let new_chr = line.[String.length line -1 -int] in
+                   if new_chr = '(' then ')' else if new_chr = ')' then '('
+                   else if new_chr = '[' then ']' else if new_chr = ']' then '['
+                   else new_chr) in
+  let rev_op = (fun int _ -> let new_chr = op.[String.length op -1 -int] in 
+                 if new_chr = '(' then ')' else if new_chr = ')' then '('
+                 else if new_chr = '[' then ']' else if new_chr = ']' then '['
+                 else new_chr) in
+  let rev_idx =  get_idx (String.mapi rev_line line) (String.mapi rev_op op) in
+  if rev_idx = -1 then -1 else String.length line - rev_idx - 1
+
 (** [expr_contains line op] is None, max_int if none of the elements of [op] are
     in [line] or Some (string, op), int is the earliest element from [op] in [line]
     at the int index. *)
@@ -109,12 +135,6 @@ let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option *
   | h :: t -> let next = expr_contains line t in 
     let current = get_idx line (fst h) in
     if current <> -1 && current < snd next then Some h, current else next
-
-(** [valid_paren str] is true if [str] has every open parenthesis closed, false 
-    otherwise *)
-let valid_paren str = match get_idx str ")" with 
-  | exception (SyntaxError x) -> false
-  | x -> if x = -1 then true else false
 
 (** [trim str] is [str] with shell spaces and paren removed. *)
 let rec trim str : string =
@@ -163,29 +183,30 @@ and parse_expr_helper (str:string) (op:string*op) : expr =
 and
   parse_expr (line:string) (oplist:(string*op) list list) : expr = 
   let line = trim line in let args = get_idx line "(" in let fstarg =  get_idx line "." in 
+  let length = String.length line in 
   if line = "" then Value(String(""))
   else
     match oplist with
     | [] -> 
       if line.[0] = '"' || line.[0] = '\'' 
-      then Value(String(String.sub line 1 (String.length line-2)))
-      else if line.[0] = '[' && line.[String.length line-1] = ']'
-      then if String.length line = 2 then List([])
+      then Value(String(String.sub line 1 (length-2)))
+      else if line.[0] = '[' && line.[length-1] = ']' && valid_bracket (String.sub line 1 (length-2))
+      then if length = 2 then List([])
         else List(List.map (fun x -> parse_expr x operators) 
-                    (split_on_char ',' (String.sub line 1 (String.length line - 2))))
-      else if int_of_string_opt line <> None then Value(Int(int_of_string line))
+                    (split_on_char ',' (String.sub line 1 (length - 2))))
+      else if  int_of_string_opt line <> None then Value(Int(int_of_string line))
       else if float_of_string_opt line <> None then Value(Float(float_of_string line))
       else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
       else if args <> -1 && fstarg <> -1 
       then Function(String.sub line (fstarg+1) (args-fstarg-1), 
                     exprlst(String.sub line 0 (fstarg) ^","^ 
-                            String.sub line (args+1) (String.length line - args - 2))',')
+                            String.sub line (args+1) (length - args - 2))',')
       else if args <> -1 
       then Function(String.sub line 0 (args), 
-                    exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
-      else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
+                    exprlst (String.sub line (args+1) (length - args - 2))',')
+      else if line.[length -1] = ']' then let args = (rev_get_idx (String.sub line 0 (length -1)) "[") in
         Function("splice", exprlst (String.sub line 0 (args) ^":"^ 
-                                    String.sub line (args+1) (String.length line - (args + 2)))':')
+                                    String.sub line (args+1) (length - args - 2))':')
       else Variable(line)
     | h :: t -> match expr_contains line h with
       | Some x, _ -> parse_expr_helper line x
@@ -204,15 +225,6 @@ let parse_assignment (line:string) : string option * expr =
       Some left, Binary(Variable left, snd x, parse_expr right operators)
     | None, _ -> let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
       Some left, parse_expr right operators
-
-(** [paren_check str idx acc] returns true if parentheses are valid and false otherwise *)
-let rec paren_check (str: string) idx acc =
-  if idx = String.length str then acc = 0 
-  else if acc < 0 then false 
-  else if String.get str idx = '(' then paren_check str (idx+1) (acc+1)
-  else if String.get str idx = ')' then paren_check str (idx+1) (acc-1)
-  else if String.get str idx = '"' then paren_check str (idx+2+(get_idx (String.sub str (idx+1) (String.length str -idx-1)) "\"")) acc
-  else paren_check str (idx+1) acc
 
 (** Matches if statement *)
 let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
