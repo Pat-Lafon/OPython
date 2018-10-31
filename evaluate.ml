@@ -2,6 +2,8 @@ open Parser
 open State
 open Utils
 
+exception EarlyReturn of State.t
+
 let rec mul x y acc op = if y = 0 then acc else mul x (y-1) (op acc x) op
 
 let helper_plus = function 
@@ -542,7 +544,7 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
       | exception (OverflowError x) -> print_endline ("OverflowError: "^x); interpret st [] new_line
       | exception (IndentationError x) -> print_endline ("IndentationError"^x); interpret st [] new_line
       | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); interpret st [] new_line
-      | exception (ReturnExpr expr) -> evaluate (Some "return", expr) st
+      | exception (ReturnExpr expr) -> raise (EarlyReturn(evaluate (Some "return", expr) st))
       | exception EmptyInput -> interpret st t new_line
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
@@ -583,7 +585,8 @@ and run_function f_name expr_args global_st =
   match List.assoc f_name global_st with
   | Function(string_args, body) -> 
     let func_st = create_function_state expr_args string_args State.empty global_st in
-    let new_state = interpret func_st (String.split_on_char '\n' (String.trim body)) false in
+    let new_state = (try interpret func_st (String.split_on_char '\n' (String.trim body)) false with
+    | EarlyReturn st -> st) in
     (match State.find "return" new_state with
     | None -> NoneVal
     | Some x -> x)
