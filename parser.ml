@@ -184,7 +184,8 @@ and
       then Function(String.sub line 0 (args), 
                     exprlst (String.sub line (args+1) (String.length line - (args + 2)))',')
       else if line.[String.length line -1] = ']' then let args = get_idx line "[" in
-        Function("splice", exprlst (String.sub line (args+1) (String.length line - (args + 2)))':')
+        Function("splice", exprlst (String.sub line 0 (args) ^":"^ 
+                                    String.sub line (args+1) (String.length line - (args + 2)))':')
       else Variable(line)
     | h :: t -> match expr_contains line h with
       | Some x, _ -> parse_expr_helper line x
