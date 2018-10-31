@@ -1,1 +1,0 @@
-alias OPython="make run"
