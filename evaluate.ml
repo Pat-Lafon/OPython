@@ -214,11 +214,11 @@ let helper_less_equal = function
 
 
 (** [eval exp st] takes a variant expression and returns the value of the 
-expression. Evaluates arithmetic expressions, defined variables, and defined
-functions to values. 
+    expression. Evaluates arithmetic expressions, defined variables, and defined
+    functions to values. 
 
-Ex: (eval (23 * (-2)) is a binary expression containing a [Value] expression (23) and 
-a [Unary] expression (-2) with an additional [Mult] operator. *)
+    Ex: (eval (23 * (-2)) is a binary expression containing a [Value] expression (23) and 
+    a [Unary] expression (-2) with an additional [Mult] operator. *)
 let rec eval (exp : expr) (st : State.t) : value = match exp with 
   | Binary (e1, op, e2) -> 
     (match op with 
@@ -399,10 +399,10 @@ and built_in_functions = [("append", append); ("len", len); ("range", range); ("
 
 
 (** [evaluate input st] determines whether or not [input] is an assignment statement;
-If there is an assignment, the expression the variable is assigned to is evaluated
-and are placed in the state paired as an association list. If there is not an assignemnt,
-the expression is evaluated. The updated state is returned after either of the two cases
-occur.*)
+    If there is an assignment, the expression the variable is assigned to is evaluated
+    and are placed in the state paired as an association list. If there is not an assignemnt,
+    the expression is evaluated. The updated state is returned after either of the two cases
+    occur.*)
 and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> print (eval expr st); st
@@ -495,8 +495,8 @@ and interpret_while (cond : expr) (body : string) (while_line) (st: State.t) : S
 
 
 (**[if_decider val] takes in a [State.value] and returns false if the values match
-a "false" value of a respective type. The "empty" or "zero" of each type results in 
-false, and if "non-empty" or "non-zero" then true*) 
+   a "false" value of a respective type. The "empty" or "zero" of each type results in 
+   false, and if "non-empty" or "non-zero" then true*) 
 and if_decider = function
   | Int(0) -> false
   | String("") -> false
