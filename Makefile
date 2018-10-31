@@ -1,9 +1,10 @@
-MODULES=main state parser evaluate
+MODULES=opython main state parser evaluate utils
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
 TEST=test.byte
 MAIN=main.byte
+OPYTHON=opython
 OCAMLBUILD=ocamlbuild -use-ocamlfind
 PKGS=unix,str,oUnit,qcheck
 
@@ -16,12 +17,11 @@ build:
 test:
 	$(OCAMLBUILD) -tag debug $(TEST) && ./$(TEST)
 
-bisect-test:
-	$(OCAMLBUILD) -package bisect -syntax camlp4o,bisect_pp \
-	  $(TEST) && ./$(TEST) -runner sequential
-
 run:
 	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
+
+all:
+	$(OCAMLBUILD) opython.byte && mv opython.byte opython && alias OPython="./opython"
 
 check:
 	bash checkenv.sh
@@ -29,9 +29,6 @@ check:
 finalcheck: check
 	bash checkzip.sh
 	bash finalcheck.sh
-
-bisect: clean bisect-test
-	bisect-report -I _build -html report bisect0001.out
 
 zip:
 	zip search_src.zip *.ml* _tags Makefile .bashrc

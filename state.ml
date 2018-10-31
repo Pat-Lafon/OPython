@@ -1,5 +1,6 @@
 type value = Int of int | Float of float | String of string 
            | Bool of bool | VList of value list ref | Function of (string list * string)
+           | NoneVal
 
 type t = (string*value) list
 
