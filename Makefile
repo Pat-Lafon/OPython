@@ -21,14 +21,7 @@ run:
 	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
 
 all:
-	$(OCAMLBUILD) opython.byte && mv opython.byte opython && alias OPython="./opython"
-
-check:
-	bash checkenv.sh
-	
-finalcheck: check
-	bash checkzip.sh
-	bash finalcheck.sh
+	$(OCAMLBUILD) opython.byte && mv opython.byte opython
 
 zip:
 	zip search_src.zip *.ml* _tags Makefile .bashrc
