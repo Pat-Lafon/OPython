@@ -12,8 +12,8 @@ let printt (value:State.value): unit = match to_string value with
   | s -> print_endline s
 
 (**[if_decider val] takes in a [State.value] and returns false if the values match
-   a "false" value of a respective type. The "empty" or "zero" of each type results in 
-   false, and if "non-empty" or "non-zero" then true*) 
+   a "false" value of a respective type. The "empty" or "zero" of each type 
+   results in false, and if "non-empty" or "non-zero" then true*) 
 let  if_decider = function
   | Int(0) -> false
   | String("") -> false
@@ -79,53 +79,66 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
     else if (List.mem_assoc f st) then run_function f lst st
     else raise (NameError ("name '"^f^"' is not defined"))
 
-(** [evaluate input st] determines whether or not [input] is an assignment statement;
-    If there is an assignment, the expression the variable is assigned to is evaluated
-    and are placed in the state paired as an association list. If there is not an assignemnt,
-    the expression is evaluated. The updated state is returned after either of the two cases
-    occur.*)
+(** [evaluate input st] determines whether or not [input] is an assignment 
+    statement; If there is an assignment, the expression the variable is assigned to
+    is evaluatedand are placed in the state paired as an association list. If there
+    is not an assignemnt,the expression is evaluated. The updated state is 
+    returned after either of the two cases occur.*)
 and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> printt (eval expr st); st
 
 (** Similar to functions in main.ml, used to evaluate functions *)
-and read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
+and read_if (conds : expr list) (bodies : string list) (acc : string) 
+    (new_line : bool) (lines : string list) =
   if new_line then
     let () = print_string "... " in
     let line = read_line () in
     let depth = indent_depth line in
     if depth = 0 then
       (match parse_multiline line with
-       | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
+       | Empty -> (List.rev (Value(Bool(true))::conds), 
+                   List.rev (""::(String.trim acc::bodies)), [])
        | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
-       | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-       | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-       | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
+       | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) 
+                              body new_line lines
+       | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) 
+                                body new_line lines
+       | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) 
+                   "" new_line lines
        | _ -> raise EmptyInput)
     else 
       let indented_line = add_depth (String.trim line) (depth - 1) in
       read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines
   else (match lines with
-      | [] -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
+      | [] -> (List.rev (Value(Bool(true))::conds), List.rev 
+                 (""::(String.trim acc::bodies)), [])
       | h::t -> 
         let depth = indent_depth h in
         if depth = 0 then
           (match parse_multiline h with
-           | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
-           | Line line -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
-           (* | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t *)
-           | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-           | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-           | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
+           | Empty -> (List.rev (Value(Bool(true))::conds), List.rev 
+                         (""::(String.trim acc::bodies)), lines)
+           | Line line -> (List.rev (Value(Bool(true))::conds), List.rev 
+                             (""::(String.trim acc::bodies)), lines)
+           (*| Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t*)
+           | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) 
+                                  body new_line t
+           | Elif (cond, body) -> read_if (cond::conds) 
+                                    (String.trim acc::bodies) body new_line t
+           | Else -> read_if (Value(Bool(true))::conds) 
+                       (String.trim acc::bodies) "" new_line t
            | _ -> raise EmptyInput)
         else 
           let line = add_depth (String.trim h) (depth - 1) in
           read_if conds bodies (acc ^ "\n" ^ line) new_line t
     )
 
-and read_while (cond : expr) (body : string) (lines : string list) (new_line : bool) =
+and read_while (cond : expr) (body : string) (lines : string list) 
+    (new_line : bool) =
   match lines with
-  | [] -> if new_line then (print_string "... "; read_while cond body [read_line ()] new_line)
+  | [] -> if new_line then (print_string "... "; 
+                            read_while cond body [read_line ()] new_line)
     else (cond, String.trim body, [])
   | line::t -> 
     let depth = indent_depth line in
@@ -138,7 +151,8 @@ and read_while (cond : expr) (body : string) (lines : string list) (new_line : b
 
 and read_function (body : string) (lines : string list) (new_line : bool) =
   match lines with
-  | [] -> if new_line then (print_string "... "; read_function body [read_line ()] new_line)
+  | [] -> if new_line then (print_string "... "; 
+                            read_function body [read_line ()] new_line)
     else (String.trim body, [])
   | line::t -> 
     let depth = indent_depth line in
@@ -152,34 +166,47 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
   match lines with
   | [] -> st
   | h::t -> (match Parser.parse_line h |> (fun x -> evaluate x st) with
-      | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); interpret st [] new_line
-      | exception (NameError x) -> print_endline ("NameError: "^x); interpret st [] new_line
-      | exception (TypeError x) -> print_endline ("TypeError: "^x); interpret st [] new_line
-      | exception (OverflowError x) -> print_endline ("OverflowError: "^x); interpret st [] new_line
-      | exception (IndentationError x) -> print_endline ("IndentationError"^x); interpret st [] new_line
-      | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); interpret st [] new_line
-      | exception (ReturnExpr expr) -> raise (EarlyReturn(evaluate (Some "return", expr) st))
+      | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); 
+        interpret st [] new_line
+      | exception (NameError x) -> print_endline ("NameError: "^x); 
+        interpret st [] new_line
+      | exception (TypeError x) -> print_endline ("TypeError: "^x); 
+        interpret st [] new_line
+      | exception (OverflowError x) -> print_endline ("OverflowError: "^x); 
+        interpret st [] new_line
+      | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
+        interpret st [] new_line
+      | exception (ZeroDivisionError x)-> print_endline 
+                                            ("ZeroDivisionError: "^x); interpret st [] new_line
+      | exception (ReturnExpr expr) -> raise (EarlyReturn(evaluate 
+                                                            (Some "return", expr) st))
       | exception EmptyInput -> interpret st t new_line
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
-        let (conds, bodies, remaining_lines) = read_if [cond] [] body (t = []) t in 
+        let (conds, bodies, remaining_lines)=read_if [cond] [] body (t = []) t in 
         let new_state = interpret_if conds bodies st in
         interpret new_state remaining_lines false
       | exception (WhileMultiline (cond, init_body)) -> 
-        (* Parse out the loop condition and body, process them in [interpret_while] *)
-        let (while_cond, while_body, remaining_lines) = read_while cond (String.trim init_body) t new_line in
+        (* Parse out the loop condition and body, process them in 
+           [interpret_while] *)
+        let (while_cond, while_body, remaining_lines) = read_while cond 
+            (String.trim init_body) t new_line in
         let new_state = interpret_while while_cond while_body st in
         interpret new_state remaining_lines new_line
       | exception (DefMultiline (name, args, init_body)) -> 
         (* Parse the body of the function *)
-        let (function_body, remaining_lines) = read_function (String.trim init_body) t new_line in
+        let (function_body, remaining_lines) = read_function 
+            (String.trim init_body) t new_line in
         (* Assign function definition to function name in global state *)
-        let new_st  = evaluate (Some name, Value(Function(name, args, function_body))) st in
+        let new_st  = evaluate (Some name, 
+                                Value(Function(name, args, function_body))) st in
         interpret new_st remaining_lines new_line
       | newst -> interpret newst t new_line)
-and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : State.t =
-  (* Go through [conds] and respective [bodies] in order. If any condition evaluates to true,
-     then we run the corresponding body through the interpreter and throw out the rest *)
+and interpret_if (conds : expr list) (bodies : string list) (st: State.t)
+  : State.t =
+  (* Go through [conds] and respective [bodies] in order. If any condition 
+     evaluates to true, then we run the corresponding body through the interpreter 
+     and throw out the rest *)
   match conds, bodies with
   | cond::c_t, body::b_t -> (match eval cond st |> if_decider with
       | true -> interpret st (String.split_on_char '\n' body) false
@@ -188,8 +215,8 @@ and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : Stat
 and interpret_while (cond : expr) (body : string) (st: State.t) : State.t = 
   match to_bool cond st with
   | true -> 
-    (* If while conditional is true, then we want to interpret the body, and after that,
-       interpret the loop condition until it's false *)
+    (* If while conditional is true, then we want to interpret the body, 
+       and after that, interpret the loop condition until it's false *)
     let new_lines = String.split_on_char '\n' body in
     let new_state = interpret st new_lines false in 
     interpret_while cond body new_state
@@ -200,9 +227,11 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
 and run_function f_name expr_args global_st = 
   match List.assoc f_name global_st with
   | Function(name, string_args, body) as f -> 
-    let func_st = create_function_state expr_args string_args State.empty global_st f_name f in
-    let new_state = (try interpret func_st (String.split_on_char '\n' (String.trim body)) false with
-        | EarlyReturn st -> st) in
+    let func_st = create_function_state expr_args string_args State.empty 
+        global_st f_name f in
+    let new_state = (try interpret func_st (String.split_on_char '\n' 
+                                              (String.trim body)) false with
+                    | EarlyReturn st -> st) in
     (match State.find "return" new_state with
      | None -> NoneVal
      | Some x -> x)
@@ -214,12 +243,14 @@ and create_function_state exprs args func_st global_st func_name f =
   | [], [] -> State.insert func_name f func_st
   | expr::e_t, arg::a_t -> 
     let value = eval expr global_st 
-    in create_function_state e_t a_t (State.insert arg value func_st) global_st func_name f
+    in create_function_state e_t a_t (State.insert arg value func_st) 
+      global_st func_name f
   | _, _ -> raise (SyntaxError ("Arguments in function do not match"))
 
 (**[to_bool exp st] evaluates an expression and passes the value through [if_decider].*)
 and to_bool (exp : expr) (st : State.t) = 
   eval exp st |> if_decider
 
-let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
+let add_function (st: State.t) (fnc_name : string) (args : string list) 
+    (body : string) =
   let func = Function(fnc_name, args, body) in insert fnc_name func st

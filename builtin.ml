@@ -47,6 +47,9 @@ let index (lst : value list): State.value  = let func = function
     in if (search s1 s >= String.length s) then Int(-1) else Int(search s1 s)
   | _ -> raise (TypeError ("Operation not supported"))
 
+(** The splice function as in Python; the first element of lst is the 
+    string/list to splice, the optional second to fourth elements of lst consist 
+    of the start, end, and stepping of the index **)
 let splice (lst : value list) : State.value = 
   let rec helper lst x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
@@ -61,8 +64,10 @@ let splice (lst : value list) : State.value =
   let rec helper_str str x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y > String.length str then helper_str str x (List.length lst) z else 
-    if x >= y then "" else String.concat "" 
-        ([String.sub str x 1;  helper_str str (x+z) y z]) in
+    if z > 0 then (if x >= y then "" else String.concat "" 
+                       ([String.sub str x 1;  helper_str str (x+z) y z])) else
+    if x <= y then "" else String.concat "" 
+        ([String.sub str x 1;  helper_str str (x+z) y z])in
   let splice_str str x y z =
     helper_str str (decider x (String.length str)) 
       (decider y (String.length str)) (z) in
@@ -118,7 +123,8 @@ let splice (lst : value list) : State.value =
     end 
   | _ -> raise (TypeError ("Operation not supported"))
 
-
+(** [append lst] appends the second element of lst into the first element, 
+    which must either be a list**)
 let append (val_list : value list)= 
   match val_list with
   | lst::value::[] -> 
