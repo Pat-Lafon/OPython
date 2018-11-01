@@ -154,7 +154,7 @@ let helper_equal = function
   | Bool x, Bool y -> Bool (x = y)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
-  | Function (args1, body1), Function (args2, body2) -> Bool (body1 = body2)
+  | Function (name1, args1, body1), Function (name2, args2, body2) -> Bool (name1 = name2)
   | NoneVal, NoneVal -> Bool true
   | _, _ -> Bool false
 
@@ -303,7 +303,7 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
     | Bool x, Bool y -> (x = y)
     | String x, _ | _, String x -> false
     | VList x, _ | _, VList x -> false
-    | Function (args1, body1), Function (args2, body2) -> (body1 = body2)
+    | Function (name1, args1, body1), Function (name2, args2, body2) -> (name1 = name2)
     | _, _ -> false
   in let idx value l = List.find (fun x -> func (x,value)) l 
   in match List.map (fun x -> eval x st) lst with
@@ -316,10 +316,10 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
     in if (search s1 s >= String.length s) then Int(-1) else Int(search s1 s)
   | _ -> raise (TypeError ("Operation not supported"))
 
-and splice (lst : expr list) (st : State.t) : State.value = 
+and splice (lst : expr list) (st : State.t) : State.value = (* error when a[:<length>:], error in helper *)
   let rec helper lst x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
-    if y >= List.length lst then helper lst x (List.length lst) z else 
+    if y > List.length lst then helper lst x (List.length lst) z else 
     if x >= y then [] else List.nth lst x :: helper lst (x+z) y z in
   let decider x len = if x < - len then 0 else 
     if x < 0 then x + len else if x > len then len else x in
@@ -327,7 +327,7 @@ and splice (lst : expr list) (st : State.t) : State.value =
     helper lst (decider x (List.length lst)) (decider y (List.length lst)) (decider z (List.length lst)) in
   let rec helper_str str x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
-    if y >= String.length str then helper_str str x (List.length lst) z else 
+    if y > String.length str then helper_str str x (List.length lst) z else 
     if x >= y then "" else String.concat "" ([String.sub str x 1;  helper_str str (x+z) y z]) in
   let splice_str str x y z =
     helper_str str (decider x (String.length str)) 
@@ -347,7 +347,7 @@ and splice (lst : expr list) (st : State.t) : State.value =
       | String(s), Int(x), Int(y) -> String(splice_str s x y 1)
       | VList(l), String(""), String("") -> VList(l)
       | VList(l), String(""), Int(x) -> VList(ref(splice_helper !l 0 x 1))
-      | VList(l), Int(x), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
+      | VList(l), Int(x), String("") -> VList(ref(splice_helper !l x (List.length !l) 1)) 
       | VList(l), Int(x), Int(y) -> VList(ref(splice_helper !l x y 1))
       | _ -> raise (TypeError ("Operation not supported"))
     end
@@ -361,7 +361,7 @@ and splice (lst : expr list) (st : State.t) : State.value =
       | String(s), String(""), Int(x), Int(y) -> String(splice_str s 0 x y)  
       | String(s), Int(x), Int(y), Int(z) -> String(splice_str s x y z) 
       | VList(l), String(""), String(""), String("") -> VList(l)
-      | VList(l), String(""), String(""), Int(x) -> VList(ref(splice_helper !l 0 (List.length !l) x))
+      | VList(l), String(""), String(""), Int(x) -> VList(ref(splice_helper !l 0 (List.length !l) x)) 
       | VList(l), String(""), Int(x), String("") -> VList(ref(splice_helper !l 0 x 1))
       | VList(l), Int(x), String(""), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
       | VList(l), Int(x), Int(y), String("") -> VList(ref(splice_helper !l x y 1))
@@ -424,9 +424,6 @@ and range (lst : expr list) (st : State.t) : State.value = match lst with
     end
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
-
-
-
 (** Type casts *)
 and chr (explist : expr list) (st: State.t) =
   let vallist = List.map (fun x -> eval x st) explist in
@@ -437,7 +434,6 @@ and chr (explist : expr list) (st: State.t) =
       | _ -> failwith("requires int")
     )
   | _ -> failwith("needs 1 arg, this is not 1 arg")
-
 
 and bool (explist: expr list) (st: State.t) = 
   let vallist = List.map (fun x -> eval x st) explist in
@@ -503,6 +499,7 @@ and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> printt (eval expr st); st
 
+(** Similar to functions in main.ml, used to evaluate functions *)
 and read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
   if new_line then
     let () = print_string "... " in
@@ -588,7 +585,7 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
         (* Parse the body of the function *)
         let (function_body, remaining_lines) = read_function (String.trim init_body) t new_line in
         (* Assign function definition to function name in global state *)
-        let new_st  = evaluate (Some name, Value(Function(args, function_body))) st in
+        let new_st  = evaluate (Some name, Value(Function(name, args, function_body))) st in
         interpret new_st remaining_lines new_line
       | newst -> interpret newst t new_line)
 and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : State.t =
@@ -609,10 +606,12 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     interpret_while cond body new_state
   | false -> interpret st [] false
 
+(** [run_function f_name expr_args global_st] runs function [f_name] with arguments
+    [expr_args] and returns the return value of the function *)
 and run_function f_name expr_args global_st = 
   match List.assoc f_name global_st with
-  | Function(string_args, body) -> 
-    let func_st = create_function_state expr_args string_args State.empty global_st in
+  | Function(name, string_args, body) as f -> 
+    let func_st = create_function_state expr_args string_args State.empty global_st f_name f in
     let new_state = (try interpret func_st (String.split_on_char '\n' (String.trim body)) false with
         | EarlyReturn st -> st) in
     (match State.find "return" new_state with
@@ -620,12 +619,14 @@ and run_function f_name expr_args global_st =
      | Some x -> x)
   | _ -> raise (NameError (f_name ^ " cannot be called"))
 
-and create_function_state exprs args func_st global_st = 
+(** Initialize a function scope using arguments passed in*)
+and create_function_state exprs args func_st global_st func_name f = 
   match exprs, args with
-  | [], [] -> func_st
+  | [], [] -> State.insert func_name f func_st
   | expr::e_t, arg::a_t -> 
-    let value = eval expr global_st in create_function_state e_t a_t (State.insert arg value func_st) global_st
-  | _, _ -> raise (NameError ("Arguments in function do not match"))
+    let value = eval expr global_st 
+    in create_function_state e_t a_t (State.insert arg value func_st) global_st func_name f
+  | _, _ -> raise (SyntaxError ("Arguments in function do not match"))
 
 (**[if_decider val] takes in a [State.value] and returns false if the values match
    a "false" value of a respective type. The "empty" or "zero" of each type results in 
@@ -642,6 +643,7 @@ and if_decider = function
 and to_bool (exp : expr) (st : State.t) = 
   eval exp st |> if_decider
 
+(**[to_string] returns the string of a value*)
 and to_string (value:State.value) : string = 
   match value with
   | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
@@ -650,7 +652,10 @@ and to_string (value:State.value) : string =
   | Int x -> string_of_int x
   | Float x -> string_of_float x
   | Bool x -> string_of_bool x |> String.capitalize_ascii
-  | Function (args, body) -> "<function 3100 at 0x10b026268>"
+  | Function f -> 
+    let (name, args, body) = f in
+    let address = 2*(Obj.magic (ref f)) in
+    "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
   | NoneVal -> "NoneVal"
 
@@ -659,6 +664,6 @@ and printt (value:State.value):unit = match to_string value with
   | s -> print_endline s
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
-  let func = Function(args, body) in insert fnc_name func st
+  let func = Function(fnc_name, args, body) in insert fnc_name func st
 
 
