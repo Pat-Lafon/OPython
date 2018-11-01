@@ -3,7 +3,10 @@ def f(x):
         return 1
     return f(x-2) + f(x-1)
 
-x = 0
+y = []
+x=0
 while x < 10:
-    f(x)
-    x = x + 1
+    if x == 5:
+        y.append(x)
+    x += 1
+y

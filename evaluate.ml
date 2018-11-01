@@ -316,19 +316,24 @@ and index (lst : expr list) (st : State.t) : State.value  = let func = function
     in if (search s1 s >= String.length s) then Int(-1) else Int(search s1 s)
   | _ -> raise (TypeError ("Operation not supported"))
 
+(** The Splice function works exactly as in Python **)
 and splice (lst : expr list) (st : State.t) : State.value = (* error when a[:<length>:], error in helper *)
   let rec helper lst x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y > List.length lst then helper lst x (List.length lst) z else 
-    if x >= y then [] else List.nth lst x :: helper lst (x+z) y z in
+    if z > 0 then (if x >= y then [] else 
+                     List.nth lst x :: helper lst (x+z) y z) else
+      (if x <= y then [] else List.nth lst x :: helper lst (x+z) y z)  in
   let decider x len = if x < - len then 0 else 
     if x < 0 then x + len else if x > len then len else x in
   let splice_helper lst x y z = 
-    helper lst (decider x (List.length lst)) (decider y (List.length lst)) (decider z (List.length lst)) in
+    helper lst (decider x (List.length lst)) (decider y (List.length lst))
+      (decider z (List.length lst)) in
   let rec helper_str str x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y > String.length str then helper_str str x (List.length lst) z else 
-    if x >= y then "" else String.concat "" ([String.sub str x 1;  helper_str str (x+z) y z]) in
+    if x >= y then "" else 
+      String.concat "" ([String.sub str x 1;  helper_str str (x+z) y z]) in
   let splice_str str x y z =
     helper_str str (decider x (String.length str)) 
       (decider y (String.length str)) (decider z (String.length str)) in
@@ -353,19 +358,26 @@ and splice (lst : expr list) (st : State.t) : State.value = (* error when a[:<le
     end
   | h1::h2::h3::h4::[] -> begin match (eval h1 st,eval h2 st, eval h3 st, eval h4 st) with 
       | String(s), String(""), String(""), String("") -> String(s)
-      | String(s), String(""), String(""), Int(x) -> String(splice_str s 0 (String.length s) x)
+      | String(s), String(""), String(""), Int(x) -> 
+        String(splice_str s 0 (String.length s) x)
       | String(s), String(""), Int(x), String("") -> String(splice_str s 0 x 1)
-      | String(s), Int(x), String(""), String("") -> String(splice_str s x (String.length s) 1) 
+      | String(s), Int(x), String(""), String("") -> 
+        String(splice_str s x (String.length s) 1) 
       | String(s), Int(x), Int(y), String("") -> String(splice_str s x y 1) 
-      | String(s), Int(x), String(""), Int(y) -> String(splice_str s x (String.length s) y) 
+      | String(s), Int(x), String(""), Int(y) -> 
+        String(splice_str s x (String.length s) y) 
       | String(s), String(""), Int(x), Int(y) -> String(splice_str s 0 x y)  
       | String(s), Int(x), Int(y), Int(z) -> String(splice_str s x y z) 
       | VList(l), String(""), String(""), String("") -> VList(l)
-      | VList(l), String(""), String(""), Int(x) -> VList(ref(splice_helper !l 0 (List.length !l) x)) 
-      | VList(l), String(""), Int(x), String("") -> VList(ref(splice_helper !l 0 x 1))
-      | VList(l), Int(x), String(""), String("") -> VList(ref(splice_helper !l x (List.length !l) 1))
+      | VList(l), String(""), String(""), Int(x) -> 
+        VList(ref(splice_helper !l 0 (List.length !l) x)) 
+      | VList(l), String(""), Int(x), String("") -> 
+        VList(ref(splice_helper !l 0 x 1))
+      | VList(l), Int(x), String(""), String("") -> 
+        VList(ref(splice_helper !l x (List.length !l) 1))
       | VList(l), Int(x), Int(y), String("") -> VList(ref(splice_helper !l x y 1))
-      | VList(l), Int(x), String(""), Int(y) -> VList(ref(splice_helper !l x (List.length !l) y))
+      | VList(l), Int(x), String(""), Int(y) -> 
+        VList(ref(splice_helper !l x (List.length !l) y))
       | VList(l), String(""), Int(x), Int(y) -> VList(ref(splice_helper !l 0 x y))
       | VList(l), Int(x), Int(y), Int(z) -> VList(ref(splice_helper !l x y z))
       | _ -> raise (TypeError ("Operation not supported"))
@@ -606,7 +618,7 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
   | false -> interpret st [] false
 
 (** [run_function f_name expr_args global_st] runs function [f_name] with arguments
-[expr_args] and returns the return value of the function *)
+    [expr_args] and returns the return value of the function *)
 and run_function f_name expr_args global_st = 
   match List.assoc f_name global_st with
   | Function(name, string_args, body) as f -> 
@@ -645,30 +657,18 @@ and to_bool (exp : expr) (st : State.t) =
 (**[to_string] returns the string of a value*)
 and to_string (value:State.value) : string = 
   match value with
-<<<<<<< HEAD
-    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
-                 (fun x -> if String.length x = 1 then x ^ "]" 
-                   else String.sub x 0 (String.length x -2) ^ "]")
-    | Int x -> string_of_int x
-    | Float x -> string_of_float x
-    | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function f -> 
-      let (name, args, body) = f in
-      let address = 2*(Obj.magic (ref f)) in
-      "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
-    | String x -> "'" ^ x ^ "'"
-    | NoneVal -> "None"
-=======
   | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
                (fun x -> if String.length x = 1 then x ^ "]" 
                  else String.sub x 0 (String.length x -2) ^ "]")
   | Int x -> string_of_int x
   | Float x -> string_of_float x
   | Bool x -> string_of_bool x |> String.capitalize_ascii
-  | Function (args, body) -> "<function 3100 at 0x10b026268>"
+  | Function f -> 
+    let (name, args, body) = f in
+    let address = 2*(Obj.magic (ref f)) in
+    "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
   | NoneVal -> "None"
->>>>>>> 8fe24846eb381859243a12ea332d3757a5de961c
 
 and print (value:State.value):unit = value |> to_string |> print_endline
 
