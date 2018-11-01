@@ -175,9 +175,11 @@ let int (val_list: value list) =
   match val_list with
   | Int(x)::[] -> Int(x)
   | Float(x)::[] -> Int(int_of_float(x))
-  | String(x)::[] -> if int_of_string_opt(x) <> None then Int(int_of_string(x)) else failwith("can't do that")
+  | String(x)::[] -> if int_of_string_opt(x) <> None then Int(int_of_string(x)) 
+    else failwith("can't do that")
   | Bool x ::[]-> if x then Int 1 else Int 0
-  | VList _ ::[]-> raise (TypeError "int() argument must be a string, a bytes-like object or a number, not 'list'")
+  | VList _ ::[]-> raise(TypeError("int() argument must be a string, a "
+                                   ^"bytes-like object or a number, not 'list'"))
   | Function _ ::[] -> failwith "Should not be possible"
   | NoneVal ::[] -> failwith "Should not be possible"
   | [] -> Int(0)
