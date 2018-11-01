@@ -606,7 +606,7 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
   | false -> interpret st [] false
 
 (** [run_function f_name expr_args global_st] runs function [f_name] with arguments
-[expr_args] and returns the return value of the function *)
+    [expr_args] and returns the return value of the function *)
 and run_function f_name expr_args global_st = 
   match List.assoc f_name global_st with
   | Function(name, string_args, body) as f -> 
@@ -645,30 +645,18 @@ and to_bool (exp : expr) (st : State.t) =
 (**[to_string] returns the string of a value*)
 and to_string (value:State.value) : string = 
   match value with
-<<<<<<< HEAD
-    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
-                 (fun x -> if String.length x = 1 then x ^ "]" 
-                   else String.sub x 0 (String.length x -2) ^ "]")
-    | Int x -> string_of_int x
-    | Float x -> string_of_float x
-    | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function f -> 
-      let (name, args, body) = f in
-      let address = 2*(Obj.magic (ref f)) in
-      "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
-    | String x -> "'" ^ x ^ "'"
-    | NoneVal -> "None"
-=======
   | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
                (fun x -> if String.length x = 1 then x ^ "]" 
                  else String.sub x 0 (String.length x -2) ^ "]")
   | Int x -> string_of_int x
   | Float x -> string_of_float x
   | Bool x -> string_of_bool x |> String.capitalize_ascii
-  | Function (args, body) -> "<function 3100 at 0x10b026268>"
+  | Function f -> 
+    let (name, args, body) = f in
+    let address = 2*(Obj.magic (ref f)) in
+    "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
   | NoneVal -> "None"
->>>>>>> 8fe24846eb381859243a12ea332d3757a5de961c
 
 and print (value:State.value):unit = value |> to_string |> print_endline
 
