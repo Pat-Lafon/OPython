@@ -1,4 +1,4 @@
-MODULES=opython main state parser evaluate utils arithmetic error
+MODULES=opython main state parser evaluate utils arithmetic error builtin
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
