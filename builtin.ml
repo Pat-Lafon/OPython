@@ -1,6 +1,7 @@
 open Parser
 open State
 open Evaluate
+open Error
 
 let append (explist : expr list) (st : State.t) = 
   let vallist = List.map (fun x -> eval x st) explist in
