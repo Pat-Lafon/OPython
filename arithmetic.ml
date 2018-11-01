@@ -1,6 +1,6 @@
 open State
 open Parser
-
+open Error
 
 let rec mul x y acc op = if y = 0 then acc else mul x (y-1) (op acc x) op
 
@@ -17,7 +17,8 @@ let helper_plus = function
   | Float x, VList y -> raise (TypeError "unsupported operand type for +")
   | Bool x, Int y -> if x then Int (y+1) else Int  y
   | Bool x, Float y -> if x then Float (y +. float_of_int 1) else Float y
-  | Bool x, Bool y -> Int(if x then 1 + (if y then 1 else 0) else 0 + (if y then 1 else 0))
+  | Bool x, Bool y -> Int(if x then 1 + (if y then 1 else 0) 
+                          else 0 + (if y then 1 else 0))
   | Bool x , String y -> raise (TypeError "unsupported operand type for +")
   | Bool x, VList y -> raise (TypeError "unsupported operand type for +")
   | String x, String y -> String (x ^ y)
@@ -64,7 +65,8 @@ let helper_divide = function
   | _, Int 0 -> raise (ZeroDivisionError "division by zero")
   | _, Float 0. -> raise (ZeroDivisionError "float division by zero") 
   | _, Bool false -> raise (ZeroDivisionError "float division by zero") 
-  | Int x, Int y -> if x mod 2 = 0 then Int(x/y) else Float(float_of_int x /. float_of_int y)
+  | Int x, Int y -> if x mod 2 = 0 then Int(x/y) 
+    else Float(float_of_int x /. float_of_int y)
   | Int x, Float y -> Float(float_of_int x /. y)
   | Int x, Bool y -> Float(float_of_int x)
   | Float x, Int y -> Float (x /. float_of_int y)
@@ -152,7 +154,8 @@ let helper_equal = function
   | Bool x, Bool y -> Bool (x = y)
   | String x, _ | _, String x -> Bool false
   | VList x, _ | _, VList x -> Bool false
-  | Function (name1, args1, body1), Function (name2, args2, body2) -> Bool (name1 = name2)
+  | Function (name1, args1, body1), Function (name2, args2, body2) -> 
+    Bool (name1 = name2)
   | NoneVal, NoneVal -> Bool true
   | _, _ -> Bool false
 

@@ -2,6 +2,7 @@ open State
 open Evaluate
 open Parser
 open Utils
+open Error
 
 (** Read next lines that are part of the if conditional block *)
 let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
@@ -11,62 +12,62 @@ let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_l
     let depth = indent_depth line in
     if depth = 0 then
       (match parse_multiline line with
-      | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
-      | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
-      | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-      | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-      | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
-      | _ -> raise EmptyInput)
+       | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
+       | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
+       | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+       | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
+       | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
+       | _ -> raise EmptyInput)
     else 
       let indented_line = add_depth (String.trim line) (depth - 1) in
       read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines
   else (match lines with
-    | [] -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
-    | h::t -> 
-    let depth = indent_depth h in
-    if depth = 0 then
-      (match parse_multiline h with
-      | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
-      | Line line -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
-      (* | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t *)
-      | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-      | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-      | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
-      | _ -> raise EmptyInput)
-    else 
-      let line = add_depth (String.trim h) (depth - 1) in
-      read_if conds bodies (acc ^ "\n" ^ line) new_line t
+      | [] -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
+      | h::t -> 
+        let depth = indent_depth h in
+        if depth = 0 then
+          (match parse_multiline h with
+           | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
+           | Line line -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
+           (* | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t *)
+           | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+           | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
+           | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
+           | _ -> raise EmptyInput)
+        else 
+          let line = add_depth (String.trim h) (depth - 1) in
+          read_if conds bodies (acc ^ "\n" ^ line) new_line t
     )
 
 (** Read next lines that are part of the while loop *)
 let rec read_while (cond : expr) (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; read_while cond body [read_line ()] new_line)
-          else (cond, String.trim body, [])
+    else (cond, String.trim body, [])
   | line::t -> 
     let depth = indent_depth line in
     if depth = 0 then
       (cond, String.trim body, lines)
     else let indent_line = add_depth (String.trim line) (depth - 1) in
       (match parse_multiline indent_line with
-        | Empty -> (cond, String.trim body, lines)
-        | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
+       | Empty -> (cond, String.trim body, lines)
+       | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
 
 (** Read the next lines as part of the body of the function *)
 let rec read_function (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; read_function body [read_line ()] new_line)
-          else (String.trim body, [])
+    else (String.trim body, [])
   | line::t -> 
     let depth = indent_depth line in
     if depth = 0 then (String.trim body, lines)
     else let indent_line = add_depth (String.trim line) (depth - 1) in
       (match parse_multiline line with
-      | Empty -> (String.trim body, lines)
-      | _ -> read_function (body ^ "\n" ^ indent_line) t new_line)
+       | Empty -> (String.trim body, lines)
+       | _ -> read_function (body ^ "\n" ^ indent_line) t new_line)
 
 (** [interpret st lines new_line] runs python [lines] to create a new state. 
-If [new_line] is true, then interface prompts uses for new lines. *)
+    If [new_line] is true, then interface prompts uses for new lines. *)
 let rec interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
   match lines with
   | [] -> if new_line then (print_string ">>> "; interpret st [read_line ()] new_line) else st
