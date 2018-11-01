@@ -56,13 +56,9 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Some t -> t
      | None -> raise (NameError ("name '"^x^"' is not defined")))
   | Value x -> x
-  | List x -> let rec help = function 
-      | [] -> []
-      | h::t -> eval h st :: help t
-    in let rf = ref (help x) in VList(rf)
+  | List x -> VList (ref (List.map (fun x -> eval x st) x))
   | Function (f, lst) -> 
     if (List.mem f built_in_function_names) then 
-
       (List.assoc f built_in_functions) lst st 
     else if (List.mem_assoc f st) 
     then run_function f lst st
