@@ -645,7 +645,6 @@ and to_bool (exp : expr) (st : State.t) =
 (**[to_string] returns the string of a value*)
 and to_string (value:State.value) : string = 
   match value with
-<<<<<<< HEAD
     | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
                  (fun x -> if String.length x = 1 then x ^ "]" 
                    else String.sub x 0 (String.length x -2) ^ "]")
@@ -658,21 +657,8 @@ and to_string (value:State.value) : string =
       "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
     | String x -> "'" ^ x ^ "'"
     | NoneVal -> "None"
-=======
-  | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
-               (fun x -> if String.length x = 1 then x ^ "]" 
-                 else String.sub x 0 (String.length x -2) ^ "]")
-  | Int x -> string_of_int x
-  | Float x -> string_of_float x
-  | Bool x -> string_of_bool x |> String.capitalize_ascii
-  | Function (args, body) -> "<function 3100 at 0x10b026268>"
-  | String x -> "'" ^ x ^ "'"
-  | NoneVal -> "None"
->>>>>>> 8fe24846eb381859243a12ea332d3757a5de961c
 
 and print (value:State.value):unit = value |> to_string |> print_endline
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
   let func = Function(fnc_name, args, body) in insert fnc_name func st
-
-
