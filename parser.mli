@@ -1,4 +1,5 @@
 open State
+open Error
 
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Equal 
@@ -18,8 +19,6 @@ exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
 exception DefMultiline of (string * string list * string)
 exception ReturnExpr of expr
-
-val get_idx : string -> string -> int
 
 val parse_line : string -> string option * expr
 
