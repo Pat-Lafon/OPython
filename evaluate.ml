@@ -7,6 +7,21 @@ open Builtin
 
 exception EarlyReturn of State.t
 
+let printt (value:State.value): unit = match to_string value with
+  | "NoneVal" -> ()
+  | s -> print_endline s
+
+(**[if_decider val] takes in a [State.value] and returns false if the values match
+   a "false" value of a respective type. The "empty" or "zero" of each type results in 
+   false, and if "non-empty" or "non-zero" then true*) 
+let  if_decider = function
+  | Int(0) -> false
+  | String("") -> false
+  | Bool(false) -> false
+  | Float(0.0)  -> false
+  | VList(a) -> if !a = [] then false else true
+  | _ -> true
+
 (** [eval exp st] takes a variant expression and returns the value of the 
     expression. Evaluates arithmetic expressions, defined variables, and defined
     functions to values. 
@@ -202,24 +217,9 @@ and create_function_state exprs args func_st global_st func_name f =
     in create_function_state e_t a_t (State.insert arg value func_st) global_st func_name f
   | _, _ -> raise (SyntaxError ("Arguments in function do not match"))
 
-(**[if_decider val] takes in a [State.value] and returns false if the values match
-   a "false" value of a respective type. The "empty" or "zero" of each type results in 
-   false, and if "non-empty" or "non-zero" then true*) 
-and if_decider = function
-  | Int(0) -> false
-  | String("") -> false
-  | Bool(false) -> false
-  | Float(0.0)  -> false
-  | VList(a) -> if !a = [] then false else true
-  | _ -> true
-
 (**[to_bool exp st] evaluates an expression and passes the value through [if_decider].*)
 and to_bool (exp : expr) (st : State.t) = 
   eval exp st |> if_decider
-
-and printt (value:State.value):unit = match to_string value with
-  | "NoneVal" -> ()
-  | s -> print_endline s
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
   let func = Function(fnc_name, args, body) in insert fnc_name func st
