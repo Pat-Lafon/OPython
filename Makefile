@@ -1,4 +1,4 @@
-MODULES=opython main state parser evaluate utils
+MODULES=opython main state parser evaluate utils arithmetic error builtin
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
@@ -21,14 +21,7 @@ run:
 	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
 
 all:
-	$(OCAMLBUILD) opython.byte && mv opython.byte opython && alias OPython="./opython"
-
-check:
-	bash checkenv.sh
-	
-finalcheck: check
-	bash checkzip.sh
-	bash finalcheck.sh
+	$(OCAMLBUILD) opython.byte && mv opython.byte opython
 
 zip:
 	zip search_src.zip *.ml* _tags Makefile .bashrc

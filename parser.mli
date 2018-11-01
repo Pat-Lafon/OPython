@@ -1,31 +1,24 @@
 open State
+open Error
 
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Equal 
         | Less_Equal | And | Or | Not | Complement
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
-          | Value of State.value | Variable of string | List of expr list | Function of (string * expr list)
+          | Value of State.value | Variable of string | List of expr list 
+          | Function of (string * expr list)
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
                | While of (expr * string) | Def of (string * string list * string)
                | Return of (expr) 
 
-exception SyntaxError of string
-exception TypeError of string
-exception NameError of string
-exception ValueError of string
-exception OverflowError of string
-exception IndentationError of string
-exception ZeroDivisionError of string
 exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
 exception DefMultiline of (string * string list * string)
 exception ReturnExpr of expr
-
-val get_idx : string -> string -> int
 
 val parse_line : string -> string option * expr
 
