@@ -5,105 +5,137 @@ open Utils
 open Error
 
 (** Read next lines that are part of the if conditional block *)
-let rec read_if (conds : expr list) (bodies : string list) (acc : string) (new_line : bool) (lines : string list) =
+let rec read_if (conds : expr list) (bodies : string list) 
+  (acc : string) (new_line : bool) (lines : string list) (line_nums : int list) =
   if new_line then
     let () = print_string "... " in
     let line = read_line () in
     let depth = indent_depth line in
     if depth = 0 then
       (match parse_multiline line with
-       | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
-       | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines
-       | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-       | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line lines
-       | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines
+       | Empty -> 
+        (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [], [])
+       | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines line_nums
+       | If (cond, body) -> 
+        read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
+       | Elif (cond, body) -> 
+        read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
+       | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines line_nums
        | _ -> raise EmptyInput)
     else 
       let indented_line = add_depth (String.trim line) (depth - 1) in
-      read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines
-  else (match lines with
-      | [] -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [])
-      | h::t -> 
+      read_if conds bodies (acc ^ "\n" ^ indented_line) new_line lines line_nums
+  else (match lines, line_nums with
+      | [], [] -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [], [])
+      | h::t, n_h::n_t -> 
         let depth = indent_depth h in
         if depth = 0 then
           (match parse_multiline h with
-           | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
-           | Line line -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines)
+           | Empty -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines, line_nums)
+           | Line line -> (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), lines, line_nums)
            (* | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t *)
-           | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-           | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t
-           | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t
+           | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t n_t
+           | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body new_line t n_t
+           | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line t n_t
            | _ -> raise EmptyInput)
         else 
           let line = add_depth (String.trim h) (depth - 1) in
-          read_if conds bodies (acc ^ "\n" ^ line) new_line t
+          read_if conds bodies (acc ^ "\n" ^ line) new_line t n_t
+      | _, _ -> failwith "Lines and line numbers should match"
     )
 
 (** Read next lines that are part of the while loop *)
-let rec read_while (cond : expr) (body : string) (lines : string list) (new_line : bool) =
-  match lines with
-  | [] -> if new_line then (print_string "... "; read_while cond body [read_line ()] new_line)
-    else (cond, String.trim body, [])
-  | line::t -> 
+let rec read_while (cond : expr) (body : string) (lines : string list)
+  (line_nums : int list) (new_line : bool) =
+  match lines, line_nums with
+  | [], [] -> if new_line then (print_string "... "; 
+          read_while cond body [read_line ()] [1] new_line)
+    else (cond, String.trim body, [], [])
+  | line::t, line_num::n_t -> 
     let depth = indent_depth line in
     if depth = 0 then
-      (cond, String.trim body, lines)
+      (cond, String.trim body, lines, line_nums)
     else let indent_line = add_depth (String.trim line) (depth - 1) in
       (match parse_multiline indent_line with
-       | Empty -> (cond, String.trim body, lines)
-       | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
+       | Empty -> (cond, String.trim body, lines, line_nums)
+       | _ -> read_while cond (body ^ "\n" ^ indent_line) t n_t new_line)
+  | _, _ -> failwith "Lines and line numbers should match"
+
+let rec create_int_list n =
+  match n with
+  | 0 -> []
+  | t -> t::(create_int_list (n-1))
 
 (** Read the next lines as part of the body of the function *)
-let rec read_function (body : string) (lines : string list) (new_line : bool) =
-  match lines with
-  | [] -> if new_line then (print_string "... "; read_function body [read_line ()] new_line)
-    else (String.trim body, [])
-  | line::t -> 
+let rec read_function (body : string) (lines : string list) 
+  (line_nums : int list) (new_line : bool) =
+  match lines, line_nums with
+  | [], [] -> if new_line then (print_string "... "; 
+          read_function body [read_line ()] [] new_line)
+    else (String.trim body, [], [])
+  | line::t, line_num::n_t -> 
     let depth = indent_depth line in
-    if depth = 0 then (String.trim body, lines)
+    if depth = 0 then (String.trim body, lines, line_nums)
     else let indent_line = add_depth (String.trim line) (depth - 1) in
       (match parse_multiline line with
-       | Empty -> (String.trim body, lines)
-       | _ -> read_function (body ^ "\n" ^ indent_line) t new_line)
+       | Empty -> (String.trim body, lines, line_nums)
+       | _ -> read_function (body ^ "\n" ^ indent_line) t n_t new_line)
+  | _, _ -> failwith "Lines and line numbers should match"
 
 (** [interpret st lines new_line] runs python [lines] to create a new state. 
     If [new_line] is true, then interface prompts uses for new lines. *)
-let rec interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
-  match lines with
-  | [] -> if new_line then (print_string ">>> "; interpret st [read_line ()] new_line) else st
-  | h::t -> (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
-      | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); interpret st [] new_line
-      | exception (IndexError x) -> print_endline ("IndexError: "^x); interpret st [] new_line
-      | exception (NameError x) -> print_endline ("NameError: "^x); interpret st [] new_line
-      | exception (TypeError x) -> print_endline ("TypeError: "^x); interpret st [] new_line
-      | exception (OverflowError x) -> print_endline ("OverflowError: "^x); interpret st [] new_line
-      | exception (IndentationError x) -> print_endline ("IndentationError"^x); interpret st [] new_line
-      | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); interpret st [] new_line
-      | exception (AssertionError)-> print_endline ("Assertion Error"); interpret st [] new_line
-      | exception EmptyInput -> interpret st t new_line
+let rec interpret (st:State.t) (lines: string list) 
+  (line_nums: int list) (new_line : bool) : State.t =
+  match lines, line_nums with
+  | [], [] -> if new_line then (print_string ">>> "; 
+              interpret st [read_line ()] [1] new_line) else st
+  | h::t, n_h::n_t -> (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
+      | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); 
+                                     interpret st [] [] new_line
+      | exception (IndexError x) -> print_endline ("IndexError: "^x); 
+                                    interpret st [] [] new_line
+      | exception (NameError x) -> print_endline ("NameError: "^x); 
+                                   interpret st [] [] new_line
+      | exception (TypeError x) -> print_endline ("TypeError: "^x); 
+                                   interpret st [] [] new_line
+      | exception (OverflowError x) -> print_endline ("OverflowError: "^x); 
+                                       interpret st [] [] new_line
+      | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
+                                          interpret st [] [] new_line
+      | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
+                                          interpret st [] [] new_line
+      | exception (AssertionError)-> print_endline ("Assertion Error: "); 
+                                     interpret st [] [] new_line
+      | exception EmptyInput -> interpret st t n_t new_line
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
-        let (conds, bodies, remaining_lines) = read_if [cond] [] body (t = []) t in 
+        let (conds, bodies, next_lines, next_line_nums) 
+          = read_if [cond] [] body (t = []) t n_t in 
         let new_state = interpret_if conds bodies st in
-        interpret new_state remaining_lines false
+        interpret new_state next_lines next_line_nums false
       | exception (WhileMultiline (cond, init_body)) -> 
         (* Parse out the loop condition and body, process them in [interpret_while] *)
-        let (while_cond, while_body, remaining_lines) = read_while cond (String.trim init_body) t new_line in
+        let (while_cond, while_body, next_lines, next_line_nums) 
+          = read_while cond (String.trim init_body) t n_t new_line in
         let new_state = interpret_while while_cond while_body st in
-        interpret new_state remaining_lines new_line
+        interpret new_state next_lines next_line_nums new_line
       | exception (DefMultiline (name, args, init_body)) -> 
         (* Parse the body of the function *)
-        let (function_body, remaining_lines) = read_function (String.trim init_body) t new_line in
+        let (function_body, next_lines, next_line_nums) = 
+          read_function (String.trim init_body) t n_t new_line in
         (* Assign function definition to function name in global state *)
         let new_st  = Evaluate.evaluate (Some name, Value(Function(name, args, function_body))) st in
-        interpret new_st remaining_lines new_line
-      | newst -> interpret newst t new_line)
+        interpret new_st next_lines next_line_nums new_line
+      | newst -> interpret newst t n_t new_line)
+  | _, _ -> failwith "Line numbers do not match up with lines"
 and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : State.t =
   (* Go through [conds] and respective [bodies] in order. If any condition evaluates to true,
      then we run the corresponding body through the interpreter and throw out the rest *)
   match conds, bodies with
   | cond::c_t, body::b_t -> (match Evaluate.eval cond st |> Evaluate.if_decider with
-      | true -> interpret st (String.split_on_char '\n' body) false
+      | true -> let body_lines = String.split_on_char '\n' body in
+                let line_nums = create_int_list (List.length body_lines) in
+                interpret st body_lines line_nums false
       | false -> interpret_if c_t b_t st)
   | _, _ -> raise (SyntaxError "Conditional statements and bodies mismatched")
 and interpret_while (cond : expr) (body : string) (st: State.t) : State.t = 
@@ -112,6 +144,7 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     (* If while conditional is true, then we want to interpret the body, and after that,
        interpret the loop condition until it's false *)
     let new_lines = String.split_on_char '\n' body in
-    let new_state = interpret st new_lines false in interpret_while cond body new_state
-  | false -> interpret st [] false
+    let new_line_nums = create_int_list (List.length new_lines) in
+    let new_state = interpret st new_lines new_line_nums false in interpret_while cond body new_state
+  | false -> interpret st [] [] false
 

@@ -4,4 +4,4 @@ open State
 *)
 
 (* You are free to add more code here. *)
-val interpret : State.t -> string list -> bool -> State.t
+val interpret : State.t -> string list -> int list -> bool -> State.t

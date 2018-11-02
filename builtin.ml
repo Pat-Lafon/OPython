@@ -91,7 +91,7 @@ let splice (lst : value list) : State.value =
       let length = List.length !a1 in
       let idx = (match a2 with 
           | Int x -> if x > length || x < -length 
-            then raise (IndexError "list index out of range")
+            then raise (IndexError ("list index out of range"))
             else (x+length) mod length
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
@@ -100,7 +100,7 @@ let splice (lst : value list) : State.value =
       let length = String.length a1 in
       let idx = (match a2 with 
           | Int x -> if x > length || x < -length 
-            then raise (IndexError "list index out of range")
+            then raise (IndexError ("list index out of range"))
             else (x+String.length a1) mod (String.length a1)
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = Char.escaped (String.get a1 idx) in
@@ -143,6 +143,9 @@ let splice (lst : value list) : State.value =
     let rec helper_str str x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y > String.length str then helper_str str x (List.length lst) z else 
+    if x >= y then "" else String.concat "" 
+        ([String.sub str x 1;  helper_str str (x+z) y z]) in
+    let splice_str str x y z =
     if z > 0 then (if x >= y then "" else String.concat "" 
                        ([String.sub str x 1;  helper_str str (x+z) y z])) else
     if x <= y then "" else String.concat "" 
@@ -301,7 +304,19 @@ let int (val_list: value list) =
   | [] -> Int(0)
   | _ -> raise (TypeError "int() can't convert more than one argument")
 
+let rec list (v : value list) = match v with
+  | [] -> VList(ref[])
+  | VList(l)::[]-> VList(l)
+  | String(s)::[] -> let rec help_list str = if str = "" then [] else 
+                       if String.length str = 1 then [String(str)] else 
+                         String(String.sub s 0 1) :: (help_list (String.sub s 1 1))
+    in VList(ref(help_list s))
+  | _ :: [] -> raise (TypeError ("Input type is not iterable"))
+  | x -> raise (TypeError ("list() takes at most 1 argument (" 
+                           ^ string_of_int (List.length x) ^ " given)"))
+
+
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index); ("assert", assertt)]
+                          ("index", index); ("assert", assertt); ("list", list)]

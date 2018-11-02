@@ -29,7 +29,8 @@ val bool : value list -> State.value
 
 val float : value list -> State.value
 
-
 val int : value list -> State.value
+
+val list : value list -> State.value
 
 val built_in_functions : (string * (State.value list -> State.value)) list
