@@ -1,15 +1,16 @@
 # fibonacci function
-def fib5(x):
-    return fib(5)
-
 def fib(x):
     if x == 0 or x == 1:
         return 1
     return fib(x-2) + fib(x-1)
 
-x = fib5(0)
-print(x)
+# Reference one function from another
+def fib5(x):
+    return fib(5)
 
+x = fib5(0)
+
+# 10th fib number is 89
 assert(fib(10) == 89)
 
 # Test while loop
@@ -71,22 +72,24 @@ assert(not [])
 assert([] or 1)
 assert(5 - 5 == 0)
 assert(5 - 4)
+
 # TODO: boolean for None types
-# TODO: a = None
-# assert(not [].append(5))
+assert(not None)
+assert(None == None)
+assert(not [].append(5))
+
 
 # Assignment tests
 a = 5
 assert(a == 5)
 a = []
 assert(a == [])
-# TODO: None of the street assertions work
-# a = ""
-# assert(a == "")
-# a = a + "b"
-# assert(a == "b")
-# a = a + "b"
-# assert(a == "bb")
+a = ""
+assert(a == "")
+a = a + "b"
+assert(a == "b")
+a = a + "b"
+assert(a == "bb")
 
 # Nested if in while loop
 x = 1
@@ -108,19 +111,17 @@ assert(l == [5])
 x = 0
 l = []
 while x < 10:
-    # TODO: this is printing the array and it shouldn't
     # TODO: Commenting at the end of a line 
     l.append(x)
     x = x + 1
 # assert(l == range(10))
 # TODO: this is actually incorrect, list(range(x)) gives a list, range gives an iterator
 # We should have a list() function
-# assert(l == list(range(10)))
+assert(l == list(range(10)))
 
 x = 0
 l = []
 while x < 10:
-    # TODO: this is printing the array and it shouldn't
     if x % 2 == 0:
         l.append(x)
     x = x + 1
@@ -128,19 +129,17 @@ assert(l == [0,2,4,6,8])
 
 # Implement prefix sum
 def prefix_arr(arr):
-    # TODO: This doesn't work because indexing returns a list instead of a value!
-    # sums = [arr[0]]
-    # sums = [] + arr[0]
-    # i = 0
-    # while i < len(arr):
-    #     sums.append(sums[-1] + arr[i])
-    #     i = i + 1
-    # print(sums)
-    return 1
+    sums = [arr[0]]
+    i = 1
+    while i < len(arr):
+        sums.append(sums[-1] + arr[i])
+        i = i + 1
+    return sums
 
-prefix_arr([1,2,3,4])
+prefix_sums = prefix_arr([1,2,3,4,5,6,7])
+assert(prefix_sums == [1, 3, 6, 10, 15, 21, 28])
 
-# TODO indexing must work before these work
+# Return the value right of val
 def bin_search_right(arr, val):
     lo, hi = 0, len(arr) - 1
     while lo < hi:
@@ -151,6 +150,7 @@ def bin_search_right(arr, val):
             hi = mid
     return lo
 
+# Return the value left of val
 def bin_search_left(arr, val):
     lo, hi = 0, len(arr) - 1
     while lo < hi:
@@ -160,3 +160,9 @@ def bin_search_left(arr, val):
         else:
             hi = mid - 1
     return lo
+
+arr = [1, 3, 5, 7, 7, 7, 9, 11, 11, 11, 13, 16, 22, 24, 25, 25, 26, 27, 27, 29]
+assert(bin_search_left(arr, 7) == 2)
+assert(bin_search_right(arr, 7) == 6)
+assert(bin_search_left(arr, 11) == 6)
+assert(bin_search_right(arr, 11) == 10)

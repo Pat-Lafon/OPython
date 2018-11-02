@@ -62,6 +62,7 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Not, Int x -> if x = 0 then Bool true else Bool false
      | Not, Float x -> if x = 0. then Bool true else Bool false
      | Not, Bool x -> Bool (not x)
+     | Not, NoneVal -> Bool (true)
      | Not, String x -> if String.length x = 0 then Bool true else Bool false
      | Not, VList x -> if !x = [] then Bool true else Bool false
      | Complement, Int x -> Int (-x-1)
