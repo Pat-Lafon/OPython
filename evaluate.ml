@@ -14,11 +14,12 @@ let printt (value:State.value): unit = match to_string value with
 (**[if_decider val] takes in a [State.value] and returns false if the values match
    a "false" value of a respective type. The "empty" or "zero" of each type 
    results in false, and if "non-empty" or "non-zero" then true*) 
-let  if_decider = function
+let if_decider = function
   | Int(0) -> false
   | String("") -> false
   | Bool(false) -> false
   | Float(0.0)  -> false
+  | NoneVal -> false
   | VList(a) -> if !a = [] then false else true
   | _ -> true
 
@@ -70,14 +71,14 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
   | Variable x -> 
     (match State.find x st with 
      | Some t -> t
-     | None -> raise (NameError ("name '"^x^"' is not defined")))
+     | None -> raise (NameError ("variable name '"^x^"' is not defined")))
   | Value x -> x
   | List x -> VList (ref (List.map (fun x -> eval x st) x))
   | Function (f, lst) -> 
     if (List.assoc_opt f built_in_functions <> None) 
     then List.assoc f built_in_functions (List.map (fun x -> eval x st) lst)
     else if (List.mem_assoc f st) then run_function f lst st
-    else raise (NameError ("name '"^f^"' is not defined"))
+    else raise (NameError ("function name '"^f^"' is not defined"))
 
 (** [evaluate input st] determines whether or not [input] is an assignment 
     statement; If there is an assignment, the expression the variable is assigned to
