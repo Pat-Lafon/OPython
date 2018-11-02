@@ -72,12 +72,19 @@ assert(not [])
 assert([] or 1)
 assert(5 - 5 == 0)
 assert(5 - 4)
+<<<<<<< HEAD
 # TODO: boolean for None types
 assert(not None)
 assert(None == None)
 # TODO: a = None
 if a == None:
     assert (not a)
+=======
+
+# TODO: boolean for None types
+assert(not None)
+assert(None == None)
+>>>>>>> 093caf21beb166bcdb8da63b2e1c4818af98b17c
 assert(not [].append(5))
 
 

@@ -318,8 +318,17 @@ let rec list (v : value list) = match v with
 (** Quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
 
+let rec replace (v : value list) = match v with
+  | VList(l):: Int(idx):: x :: []-> let
+    rec replace_help l idx x = begin match l with 
+      | [] -> []
+      | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
+    end
+    in VList(ref (replace_help !l idx x))
+  | _ -> raise (TypeError (""))
+
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
                           ("index", index); ("assert", assertt); 
-                          ("list", list); ("quit", quit)]
+                          ("list", list); ("quit", quit); ("replace", replace)]
