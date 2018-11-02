@@ -152,7 +152,7 @@ let rec split_on_char (chr:char) (line:string) : string list =
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in
   if idx <> -1 then 
-    let prev = if idx - 1 = -1 then raise (SyntaxError "invalid syntax")
+    let prev = if idx = 0 then raise (SyntaxError "invalid syntax")
       else String.get line (idx-1) in
     let next = if idx + 1 = String.length line then raise (SyntaxError "invalid syntax")
       else String.get line (idx+1) in
@@ -219,7 +219,7 @@ let parse_assignment (line:string) : string option * expr =
   else
     match expr_contains (String.sub line (eq_idx-2) 2) (List.flatten operators) with 
     | Some x, _ -> let left = x |> fst |> String.length |> (fun x -> eq_idx - x) 
-                              |> String.sub line 0 |> is_var_name in
+                              |> String.sub line 0 |> trim |> is_var_name in
       Some left, Binary(Variable left, snd x, parse_expr right operators)
     | None, _ -> let left = is_var_name (trim (String.sub line 0 eq_idx)) in
       Some left, parse_expr right operators
