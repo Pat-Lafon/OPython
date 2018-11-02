@@ -228,7 +228,7 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
 and run_function f_name expr_args global_st = 
   match List.assoc f_name global_st with
   | Function(name, string_args, body) as f -> 
-    let func_st = create_function_state expr_args string_args State.empty 
+    let func_st = create_function_state expr_args string_args global_st
         global_st f_name f in
     let new_state = (try interpret func_st (String.split_on_char '\n' 
                                               (String.trim body)) false with

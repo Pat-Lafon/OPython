@@ -1,8 +1,14 @@
 # fibonacci function
+def fib5(x):
+    return fib(5)
+
 def fib(x):
     if x == 0 or x == 1:
         return 1
     return fib(x-2) + fib(x-1)
+
+x = fib5(0)
+print(x)
 
 assert(fib(10) == 89)
 
@@ -106,7 +112,7 @@ while x < 10:
     # TODO: Commenting at the end of a line 
     l.append(x)
     x = x + 1
-assert(l == range(10))
+# assert(l == range(10))
 # TODO: this is actually incorrect, list(range(x)) gives a list, range gives an iterator
 # We should have a list() function
 # assert(l == list(range(10)))
@@ -124,12 +130,13 @@ assert(l == [0,2,4,6,8])
 def prefix_arr(arr):
     # TODO: This doesn't work because indexing returns a list instead of a value!
     # sums = [arr[0]]
-    sums = [] + arr[0]
-    i = 0
-    while i < len(arr):
-        sums.append(sums[-1] + arr[i])
-        i = i + 1
-    print(sums)
+    # sums = [] + arr[0]
+    # i = 0
+    # while i < len(arr):
+    #     sums.append(sums[-1] + arr[i])
+    #     i = i + 1
+    # print(sums)
+    return 1
 
 prefix_arr([1,2,3,4])
 
@@ -153,4 +160,3 @@ def bin_search_left(arr, val):
         else:
             hi = mid - 1
     return lo
-

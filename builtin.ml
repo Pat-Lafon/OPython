@@ -212,9 +212,9 @@ let append (val_list : value list)=
   | lst::value::[] -> 
     (match lst with
      | VList x -> x := !x@value::[]; VList(x)
-     | _ -> failwith("not a list")
+     | _ -> raise (TypeError("requires a list"))
     )
-  | _ -> failwith("not enough args")
+  | _ -> raise (TypeError("requires two arguments"))
 
 
 let print (val_list : value list) =
@@ -267,9 +267,9 @@ let chr (val_list : value list) =
   match val_list with
   | Int(x)::[] ->if (x>=0) && (x<=1114111) 
     then String(Char.escaped((Uchar.to_char(Uchar.of_int(x))))) 
-    else failwith("int out of bounds")
-  | _ ::[]-> failwith("requires int")
-  | _ -> failwith("needs 1 arg, this is not 1 arg")
+    else raise (ValueError("chr() arg is not in range"))
+  | _ ::[]-> raise (TypeError("an integer is required"))
+  | _ -> raise (TypeError("chr() takes exactly 1 argument"))
 
 let bool (val_list: value list) = 
   match val_list with
@@ -281,7 +281,7 @@ let bool (val_list: value list) =
   | Function x::[] -> Bool true
   | NoneVal :: [] -> Bool false
   | [] -> Bool false
-  | _ -> failwith("neither empty nor 1 arg")
+  | _ -> raise (TypeError("bool() takes at most 1 argument"))
 
 let float (val_list: value list) =
   match val_list with
@@ -289,22 +289,18 @@ let float (val_list: value list) =
   | Float x::[] -> Float x
   | String x::[] -> if float_of_string_opt(x) <> None 
     then Float(float_of_string(x)) 
-    else raise (SyntaxError "near unexpected token `\"hello\"")
-  | _::[] -> failwith("not really sure what to do with Function")
+    else raise (ValueError "could not convert input to float")
+  | _::[] -> raise (TypeError("float() argument must be a string or a number"))
   | [] -> Float(0.0)
-  | _ -> failwith("neither empty nor 1 arg")
+  | _ -> raise (TypeError("float() takes at most 1 argument"))
 
 let int (val_list: value list) = 
   match val_list with
   | Int(x)::[] -> Int(x)
   | Float(x)::[] -> Int(int_of_float(x))
   | String(x)::[] -> if int_of_string_opt(x) <> None then Int(int_of_string(x)) 
-    else failwith("can't do that")
+    else raise (ValueError("could not convert input to int"))
   | Bool x ::[]-> if x then Int 1 else Int 0
-  | VList _ ::[]-> raise(TypeError("int() argument must be a string, a "
-                                   ^"bytes-like object or a number, not 'list'"))
-  | Function _ ::[] -> failwith "Should not be possible"
-  | NoneVal ::[] -> failwith "Should not be possible"
   | [] -> Int(0)
   | _ -> raise (TypeError "int() can't convert more than one argument")
 
