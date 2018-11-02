@@ -211,10 +211,25 @@ let append (val_list : value list)=
     )
   | _ -> failwith("not enough args")
 
+
 let print (val_list : value list) =
   print_endline(List.fold_left (fun acc value -> acc^(to_string value)) "" 
                   val_list);
   NoneVal 
+
+let if_decider = function
+  | Int(0) -> false
+  | String("") -> false
+  | Bool(false) -> false
+  | NoneVal -> false
+  | Float(0.0)  -> false
+  | VList(a) -> if !a = [] then false else true
+  | _ -> true
+
+let rec assertt (val_list : value list) =
+  match val_list with
+  | [] -> NoneVal 
+  | h::t -> if if_decider h then assertt t else raise AssertionError
 
 let len (lst : value list) : State.value = match lst with
   | VList(l)::[] -> Int(List.length !l)
@@ -291,4 +306,4 @@ let int (val_list: value list) =
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index)]
+                          ("index", index); ("assert", assertt)]

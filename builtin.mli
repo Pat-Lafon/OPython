@@ -14,6 +14,8 @@ val splice : value list -> State.value
 
 val append : value list -> State.value
 
+val assertt : value list -> State.value
+
 val print : value list -> State.value 
 
 val len : value list -> State.value 

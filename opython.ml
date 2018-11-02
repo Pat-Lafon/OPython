@@ -16,6 +16,7 @@ let _ =
       (match Pervasives.input_line file with
       | exception End_of_file -> Pervasives.close_in file; List.rev lines
       | "" -> file_helper file lines
-      | text -> file_helper file (text::lines)) in
+      | text -> if String.get (String.trim text) 0 = '#' then file_helper file lines 
+                else file_helper file (text::lines)) in
     let lines = file_helper (Pervasives.open_in file_name) [] in
     interpret State.empty lines false
