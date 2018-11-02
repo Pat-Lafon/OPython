@@ -100,12 +100,14 @@ let helper_mod = function
   | Bool x, Int y -> if x then Int (1 mod y) else Int 0
   | Bool x, Float y -> if x then Float (mod_float 1. y) else Float 0.
   | Bool x, Bool y -> Float 0.
-  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for %")
-  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for %")
-  | Function t, _-> raise (TypeError "unsupported operand type function for %")
-  | _, Function t-> raise (TypeError "unsupported operand type function for %")
-  | _, NoneVal -> raise (TypeError "unsupported operand type function for %")
-  | NoneVal, _ -> raise (TypeError "unsupported operand type function for %")
+  | String x, _ | _, String x -> 
+    raise (TypeError "unsupported operand type for %")
+  | VList x, _ | _, VList x -> 
+    raise (TypeError "unsupported operand type for %")
+  | Function t, _| _, Function t-> 
+    raise (TypeError "unsupported operand type function for %")
+  | _, NoneVal | NoneVal, _ -> 
+    raise (TypeError "unsupported operand type function for %")
 
 let helper_exp = function 
   | Int x, Int y -> Int (int_of_float (float_of_int x ** float_of_int y))
@@ -117,12 +119,14 @@ let helper_exp = function
   | Bool x, Int y -> if x then Int(int_of_float(1.0 ** float_of_int y)) else Int 0
   | Bool x, Float y -> if x then Float(1.0 ** y) else Float 0.
   | Bool x, Bool y -> if not x && y then Int 0 else Int 1
-  | VList x, _ | _, VList x -> raise (TypeError "unsupported operand type for **")
-  | String x, _ | _, String x -> raise (TypeError "unsupported operand type for **")
-  | Function t, _-> raise (TypeError "unsupported operand type function for **")
-  | _, Function t-> raise (TypeError "unsupported operand type function for **")
-  | _, NoneVal -> raise (TypeError "unsupported operand type function for **")
-  | NoneVal, _ -> raise (TypeError "unsupported operand type function for **")
+  | VList x, _ | _, VList x -> 
+    raise (TypeError "unsupported operand type for **")
+  | String x, _ | _, String x -> 
+    raise (TypeError "unsupported operand type for **")
+  | Function t, _ | _, Function t-> 
+    raise (TypeError "unsupported operand type function for **")
+  | _, NoneVal | NoneVal, _ -> 
+    raise (TypeError "unsupported operand type function for **")
 
 let helper_and = function
   | Int x, y -> if x = 0 then Int 0 else y
@@ -152,13 +156,15 @@ let helper_equal = function
   | Bool x, Int y -> if x then Bool(y=1) else Bool (y=0)
   | Bool x, Float y -> if x then Bool(y=1.0) else Bool (y=0.0)
   | Bool x, Bool y -> Bool (x = y)
-  | String x, _ | _, String x -> Bool false
+  | String x, String y -> Bool(x=y)
+  | _, String x |String x, _-> Bool false
   | VList x, VList y -> Bool(x=y)    (*ask eric about this note*)
   | VList x, _ | _, VList x -> Bool false
   | Function (name1, args1, body1), Function (name2, args2, body2) -> 
     Bool (name1 = name2)
   | NoneVal, NoneVal -> Bool true
-  | _, _ -> Bool false
+  | NoneVal, _ | _, NoneVal -> Bool false
+  | Function _, _ | _, Function _ -> Bool false
 
 let helper_greater_than = function
   | Int x, Int y -> Bool (x > y)
@@ -170,9 +176,12 @@ let helper_greater_than = function
   | Bool x, Int y -> if x then Bool(y<1) else Bool (y<0)
   | Bool x, Float y -> if x then Bool(y<1.0) else Bool (y<0.0)
   | Bool x, Bool y -> if x then Bool(not y) else Bool (false)
+  | String x, String y ->  Bool (x>y)
   | String x, _ | _, String x -> Bool false
+  | VList x, VList y -> Bool(x>y)
   | VList x, _ | _, VList x -> Bool false
-  | _ -> raise (NameError ("Operation not defined for functions"))
+  | NoneVal, _ | _, NoneVal -> Bool false
+  | Function _, _ | _, Function _ -> Bool false
 
 let helper_greater_equal = function
   | Int x, Int y -> Bool (x >= y)
@@ -184,23 +193,12 @@ let helper_greater_equal = function
   | Bool x, Int y -> if x then Bool(y<=1) else Bool (y<=0)
   | Bool x, Float y -> if x then Bool(y<=1.0) else Bool (y<=0.0)
   | Bool x, Bool y -> if x then Bool(true) else Bool (not y)
+  | String x, String y -> Bool(x>=y)
   | String x, _ | _, String x -> Bool false
+  | VList x, VList y -> Bool(x>=y)
   | VList x, _ | _, VList x -> Bool false
-  | _ -> raise (NameError ("Operation not defined for functions"))
-
-let helper_greater_equal = function
-  | Int x, Int y -> Bool (x >= y)
-  | Int x, Float y -> Bool (float_of_int x >= y)
-  | Int x, Bool y -> if y then Bool(x>=1) else Bool (x>=0)
-  | Float x, Int y -> Bool (x >= float_of_int y)
-  | Float x, Float y -> Bool (x >= y)
-  | Float x, Bool y -> if y then Bool(x>=1.0) else Bool (x>=0.0)
-  | Bool x, Int y -> if x then Bool(y<=1) else Bool (y<=0)
-  | Bool x, Float y -> if x then Bool(y<=1.0) else Bool (y<=0.0)
-  | Bool x, Bool y -> if x then Bool(true) else Bool (not y)
-  | String x, _ | _, String x -> Bool false
-  | VList x, _ | _, VList x -> Bool false
-  | _ -> raise (NameError ("Operation not defined for functions"))
+  | NoneVal, _ | _, NoneVal -> Bool false
+  | Function _, _ | _, Function _ -> Bool false
 
 let helper_less_than = function
   | Int x, Int y -> Bool (x < y)
@@ -212,9 +210,12 @@ let helper_less_than = function
   | Bool x, Int y -> if x then Bool(y>1) else Bool (y>0)
   | Bool x, Float y -> if x then Bool(y>1.0) else Bool (y>0.0)
   | Bool x, Bool y -> if not x then Bool(true) else Bool (y)
+  | String x, String y -> Bool(x<y)
   | String x, _ | _, String x -> Bool false
+  | VList x, VList y -> Bool(x<y)
   | VList x, _ | _, VList x -> Bool false
-  | _ -> raise (NameError ("Operation not defined for given types"))
+  | NoneVal, _ | _, NoneVal -> Bool false
+  | Function _, _ | _, Function _ -> Bool false
 
 let helper_less_equal = function
   | Int x, Int y -> Bool (x <= y)
@@ -226,6 +227,9 @@ let helper_less_equal = function
   | Bool x, Int y -> if x then Bool(y>=1) else Bool (y>=0)
   | Bool x, Float y -> if x then Bool(y>=1.0) else Bool (y>=0.0)
   | Bool x, Bool y -> if not x then Bool(y) else Bool (false)
+  | String x, String y -> Bool(x<=y)
   | String x, _ | _, String x -> Bool false
+  | VList x, VList y -> Bool(x<=y)
   | VList x, _ | _, VList x -> Bool false
-  | _ -> raise (NameError ("Operation not defined for given types"))
+  | NoneVal, _ | _, NoneVal -> Bool false
+  | Function _, _ | _, Function _ -> Bool false

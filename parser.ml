@@ -154,7 +154,8 @@ let is_assignment (line:string) : bool =
   if idx <> -1 then 
     let prev = if idx = 0 then raise (SyntaxError "invalid syntax")
       else String.get line (idx-1) in
-    let next = if idx + 1 = String.length line then raise (SyntaxError "invalid syntax")
+    let next = if idx + 1 = String.length line 
+      then raise (SyntaxError "invalid syntax")
       else String.get line (idx+1) in
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
@@ -193,6 +194,7 @@ and
       else if float_of_string_opt line <> None then Value(Float(float_of_string line))
       else if "True" = line || "False" = line 
       then Value(Bool(bool_of_string (String.lowercase_ascii line)))
+      else if "None" = line then Value(NoneVal)
       else if args <> -1 && fstarg <> -1 
       then Function(String.sub line (fstarg+1) (args-fstarg-1), 
                     exprlst(String.sub line 0 (fstarg) ^","^ 
