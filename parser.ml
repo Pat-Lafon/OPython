@@ -280,7 +280,6 @@ let parse_line (line : string) : string option * expr =
   | Def (name, args, body) -> raise (DefMultiline (name, args, body))
   | Elif (cond, body) -> raise (SyntaxError "Elif statement with no if")
   | Else -> raise (SyntaxError "Else statement with no if")
-  (* line type is helpful for later *)
   | Line l -> (None, parse_expr line operators)
   | While (cond, body) -> raise (WhileMultiline (cond, body)) 
   | Return (expr) -> raise (ReturnExpr (expr))

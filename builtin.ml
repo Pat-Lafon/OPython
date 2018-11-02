@@ -91,7 +91,7 @@ let splice (lst : value list) : State.value =
       let length = List.length !a1 in
       let idx = (match a2 with 
           | Int x -> if x > length || x < -length 
-            then raise (IndexError "list index out of range")
+            then raise (IndexError ("list index out of range"))
             else (x+length) mod length
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
@@ -100,7 +100,7 @@ let splice (lst : value list) : State.value =
       let length = String.length a1 in
       let idx = (match a2 with 
           | Int x -> if x > length || x < -length 
-            then raise (IndexError "list index out of range")
+            then raise (IndexError ("list index out of range"))
             else (x+String.length a1) mod (String.length a1)
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = Char.escaped (String.get a1 idx) in
@@ -143,6 +143,9 @@ let splice (lst : value list) : State.value =
     let rec helper_str str x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y > String.length str then helper_str str x (List.length lst) z else 
+    if x >= y then "" else String.concat "" 
+        ([String.sub str x 1;  helper_str str (x+z) y z]) in
+    let splice_str str x y z =
     if z > 0 then (if x >= y then "" else String.concat "" 
                        ([String.sub str x 1;  helper_str str (x+z) y z])) else
     if x <= y then "" else String.concat "" 
@@ -208,10 +211,10 @@ let append (val_list : value list)=
   match val_list with
   | lst::value::[] -> 
     (match lst with
-     | VList x -> x := !x@value::[]; VList(x)
+     | VList x -> x := !x@value::[]; NoneVal
      | _ -> failwith("not a list")
     )
-  | _ -> failwith("not enough args")
+  | _ -> raise (TypeError("requires two arguments"))
 
 
 let print (val_list : value list) =
@@ -264,9 +267,9 @@ let chr (val_list : value list) =
   match val_list with
   | Int(x)::[] ->if (x>=0) && (x<=1114111) 
     then String(Char.escaped((Uchar.to_char(Uchar.of_int(x))))) 
-    else failwith("int out of bounds")
-  | _ ::[]-> failwith("requires int")
-  | _ -> failwith("needs 1 arg, this is not 1 arg")
+    else raise (ValueError("chr() arg is not in range"))
+  | _ ::[]-> raise (TypeError("an integer is required"))
+  | _ -> raise (TypeError("chr() takes exactly 1 argument"))
 
 let bool (val_list: value list) = 
   match val_list with
@@ -278,7 +281,7 @@ let bool (val_list: value list) =
   | Function x::[] -> Bool true
   | NoneVal :: [] -> Bool false
   | [] -> Bool false
-  | _ -> failwith("neither empty nor 1 arg")
+  | _ -> raise (TypeError("bool() takes at most 1 argument"))
 
 let float (val_list: value list) =
   match val_list with
@@ -286,26 +289,42 @@ let float (val_list: value list) =
   | Float x::[] -> Float x
   | String x::[] -> if float_of_string_opt(x) <> None 
     then Float(float_of_string(x)) 
-    else raise (SyntaxError "near unexpected token `\"hello\"")
-  | _::[] -> failwith("not really sure what to do with Function")
+    else raise (ValueError "could not convert input to float")
+  | _::[] -> raise (TypeError("float() argument must be a string or a number"))
   | [] -> Float(0.0)
-  | _ -> failwith("neither empty nor 1 arg")
+  | _ -> raise (TypeError("float() takes at most 1 argument"))
 
 let int (val_list: value list) = 
   match val_list with
   | Int(x)::[] -> Int(x)
   | Float(x)::[] -> Int(int_of_float(x))
   | String(x)::[] -> if int_of_string_opt(x) <> None then Int(int_of_string(x)) 
-    else failwith("can't do that")
+    else raise (ValueError("could not convert input to int"))
   | Bool x ::[]-> if x then Int 1 else Int 0
-  | VList _ ::[]-> raise(TypeError("int() argument must be a string, a "
-                                   ^"bytes-like object or a number, not 'list'"))
-  | Function _ ::[] -> failwith "Should not be possible"
-  | NoneVal ::[] -> failwith "Should not be possible"
   | [] -> Int(0)
   | _ -> raise (TypeError "int() can't convert more than one argument")
+
+let rec list (v : value list) = match v with
+  | [] -> VList(ref[])
+  | VList(l)::[]-> VList(l)
+  | String(s)::[] -> let rec help_list str = if str = "" then [] else 
+                       if String.length str = 1 then [String(str)] else 
+                         String(String.sub s 0 1) :: (help_list (String.sub s 1 1))
+    in VList(ref(help_list s))
+  | _ :: [] -> raise (TypeError ("Input type is not iterable"))
+  | x -> raise (TypeError ("list() takes at most 1 argument (" 
+                           ^ string_of_int (List.length x) ^ " given)"))
+
+let rec replace (v : value list) = match v with
+  | VList(l):: Int(idx):: x :: []-> let
+    rec replace_help l idx x = begin match l with 
+      | [] -> []
+      | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
+    end
+    in VList(ref (replace_help !l idx x))
+  | _ -> raise (TypeError (""))
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index); ("assert", assertt)]
+                          ("index", index); ("assert", assertt); ("list", list)]
