@@ -153,6 +153,7 @@ let helper_equal = function
   | Bool x, Float y -> if x then Bool(y=1.0) else Bool (y=0.0)
   | Bool x, Bool y -> Bool (x = y)
   | String x, _ | _, String x -> Bool false
+  | VList x, VList y -> Bool(x=y)    (*ask eric about this note*)
   | VList x, _ | _, VList x -> Bool false
   | Function (name1, args1, body1), Function (name2, args2, body2) -> 
     Bool (name1 = name2)

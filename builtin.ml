@@ -55,11 +55,15 @@ let rec splice_string (item:string) start stop step =
        ^ splice_string item start (stop+step) step
 
 let rec splice_list (item: value list) start stop step =
+  let () = print_endline (string_of_int start) in   let () = print_endline (string_of_int stop) in
   if start >= stop then []
   else if step > 0 then List.nth item start
                         :: splice_list item (start+step) stop step
   else List.nth item (stop-1) :: splice_list item start (stop+step) step
 
+(** The splice function as in Python; the first element of lst is the 
+    string/list to splice, the optional second to fourth elements of lst consist 
+    of the start, end, and stepping of the index **)
 let splice (lst : value list) : State.value = 
   let item, start, stop, step = match lst with
     | VList a1 :: a2 :: a3 :: a4 :: [] -> 
@@ -85,31 +89,41 @@ let splice (lst : value list) : State.value =
       let a2 = if a2 = String "" then Int 0 else a2
       in String a1, a2, a3, a4
     | VList a1 :: a2 :: [] -> 
-      let a4 =  Int 1 in 
-      let a3 =  Int (List.length !a1) in
-      let a2 = if a2 = String "" then Int 0 else a2
-      in VList a1, a2, a3, a4
-    | String a1 :: a2 :: [] -> 
-      let a4 = Int 1 in 
-      let a3 = Int (String.length a1) in
-      let a2 = if a2 = String "" then Int 0 else a2
-      in String a1, a2, a3, a4
+      let length = List.length !a1 in
+      let idx = (match a2 with 
+          | Int x -> if x > length || x < -length 
+            then raise (IndexError "list index out of range")
+            else (x+length) mod length
+          | _ -> raise (SyntaxError "invalid syntax")) in
+      let a1 = ref(List.nth !a1 idx::[])
+      in VList a1, NoneVal, NoneVal, NoneVal
+    | String a1 :: a2 :: [] ->
+      let length = String.length a1 in
+      let idx = (match a2 with 
+          | Int x -> if x > length || x < -length 
+            then raise (IndexError "list index out of range")
+            else (x+String.length a1) mod (String.length a1)
+          | _ -> raise (SyntaxError "invalid syntax")) in
+      let a1 = Char.escaped (String.get a1 idx) in
+      String a1, NoneVal, NoneVal, NoneVal
     | a1 :: [] -> raise (SyntaxError "invalid syntax")
     | a1 -> raise (SyntaxError "invalid syntax") in
   match item, start, stop, step with 
+  | VList a1, NoneVal, NoneVal, NoneVal -> VList a1
+  | String a1, NoneVal, NoneVal, NoneVal -> String a1
   | VList a1, Int a2, Int a3, Int a4 -> 
     let length = List.length !a1 in
     let a2, a3 = 
       if a2 > length || a2 < -length || a3 > length || a3 < -length
       then raise (IndexError "list index out of range")
-      else a2 mod length, a3 mod (length+1) in
+      else (a2+length) mod length, (a3+length+1) mod (length+1) in
     VList(ref(splice_list !a1 a2 a3 a4))
   | String a1, Int a2, Int a3, Int a4 -> 
     let length = String.length a1 in
     let a2, a3 = 
       if a2 > length || a2 < -length || a3 > length || a3 < -length
       then raise (IndexError "list index out of range")
-      else a2 mod length, a3 mod (length+1) in 
+      else (a2+length) mod length, (a3+length+1) mod (length+1) in
     String(splice_string a1 a2 a3 a4)
   | _ -> failwith "Something went wrong in splice evaluation"
 

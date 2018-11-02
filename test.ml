@@ -11,14 +11,6 @@ let make_line_test
   name >:: (fun _ -> 
       assert_equal expected_output (evaluate (parse_line line) state))
 
-let make_check_values_test
-    (name : string)
-    (line : string)
-    (state : State.t)
-    (expected_output : State.t) : test = 
-  name >:: (fun _ -> 
-      assert_equal expected_output (evaluate (parse_line line) state))
-
 (**** TESTING *****)
 
 let arith_tests = [
@@ -54,6 +46,9 @@ let function_tests = [
   make_line_test "int2" "x = int(1234.02344)" ["x", Int(1234)] [];
   make_line_test "float" "x = float(345)" ["x", Float(345.)] [];
   make_line_test "float2" "x = float([])" ["x", Float(0.)] [];
+
+  make_line_test "append1" "x = [123, 23] == append([123],23)" ["x",Bool(true)] [];
+  make_line_test "append2" "x = [\"\"] == append([],\"\")" ["x", Bool(true)] [];
 ]
 
 
