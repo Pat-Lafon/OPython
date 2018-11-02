@@ -327,4 +327,4 @@ let rec replace (v : value list) = match v with
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index); ("assert", assertt); ("list", list)]
+                          ("index", index); ("assert", assertt); ("list", list); ("replace", replace)]
