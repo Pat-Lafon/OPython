@@ -268,8 +268,8 @@ and to_string (value:State.value) : string =
   | String x -> "'" ^ x ^ "'"
   | NoneVal -> "None"
 
-and printt (value:State.value):unit = match to_string value with
-  | "NoneVal" -> ()
+and printt (value:State.value) : unit = match to_string value with
+  | "None" -> ()
   | s -> print_endline s
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
