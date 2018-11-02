@@ -55,7 +55,6 @@ let rec splice_string (item:string) start stop step =
        ^ splice_string item start (stop+step) step
 
 let rec splice_list (item: value list) start stop step =
-  let () = print_endline (string_of_int start) in   let () = print_endline (string_of_int stop) in
   if start >= stop then []
   else if step > 0 then List.nth item start
                         :: splice_list item (start+step) stop step
