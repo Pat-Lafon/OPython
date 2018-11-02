@@ -315,8 +315,11 @@ let rec list (v : value list) = match v with
   | x -> raise (TypeError ("list() takes at most 1 argument (" 
                            ^ string_of_int (List.length x) ^ " given)"))
 
+(** Quit in actual python can take an arg, it ignores it.*)
+let quit arg = exit 0
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index); ("assert", assertt); ("list", list)]
+                          ("index", index); ("assert", assertt); 
+                          ("list", list); ("quit", quit)]
