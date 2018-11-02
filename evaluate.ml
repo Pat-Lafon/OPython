@@ -646,7 +646,6 @@ and to_bool (exp : expr) (st : State.t) =
 (**[to_string] returns the string of a value*)
 and to_string (value:State.value) : string = 
   match value with
-<<<<<<< HEAD
   | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
                (fun x -> if String.length x = 1 then x ^ "]" 
                  else String.sub x 0 (String.length x -2) ^ "]")
@@ -659,20 +658,6 @@ and to_string (value:State.value) : string =
     "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
   | NoneVal -> "NoneVal"
-=======
-    | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
-                 (fun x -> if String.length x = 1 then x ^ "]" 
-                   else String.sub x 0 (String.length x -2) ^ "]")
-    | Int x -> string_of_int x
-    | Float x -> string_of_float x
-    | Bool x -> string_of_bool x |> String.capitalize_ascii
-    | Function f -> 
-      let (name, args, body) = f in
-      let address = 2*(Obj.magic (ref f)) in
-      "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
-    | String x -> "'" ^ x ^ "'"
-    | NoneVal -> "None"
->>>>>>> 45eda0ad0a010d0b3b8312fc3fd098f864750c14
 
 and printt (value:State.value):unit = match to_string value with
   | "NoneVal" -> ()
