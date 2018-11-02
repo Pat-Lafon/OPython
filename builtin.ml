@@ -47,27 +47,93 @@ let index (lst : value list): State.value  = let func = function
     in if (search s1 s >= String.length s) then Int(-1) else Int(search s1 s)
   | _ -> raise (TypeError ("Operation not supported"))
 
+let rec splice_string (item:string) start stop step = 
+  if start >= stop then ""
+  else if step > 0 then Char.escaped (String.get item start) 
+                        ^ splice_string item (start+step) stop step
+  else Char.escaped (String.get item (stop-1)) 
+       ^ splice_string item start (stop+step) step
+
+let rec splice_list (item: value list) start stop step =
+  if start >= stop then []
+  else if step > 0 then List.nth item start
+                        :: splice_list item (start+step) stop step
+  else List.nth item (stop-1) :: splice_list item start (stop+step) step
+
 let splice (lst : value list) : State.value = 
-  let rec helper lst x y z = if z = 0 then 
+  let item, start, stop, step = match lst with
+    | VList a1 :: a2 :: a3 :: a4 :: [] -> 
+      let a4 = if a4 = Int 0 then raise (ValueError "Third argument must not be zero") 
+        else if a4 = String "" then Int 1 else a4 in 
+      let a3 = if a3 = String "" then Int (List.length !a1) else a3 in
+      let a2 = if a2 = String "" then Int 0 else a2
+      in VList a1, a2, a3, a4
+    | String a1 :: a2 :: a3 :: a4 :: [] -> 
+      let a4 = if a4 = Int 0 then raise (ValueError "Third argument must not be zero") 
+        else if a4 = String "" then Int 1 else a4 in 
+      let a3 = if a3 = String "" then Int (String.length a1) else a3 in
+      let a2 = if a2 = String "" then Int 0 else a2
+      in String a1, a2, a3, a4
+    | VList a1 :: a2 :: a3 :: [] ->       
+      let a4 =  Int 1 in 
+      let a3 = if a3 = String "" then Int (List.length !a1) else a3 in
+      let a2 = if a2 = String "" then Int 0 else a2
+      in VList a1, a2, a3, a4
+    | String a1 :: a2 :: a3 :: [] ->       
+      let a4 =  Int 1 in 
+      let a3 = if a3 = String "" then Int (String.length a1) else a3 in
+      let a2 = if a2 = String "" then Int 0 else a2
+      in String a1, a2, a3, a4
+    | VList a1 :: a2 :: [] -> 
+      let a4 =  Int 1 in 
+      let a3 =  Int (List.length !a1) in
+      let a2 = if a2 = String "" then Int 0 else a2
+      in VList a1, a2, a3, a4
+    | String a1 :: a2 :: [] -> 
+      let a4 = Int 1 in 
+      let a3 = Int (String.length a1) in
+      let a2 = if a2 = String "" then Int 0 else a2
+      in String a1, a2, a3, a4
+    | a1 :: [] -> raise (SyntaxError "invalid syntax")
+    | a1 -> raise (SyntaxError "invalid syntax") in
+  match item, start, stop, step with 
+  | VList a1, Int a2, Int a3, Int a4 -> 
+    let length = List.length !a1 in
+    let a2, a3 = 
+      if a2 > length || a2 < -length || a3 > length || a3 < -length
+      then raise (IndexError "list index out of range")
+      else a2 mod length, a3 mod (length+1) in
+    VList(ref(splice_list !a1 a2 a3 a4))
+  | String a1, Int a2, Int a3, Int a4 -> 
+    let length = String.length a1 in
+    let a2, a3 = 
+      if a2 > length || a2 < -length || a3 > length || a3 < -length
+      then raise (IndexError "list index out of range")
+      else a2 mod length, a3 mod (length+1) in 
+    String(splice_string a1 a2 a3 a4)
+  | _ -> failwith "Something went wrong in splice evaluation"
+
+
+(*  let rec helper lst x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y > List.length lst then helper lst x (List.length lst) z else 
       (if z < 0 then (if x <= y then [] else List.nth lst x :: helper lst (x+z) y z)
        else (if x >= y then [] else List.nth lst x::helper lst (x+z) y z) ) in
-  let decider x len = if x < - len then 0 else 
+    let decider x len = if x < - len then 0 else 
     if x < 0 then x + len else if x > len then len else x in
-  let splice_helper lst x y z = 
+    let splice_helper lst x y z = 
     helper lst (decider x (List.length lst)) (decider y (List.length lst)) 
       (z) in
-  let rec helper_str str x y z = if z = 0 then 
+    let rec helper_str str x y z = if z = 0 then 
       raise (ValueError "Third argument must not be zero") else 
     if y > String.length str then helper_str str x (List.length lst) z else 
     if x >= y then "" else String.concat "" 
         ([String.sub str x 1;  helper_str str (x+z) y z]) in
-  let splice_str str x y z =
+    let splice_str str x y z =
     helper_str str (decider x (String.length str)) 
       (decider y (String.length str)) (z) in
-  match lst with
-  | h1::h2::[] -> begin match h1, h2 with
+    match lst with
+    | h1::h2::[] -> begin match h1, h2 with
       | String(s), Int(x) -> String(String.sub s x 1)
       | VList(l), Int(x) -> if (x < 0 || x > List.length !l) then raise 
             (Invalid_argument ("Out of bounds")) else
@@ -75,7 +141,7 @@ let splice (lst : value list) : State.value =
            | x -> x)
       | _ -> raise (TypeError ("Operation not supported"))
     end
-  | h1::h2::h3::[] -> begin match h1, h2, h3 with 
+    | h1::h2::h3::[] -> begin match h1, h2, h3 with 
       | String(s), String(""), String("") -> String(s)
       | String(s), String(""), Int(x) -> String(splice_str s 0 x 1)
       | String(s), Int(x), String("") -> 
@@ -88,7 +154,7 @@ let splice (lst : value list) : State.value =
       | VList(l), Int(x), Int(y) -> VList(ref(splice_helper !l x y 1))
       | _ -> raise (TypeError ("Operation not supported"))
     end
-  | h1::h2::h3::h4::[] -> begin match h1,h2, h3, h4 with 
+    | h1::h2::h3::h4::[] -> begin match h1,h2, h3, h4 with 
       | String(s), String(""), String(""), String("") -> String(s)
       | String(s), String(""), String(""), Int(x) -> 
         String(splice_str s 0 (String.length s) x)
@@ -116,7 +182,7 @@ let splice (lst : value list) : State.value =
       | VList(l), Int(x), Int(y), Int(z) -> VList(ref(splice_helper !l x y z))
       | _ -> raise (TypeError ("Operation not supported"))
     end 
-  | _ -> raise (TypeError ("Operation not supported"))
+    | _ -> raise (TypeError ("Operation not supported")) *)
 
 
 let append (val_list : value list)= 

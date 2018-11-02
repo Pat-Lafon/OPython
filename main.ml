@@ -73,6 +73,7 @@ let rec interpret (st:State.t) (lines: string list) (new_line : bool) : State.t 
   | [] -> if new_line then (print_string ">>> "; interpret st [read_line ()] new_line) else st
   | h::t -> (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
       | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); interpret st [] new_line
+      | exception (IndexError x) -> print_endline ("IndexError: "^x); interpret st [] new_line
       | exception (NameError x) -> print_endline ("NameError: "^x); interpret st [] new_line
       | exception (TypeError x) -> print_endline ("TypeError: "^x); interpret st [] new_line
       | exception (OverflowError x) -> print_endline ("OverflowError: "^x); interpret st [] new_line
