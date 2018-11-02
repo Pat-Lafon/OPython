@@ -1,4 +1,5 @@
 open State
+open Error
 
 type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent 
         | Equal | Not_Equal | Greater_Than | Less_Than | Greater_Equal 
@@ -13,13 +14,6 @@ type line_type = Assignment | Expression | If of (expr * string)
                | While of (expr * string) | Def of (string * string list * string)
                | Return of (expr) 
 
-exception SyntaxError of string
-exception TypeError of string
-exception NameError of string
-exception ValueError of string
-exception OverflowError of string
-exception IndentationError of string
-exception ZeroDivisionError of string
 exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
@@ -29,10 +23,12 @@ exception ReturnExpr of expr
 let operators = [[("or", Or)];
                  [("and", And);];
                  [("==", Equal);("!=", Not_Equal)];
-                 [("<", Less_Than);("<=", Less_Equal);(">", Greater_Than);(">=", Greater_Equal);];
-                 [("not", Not)];(* Not sure if not should be higher, can't prove yet *)
+                 [("<", Less_Than);("<=", Less_Equal);(">", Greater_Than);
+                  (">=", Greater_Equal);];
+                 [("not", Not)];
                  [("+", Plus);("-", Minus);];
-                 [("%", Modular);("/", Divide);("//", Floor_Divide);("*", Multiply);];
+                 [("%", Modular);("/", Divide);("//", Floor_Divide);
+                  ("*", Multiply);];
                  [("**", Exponent);]]
 
 let reserved_keywords = [
@@ -69,8 +65,7 @@ let not_mistaken str op =
 let rec get_idx (str:string) (op:string) : int =
   let strlen = String.length str in
   let oplen = String.length op in 
-  if strlen = 0 then -1
-  else if strlen < oplen then  -1
+  if strlen < oplen then  -1
   else if String.sub str 0 oplen = op then 
     if not_mistaken str op then 0
     else get_idx_acc str 2 op
@@ -94,8 +89,9 @@ let rec get_idx (str:string) (op:string) : int =
      | x -> get_idx_acc str (x+2) op)
   else get_idx_acc str 1 op
 and 
-  (** [get_idx_acc str num op] is the index number of the first occurrence of [op] in [str]
-      that is not enclosed in quotes, brackets, or parenthesis added to num. *)
+  (** [get_idx_acc str num op] is the index number of the first occurrence of 
+      [op] in [str] that is not enclosed in quotes, brackets, or parenthesis 
+      added to num. *)
   get_idx_acc (str:string) (num:int) (op:string) : int = 
   let acc = get_idx (String.sub str num (String.length str - num)) op in 
   if acc = -1 then -1 else num + acc
@@ -115,21 +111,18 @@ let valid_bracket str = match get_idx str "]" with
 (** [rev_get_idx line op] is the index of the first occurrence of [op] in [line]
     Requires: [op] does not contain parenthesis or brackets. *)
 let rev_get_idx (line:string) (op:string) : int = 
-  let rev_line = (fun int _ -> let new_chr = line.[String.length line -1 -int] in
-                   if new_chr = '(' then ')' else if new_chr = ')' then '('
-                   else if new_chr = '[' then ']' else if new_chr = ']' then '['
-                   else new_chr) in
-  let rev_op = (fun int _ -> let new_chr = op.[String.length op -1 -int] in 
-                 if new_chr = '(' then ')' else if new_chr = ')' then '('
-                 else if new_chr = '[' then ']' else if new_chr = ']' then '['
-                 else new_chr) in
-  let rev_idx =  get_idx (String.mapi rev_line line) (String.mapi rev_op op) in
+  let rev_str str = (fun int _ -> 
+      let new_chr = str.[String.length str -1 -int] in
+      if new_chr = '(' then ')' else if new_chr = ')' then '('
+      else if new_chr = '[' then ']' else if new_chr = ']' then '['
+      else new_chr) in
+  let rev_idx =  get_idx (String.mapi (rev_str line) line) (String.mapi (rev_str op) op) in
   if rev_idx = -1 then -1 else String.length line - rev_idx - 1
 
 (** [expr_contains line op] is None, max_int if none of the elements of [op] are
-    in [line] or Some (string, op), int is the earliest element from [op] in [line]
-    at the int index. *)
-let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option * int = 
+    in [line] or Some (string, op), int is the earliest element from [op] in 
+    [line] at the int index. *)
+let rec expr_contains(line:string)(op:(string*op) list): (string*op) option*int= 
   match op with
   | [] -> None, max_int
   | h :: t -> let next = expr_contains line t in 
@@ -138,9 +131,8 @@ let rec expr_contains (line:string) (op:(string*op) list) : (string*op) option *
 
 (** [trim str] is [str] with shell spaces and paren removed. *)
 let rec trim str : string =
-  let newstr = String.trim str in
-  if newstr <> str then trim newstr
-  else if String.length newstr = 0 then str
+  let str = String.trim str in
+  if String.length str = 0 then str
   else if str.[0] = '(' && str.[String.length str - 1] = ')' then 
     if valid_paren (String.sub str 1 (String.length str - 2))
     then trim (String.sub str 1 (String.length str - 2))
@@ -153,9 +145,10 @@ let rec split_on_char (chr:char) (line:string) : string list =
   match get_idx line (Char.escaped chr) with
   | -1 -> line::[]
   | num -> String.sub line 0 num::
-           split_on_char chr (String.sub line (num+1) (String.length line - num -1))
+           split_on_char chr (String.sub line (num+1) (String.length line-num-1))
 
-(** [is_assignment line] is true if [line] is an assignment statement, false otherwise. *)
+(** [is_assignment line] is true if [line] is an assignment statement, false 
+    otherwise. *)
 let is_assignment (line:string) : bool =
   let idx = get_idx line "=" in
   if idx <> -1 then 
@@ -166,11 +159,11 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
-(** [exprlst line chr] is an expr list of [line] partitioned into elements by [chr] *)
+(** [exprlst line chr] is an expr list of [line] partitioned into elements by 
+    [chr] *)
 let rec exprlst (line:string) (chr:char): expr list =
   if line = "" then []
-  else 
-    List.map (fun x -> parse_expr x operators) (split_on_char chr line)
+  else List.map (fun x -> parse_expr x operators) (split_on_char chr line)
 (** [parse_expr_helper] is an expr made from [str] based on [op] *)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let idx = get_idx str (fst op) in
@@ -179,51 +172,56 @@ and parse_expr_helper (str:string) (op:string*op) : expr =
   let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
   if trim left = "" then Unary (snd op, parse_expr right operators) 
   else Binary(parse_expr left operators, snd op, parse_expr right operators) 
-(** [parse_expr line oplist] is an expr made up of [line] and the operations in [oplist] *)
+(** [parse_expr line oplist] is an expr made up of [line] and the operations in 
+    [oplist] *)
 and
   parse_expr (line:string) (oplist:(string*op) list list) : expr = 
-  let line = trim line in let args = get_idx line "(" in let fstarg =  get_idx line "." in 
-  let length = String.length line in 
+  let line = trim line in let args = get_idx line "(" in 
+  let fstarg =  get_idx line "." in let length = String.length line in 
   if line = "" then Value(String(""))
   else
     match oplist with
     | [] -> 
       if line.[0] = '"' || line.[0] = '\'' 
       then Value(String(String.sub line 1 (length-2)))
-      else if line.[0] = '[' && line.[length-1] = ']' && valid_bracket (String.sub line 1 (length-2))
+      else if line.[0] = '[' && line.[length-1] = ']' 
+              && valid_bracket (String.sub line 1 (length-2))
       then if length = 2 then List([])
         else List(List.map (fun x -> parse_expr x operators) 
                     (split_on_char ',' (String.sub line 1 (length - 2))))
       else if  int_of_string_opt line <> None then Value(Int(int_of_string line))
       else if float_of_string_opt line <> None then Value(Float(float_of_string line))
-      else if "True" = line || "False" = line then Value(Bool(bool_of_string (String.lowercase_ascii line)))
+      else if "True" = line || "False" = line 
+      then Value(Bool(bool_of_string (String.lowercase_ascii line)))
       else if args <> -1 && fstarg <> -1 
       then Function(String.sub line (fstarg+1) (args-fstarg-1), 
                     exprlst(String.sub line 0 (fstarg) ^","^ 
-                            String.sub line (args+1) (length - args - 2))',')
+                            String.sub line (args+1) (length-args-2))',')
       else if args <> -1 
       then Function(String.sub line 0 (args), 
-                    exprlst (String.sub line (args+1) (length - args - 2))',')
-      else if line.[length -1] = ']' then let args = (rev_get_idx (String.sub line 0 (length -1)) "[") in
+                    exprlst (String.sub line (args+1) (length-args-2))',')
+      else if line.[length -1] = ']' then 
+        let args = (rev_get_idx (String.sub line 0 (length-1)) "[") in
         Function("splice", exprlst (String.sub line 0 (args) ^":"^ 
-                                    String.sub line (args+1) (length - args - 2))':')
+                                    String.sub line (args+1) (length-args-2))':')
       else Variable(line)
     | h :: t -> match expr_contains line h with
       | Some x, _ -> parse_expr_helper line x
       | None, _ -> parse_expr line t
 
-(** [parse_assignment line] is Some string, expr where the string option contains 
-    the variable name that is being assigned to and expr is the rest of [line] parsed 
-    into an expr. *)
+(** [parse_assignment line] is Some string, expr where the string option 
+    contains the variable name that is being assigned to and expr is the rest of
+    [line] parsed into an expr. *)
 let parse_assignment (line:string) : string option * expr = 
   let eq_idx = get_idx line "=" in
-  let right = trim (String.sub line (eq_idx + 1) ((String.length line) - eq_idx - 1)) in
-  if eq_idx = 1 then Some (is_var_name (Char.escaped (line.[0]))), parse_expr right operators
+  let right = trim (String.sub line (eq_idx+1) (String.length line-eq_idx-1)) in
+  if eq_idx = 1 then Some (is_var_name (Char.escaped line.[0])), parse_expr right operators
   else
-    match expr_contains (String.sub line (eq_idx - 2) 2) (List.flatten operators) with 
-    | Some x, _ -> let left = is_var_name (String.trim (String.sub line 0 (eq_idx-(String.length (fst x))))) in
+    match expr_contains (String.sub line (eq_idx-2) 2) (List.flatten operators) with 
+    | Some x, _ -> let left = x |> fst |> String.length |> (fun x -> eq_idx - x) 
+                              |> String.sub line 0 |> is_var_name in
       Some left, Binary(Variable left, snd x, parse_expr right operators)
-    | None, _ -> let left = is_var_name (String.trim (String.sub line 0 eq_idx)) in
+    | None, _ -> let left = is_var_name (trim (String.sub line 0 eq_idx)) in
       Some left, parse_expr right operators
 
 (** Matches if statement *)
@@ -257,11 +255,11 @@ let parse_def (line: string) : (string * string list * string) =
   let body = String.trim (Str.matched_group 3 line) in
   (fn_name, args, body)
 
+(** [line_type line] is the line_type of [line] *)
 let line_type (line : string) : line_type =
   if String.length line = 0 then Empty
   else if is_assignment line then Assignment
   else if is_if line then If (parse_if line)
-  (* calling parse_if is not a typo *)
   else if is_elif line then Elif (parse_if line)
   else if is_else line then Else
   else if is_while line then While (parse_if line)

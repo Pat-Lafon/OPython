@@ -3,6 +3,7 @@ doc.public
 doc.private
 search_src.zip
 report
+opython
 
 # ocaml
 *.cmo
