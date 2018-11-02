@@ -104,7 +104,8 @@ let rec interpret (st:State.t) (lines: string list)
                                           interpret st [] [] new_line
       | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
                                           interpret st [] [] new_line
-      | exception (AssertionError)-> print_endline ("Assertion Error: "); 
+      | exception (AssertionError)-> print_endline ("Assertion Error: '" ^ h ^ 
+                                                    "' in line " ^ string_of_int n_h);  
                                      interpret st [] [] new_line
       | exception EmptyInput -> interpret st t n_t new_line
       | exception (IfMultiline (cond, body)) -> 
