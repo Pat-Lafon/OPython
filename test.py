@@ -153,4 +153,3 @@ def bin_search_left(arr, val):
         else:
             hi = mid - 1
     return lo
-
