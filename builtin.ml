@@ -306,7 +306,18 @@ let int (val_list: value list) =
   | [] -> Int(0)
   | _ -> raise (TypeError "int() can't convert more than one argument")
 
+let rec list (v : value list) = match v with
+  | [] -> VList(ref[])
+  | VList(l)::[]-> VList(l)
+  | String(s)::[] -> let rec help_list str = if str = "" then [] else 
+                       if String.length str = 1 then [String(str)] else 
+                         String(String.sub s 0 1) :: (help_list (String.sub s 1 1))
+    in VList(ref(help_list s))
+  | _ :: [] -> raise (TypeError ("Input type is not iterable"))
+  | x -> raise (TypeError ("list() takes at most 1 argument (" 
+                           ^ string_of_int (List.length x) ^ " given)"))
+
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index); ("assert", assertt)]
+                          ("index", index); ("assert", assertt); ("list", list)]
