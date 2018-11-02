@@ -154,7 +154,8 @@ let is_assignment (line:string) : bool =
   if idx <> -1 then 
     let prev = if idx = 0 then raise (SyntaxError "invalid syntax")
       else String.get line (idx-1) in
-    let next = if idx + 1 = String.length line then raise (SyntaxError "invalid syntax")
+    let next = if idx + 1 = String.length line 
+      then raise (SyntaxError "invalid syntax")
       else String.get line (idx+1) in
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false

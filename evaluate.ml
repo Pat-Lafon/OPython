@@ -266,7 +266,7 @@ and to_string (value:State.value) : string =
     let address = 2*(Obj.magic (ref f)) in
     "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
-  | NoneVal -> "NoneVal"
+  | NoneVal -> "None"
 
 and printt (value:State.value):unit = match to_string value with
   | "NoneVal" -> ()
