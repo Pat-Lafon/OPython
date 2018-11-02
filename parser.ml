@@ -55,9 +55,10 @@ let is_var_name (s:string) : string =
 
 (** [not_mistaken str op] is true if [str] has not been confused to a similar 
     operator with more characters and is in fact [op]. false otherwise.*)
-let not_mistaken str op = 
+let not_mistaken str op =
   let oplen = String.length op in
   if String.length str = oplen then true
+  else if op <> "*" && op <> "=" && op <> "/" then true
   else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
 
 (** [get_idx str op] is the index number of the first occurrence of [op] in [str]
@@ -195,7 +196,8 @@ and
       else if "True" = line || "False" = line 
       then Value(Bool(bool_of_string (String.lowercase_ascii line)))
       else if "None" = line then Value(NoneVal)
-      else if args <> -1 && fstarg <> -1 
+      else if args <> -1 && fstarg <> -1
+      (* TODO: Pass None instead of strings *)
       then Function(String.sub line (fstarg+1) (args-fstarg-1), 
                     exprlst(String.sub line 0 (fstarg) ^","^ 
                             String.sub line (args+1) (length-args-2))',')
