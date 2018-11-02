@@ -211,8 +211,8 @@ let append (val_list : value list)=
   match val_list with
   | lst::value::[] -> 
     (match lst with
-     | VList x -> x := !x@value::[]; VList(x)
-     | _ -> raise (TypeError("requires a list"))
+     | VList x -> x := !x@value::[]; NoneVal
+     | _ -> failwith("not a list")
     )
   | _ -> raise (TypeError("requires two arguments"))
 
