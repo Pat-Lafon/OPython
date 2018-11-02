@@ -266,10 +266,10 @@ and to_string (value:State.value) : string =
     let address = 2*(Obj.magic (ref f)) in
     "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
-  | NoneVal -> "NoneVal"
+  | NoneVal -> "None"
 
-and printt (value:State.value):unit = match to_string value with
-  | "NoneVal" -> ()
+and printt (value:State.value) : unit = match to_string value with
+  | "None" -> ()
   | s -> print_endline s
 
 let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =

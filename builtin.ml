@@ -16,7 +16,7 @@ let rec to_string (value:State.value) : string =
     let address = 2*(Obj.magic (ref f)) in
     "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
-  | NoneVal -> "NoneVal"
+  | NoneVal -> "None"
 
 (** [index lst] returns the index of the second element of lst in the first 
     element of lst in an integer value, returns Int(-1) if not found.
