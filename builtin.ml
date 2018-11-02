@@ -55,7 +55,6 @@ let rec splice_string (item:string) start stop step =
        ^ splice_string item start (stop+step) step
 
 let rec splice_list (item: value list) start stop step =
-  let () = print_endline (string_of_int start) in   let () = print_endline (string_of_int stop) in
   if start >= stop then []
   else if step > 0 then List.nth item start
                         :: splice_list item (start+step) stop step
@@ -109,7 +108,10 @@ let splice (lst : value list) : State.value =
     | a1 :: [] -> raise (SyntaxError "invalid syntax")
     | a1 -> raise (SyntaxError "invalid syntax") in
   match item, start, stop, step with 
-  | VList a1, NoneVal, NoneVal, NoneVal -> VList a1
+  | VList a1, NoneVal, NoneVal, NoneVal -> 
+    (match !a1 with 
+     | a::[] -> a
+     | _ -> failwith "something above messed up")
   | String a1, NoneVal, NoneVal, NoneVal -> String a1
   | VList a1, Int a2, Int a3, Int a4 -> 
     let length = List.length !a1 in
