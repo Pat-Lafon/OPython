@@ -208,7 +208,7 @@ let append (val_list : value list)=
   match val_list with
   | lst::value::[] -> 
     (match lst with
-     | VList x -> x := !x@value::[]; VList(x)
+     | VList x -> x := !x@value::[]; NoneVal
      | _ -> failwith("not a list")
     )
   | _ -> failwith("not enough args")
