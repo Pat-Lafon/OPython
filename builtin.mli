@@ -22,6 +22,7 @@ val len : value list -> State.value
 
 val range : value list -> State.value 
 
+val dictionary : value list -> State.value 
 (** Type casts *)
 val chr : value list -> State.value 
 
@@ -32,5 +33,7 @@ val float : value list -> State.value
 val int : value list -> State.value
 
 val list : value list -> State.value
+
+val replace : value list -> State.value
 
 val built_in_functions : (string * (State.value list -> State.value)) list
