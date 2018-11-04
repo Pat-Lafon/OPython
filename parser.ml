@@ -242,7 +242,7 @@ let elif_regex = Str.regexp "^elif \\(.*\\):\\(.*\\)"
 let else_regex = Str.regexp "^else *: *"
 let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
 let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
-let for_regex = Str.regexp "^for \\(.*\\) in \\(.*\\) *: \\(.*\\)"
+let for_regex = Str.regexp "^for \\(.*\\) in \\(.*\\) *:\\(.*\\)"
 let return_regex = Str.regexp "^return \\(.*\\)"
 let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] *= *\\(.*\\)"
 
@@ -263,7 +263,6 @@ let parse_if (line: string) : (expr * string) =
 
 (** For now, assume single argument in for loop *)
 let parse_for (line: string) : (expr * string * string) =
-  let () = print_endline line in
   let args = Str.matched_group 1 line in
   let iterator = Str.matched_group 2 line in
   let body = String.trim (Str.matched_group 3 line) in
