@@ -265,7 +265,7 @@ let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
 let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
 let for_regex = Str.regexp "^for \\(.*\\) in \\(.*\\) *:\\(.*\\)"
 let return_regex = Str.regexp "^return \\(.*\\)"
-let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] *= *\\(.*\\)"
+let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] = \\(.*\\)"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
