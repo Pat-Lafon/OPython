@@ -7,7 +7,7 @@ type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
           | Value of State.value | Variable of string | List of expr list 
-          | Function of (string * expr list)
+          | Function of (string * expr list) | Dictionary of expr list
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
