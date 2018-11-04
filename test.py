@@ -1,35 +1,3 @@
-# if statement
-if 1:
-    assert(1)
-else:
-    assert(0)
-
-# else test
-if 0:
-    assert(0)
-else:
-    assert(1)
-
-# elif statements, boolean casting
-if 0:
-    assert(0)
-elif False:
-    assert(0)
-elif []:
-    assert(0)
-elif "":
-    assert(0)
-else:
-    assert(1)
-
-# boolean expression tests
-assert("a")
-assert(not "")
-assert([1])
-assert(not [])
-assert([] or 1)
-assert(5 - 5 == 0)
-assert(5 - 4)
 # TODO: boolean for None types
 assert(not None)
 assert(None == None)
