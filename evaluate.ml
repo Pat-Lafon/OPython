@@ -74,12 +74,18 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Some t -> t
      | None -> raise (NameError ("variable name '"^x^"' is not defined")))
   | Value x -> x
+  | ListComp(acc, arg, iter, cond) -> 
+    (match cond with
+    | None -> create_list acc arg (to_list [(eval iter st)]) (Value(Bool(true))) st []
+    | Some c -> create_list acc arg (to_list [(eval iter st)]) c st [])
   | List x -> VList (ref (List.map (fun x -> eval x st) x))
   | Function (f, lst) -> 
     if (List.assoc_opt f built_in_functions <> None) 
     then List.assoc f built_in_functions (List.map (fun x -> eval x st) lst)
     else if (List.mem_assoc f st) then run_function f lst st
     else raise (NameError ("function name '"^f^"' is not defined"))
+  | Dictionary lst -> dictionary (List.map (fun x -> eval x st) lst)
+
 
 (** [evaluate input st] determines whether or not [input] is an assignment 
     statement; If there is an assignment, the expression the variable is assigned 
@@ -89,6 +95,17 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
 and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> printt (eval expr st); st
+
+and create_list (acc : expr) (arg : string) (iter : value list) 
+  (cond : expr) (st : State.t) (list_comp : value list) =
+  match iter with
+  | [] -> VList(ref (List.rev list_comp))
+  | h::t -> let new_state = insert arg h st in
+            let cond_sat = if_decider (eval cond new_state) in
+            if cond_sat 
+            then let new_val = eval acc new_state in
+              create_list acc arg t cond new_state (new_val::list_comp)
+            else create_list acc arg t cond new_state list_comp
 
 (** Similar to functions in main.ml, used to evaluate functions *)
 and read_if (conds : expr list) (bodies : string list) (acc : string) 

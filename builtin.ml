@@ -17,7 +17,33 @@ let rec to_string (value:State.value) : string =
     let address = 2*(Obj.magic (ref f)) in
     "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
+  | Dictionary d -> 
+    let rec helper lst = begin match lst with
+      | [] -> ""
+      | (h1,h2) :: [] -> to_string h1 ^" : "^to_string h2 
+      | (h1,h2) :: t -> to_string h1 ^" : "^to_string h2 ^", " ^ helper t
+    end in "{" ^ helper(!d) ^ "}"
   | NoneVal -> "None"
+
+let dictionary (lst : value list) : State.value = 
+  let rec to_assoc lst = 
+    begin match lst with
+      | [] -> []
+      | h1::h2::t -> (h1,h2) :: to_assoc t
+      | _ -> raise (TypeError("Operation unsupported"))
+    end 
+  in Dictionary(ref(to_assoc lst))
+
+let put (lst : value list) : State.value =
+  match lst with
+  | Dictionary(h)::key::value::[] -> if not (List.mem_assoc key !h) then 
+      Dictionary(h) else Dictionary(ref((key,value) :: List.remove_assoc key !h))
+  | _ -> raise (TypeError("Operation unsupported"))
+
+let get (lst : value list) : State.value =
+  match lst with
+  | Dictionary(h)::key::[] -> List.assoc key !h
+  | _ -> raise (TypeError("Operation unsupported"))
 
 (** [index lst] returns the index of the second element of lst in the first 
     element of lst in an integer value, returns Int(-1) if not found.
@@ -96,6 +122,8 @@ let splice (lst : value list) : State.value =
             else (x+length) mod length
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
+      in VList a1, NoneVal, NoneVal, NoneVal
+    | Dictionary h :: idx :: [] -> let a1 = ref(get (Dictionary h::idx::[]) :: [])
       in VList a1, NoneVal, NoneVal, NoneVal
     | String a1 :: a2 :: [] ->
       let length = String.length a1 in
@@ -187,27 +215,6 @@ let range (lst : value list) : State.value =
 
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
-let dictionary (lst : value list) : State.value = 
-  let hashtbl = Hashtbl.create (List.length lst) in
-  let rec helper (assoc_lst : value list) : (value,value) Hashtbl.t = 
-    begin match assoc_lst with
-      | [] -> Hashtbl.copy hashtbl
-      | h1::h2::t -> Hashtbl.add hashtbl h1 h2; helper t
-      | _ -> raise (TypeError("Operation unsupported"))
-    end 
-  in Hash(helper lst)
-
-let put (lst : value list) : State.value =
-  match lst with
-  | Hash(h)::key::value::[] -> Hashtbl.remove h key; 
-    Hashtbl.add h key value; Hash(h)
-  | _ -> raise (TypeError("Operation unsupported"))
-
-let get (lst : value list) : State.value =
-  match lst with
-  | Hash(h)::key::[] -> Hashtbl.find h key
-  | _ -> raise (TypeError("Operation unsupported"))
-
 (** Type casts *)
 let chr (val_list : value list) =
   match val_list with
@@ -255,17 +262,11 @@ let rec list (v : value list) = match v with
   | VList(l)::[]-> VList(l)
   | String(s)::[] -> let rec help_list str = if str = "" then [] else 
                        if String.length str = 1 then [String(str)] else 
-                         String(String.sub str 0 1) :: (help_list (String.sub str 1 (String.length str - 1)))
+                         String(String.sub s 0 1) :: (help_list (String.sub s 1 1))
     in VList(ref(help_list s))
   | _ :: [] -> raise (TypeError ("Input type is not iterable"))
   | x -> raise (TypeError ("list() takes at most 1 argument (" 
                            ^ string_of_int (List.length x) ^ " given)"))
-
-let rec to_list (lst : value list) = 
-  let vlist = list lst in
-  match vlist with
-  | VList(l) -> !l
-  | _ -> raise (TypeError ("Input type is not iterable"))
 
 (** Quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
@@ -277,6 +278,7 @@ let rec replace (v : value list) = match v with
       | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
     end
     in VList(ref (replace_help !l idx x))
+  | Dictionary(h)::key::valu::[] -> put (Dictionary(h)::key::valu::[]) 
   | _ -> raise (TypeError (""))
 
 let match_bool = function
@@ -299,7 +301,8 @@ let max (v:value list) = match v with
       | [] -> NoneVal
     end in let rec max_assist x acc = begin match x with
       | [] -> acc
-      | h::t -> if match_bool(helper_greater_equal (h,acc)) then max_assist t h else max_assist t acc
+      | h::t -> if match_bool(helper_greater_equal (h,acc)) 
+        then max_assist t h else max_assist t acc
     end in let frst =  get_first(x) in (max_assist x frst)
 
 let min (v:value list) = match v with

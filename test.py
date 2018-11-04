@@ -3,11 +3,9 @@ for i in "abcdasdasd":
     if i == "a":
         print(i)
 
-<<<<<<< HEAD
 print(i)
-=======
-# Reference one function from another
 
+<<<<<<< HEAD
 
 def fib5(x):
     return fib(5)
@@ -196,3 +194,8 @@ assert(bin_search_right(arr, 7) == 6)
 assert(bin_search_left(arr, 11) == 6)
 assert(bin_search_right(arr, 11) == 10)
 >>>>>>> e1ebc379edf59e14e81783011160e137850282aa
+=======
+x = [i for i in range(5)]
+x = [[i for i in range(5)] for j in range(6) if j % 2 == 0]
+x = [[i for i in range(5)] for j in [1,2,3] if j % 2 == 0]
+>>>>>>> bfd8a704976edf7a45c32ca54297d01fed0cc724

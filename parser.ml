@@ -9,6 +9,7 @@ type expr = Binary of (expr * op * expr) | Unary of (op * expr)
           | Value of State.value | Variable of string | List of expr list 
           | Function of (string * expr list) 
           | Dictionary of expr list
+          | ListComp of (expr * string * expr * expr option)
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
@@ -165,6 +166,12 @@ let is_assignment (line:string) : bool =
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
 
+let list_comp_regex = Str.regexp "\\[\\(.*\\) for \\(.*\\) in \\(.*\\)\\]"
+let list_comp_if_regex = Str.regexp "\\[\\(.*\\) for \\(.*\\) in \\(.*\\) if \\(.*\\)\\]"
+
+let is_list_comp line = Str.string_match list_comp_regex line 0
+let is_if_list_comp line = Str.string_match list_comp_if_regex line 0
+
 (** [exprlst line chr] is an expr list of [line] partitioned into elements by 
     [chr] *)
 let rec exprlst (line:string) (chr:char): expr list =
@@ -193,6 +200,8 @@ and
       else if line.[0] = '[' && line.[length-1] = ']' 
               && valid_bracket (String.sub line 1 (length-2))
       then if length = 2 then List([])
+        else if is_if_list_comp line then ListComp(parse_list_comp_if line)
+        else if is_list_comp line then ListComp(parse_list_comp line)
         else List(List.map (fun x -> parse_expr x operators) 
                     (split_on_char ',' (String.sub line 1 (length - 2))))
       else if line.[0] = '{' && line.[length-1] = '}' 
@@ -220,6 +229,18 @@ and
     | h :: t -> match expr_contains line h with
       | Some x, _ -> parse_expr_helper line x
       | None, _ -> parse_expr line t
+and parse_list_comp_if (line:string) = 
+  let acc = Str.matched_group 1 line in
+  let arg = Str.matched_group 2 line in
+  let iter = Str.matched_group 3 line in
+  let cond = Str.matched_group 4 line in
+  parse_expr acc operators, arg, 
+  parse_expr iter operators, Some (parse_expr cond operators)
+and parse_list_comp (line:string) = 
+  let acc = Str.matched_group 1 line in
+  let arg = Str.matched_group 2 line in
+  let iter = Str.matched_group 3 line in
+  parse_expr acc operators, arg, parse_expr iter operators, None
 
 (** [parse_assignment line] is Some string, expr where the string option 
     contains the variable name that is being assigned to and expr is the rest of
