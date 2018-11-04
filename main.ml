@@ -6,7 +6,7 @@ open Error
 
 (** Read next lines that are part of the if conditional block *)
 let rec read_if (conds : expr list) (bodies : string list) 
-  (acc : string) (new_line : bool) (lines : string list) (line_nums : int list) =
+    (acc : string) (new_line : bool) (lines : string list) (line_nums : int list) =
   if new_line then
     let () = print_string "... " in
     let line = read_line () in
@@ -14,12 +14,12 @@ let rec read_if (conds : expr list) (bodies : string list)
     if depth = 0 then
       (match parse_multiline line with
        | Empty -> 
-        (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [], [])
+         (List.rev (Value(Bool(true))::conds), List.rev (""::(String.trim acc::bodies)), [], [])
        | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines line_nums
        | If (cond, body) -> 
-        read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
+         read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
        | Elif (cond, body) -> 
-        read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
+         read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
        | Else -> read_if (Value(Bool(true))::conds) (String.trim acc::bodies) "" new_line lines line_nums
        | _ -> raise EmptyInput)
     else 
@@ -46,10 +46,10 @@ let rec read_if (conds : expr list) (bodies : string list)
 
 (** Read next lines that are part of the while loop *)
 let rec read_while (cond : expr) (body : string) (lines : string list)
-  (line_nums : int list) (new_line : bool) =
+    (line_nums : int list) (new_line : bool) =
   match lines, line_nums with
   | [], [] -> if new_line then (print_string "... "; 
-          read_while cond body [read_line ()] [1] new_line)
+                                read_while cond body [read_line ()] [1] new_line)
     else (cond, String.trim body, [], [])
   | line::t, line_num::n_t -> 
     let depth = indent_depth line in
@@ -63,10 +63,10 @@ let rec read_while (cond : expr) (body : string) (lines : string list)
 
 (** Read the next lines as part of the body of the function *)
 let rec read_function (body : string) (lines : string list) 
-  (line_nums : int list) (new_line : bool) =
+    (line_nums : int list) (new_line : bool) =
   match lines, line_nums with
   | [], [] -> if new_line then (print_string "... "; 
-          read_function body [read_line ()] [] new_line)
+                                read_function body [read_line ()] [] new_line)
     else (String.trim body, [], [])
   | line::t, line_num::n_t -> 
     let depth = indent_depth line in
@@ -80,28 +80,28 @@ let rec read_function (body : string) (lines : string list)
 (** [interpret st lines new_line] runs python [lines] to create a new state. 
     If [new_line] is true, then interface prompts uses for new lines. *)
 let rec interpret (st:State.t) (lines: string list) 
-  (line_nums: int list) (new_line : bool) : State.t =
+    (line_nums: int list) (new_line : bool) : State.t =
   match lines, line_nums with
   | [], [] -> if new_line then (print_string ">>> "; 
-              interpret st [read_line ()] [1] new_line) else st
+                                interpret st [read_line ()] [1] new_line) else st
   | h::t, n_h::n_t -> (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
       | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); 
-                                     interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception (IndexError x) -> print_endline ("IndexError: "^x); 
-                                    interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception (NameError x) -> print_endline ("NameError: "^x); 
-                                   interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception (TypeError x) -> print_endline ("TypeError: "^x); 
-                                   interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception (OverflowError x) -> print_endline ("OverflowError: "^x); 
-                                       interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
-                                          interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
-                                          interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception (AssertionError)-> print_endline ("Assertion Error: '" ^ h ^ 
                                                     "' in line " ^ string_of_int n_h);  
-                                     interpret st [] [] new_line
+        interpret st [] [] new_line
       | exception EmptyInput -> interpret st t n_t new_line
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
@@ -130,8 +130,8 @@ and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : Stat
   match conds, bodies with
   | cond::c_t, body::b_t -> (match Evaluate.eval cond st |> Evaluate.if_decider with
       | true -> let body_lines = String.split_on_char '\n' body in
-                let line_nums = create_int_list (List.length body_lines) in
-                interpret st body_lines line_nums false
+        let line_nums = create_int_list (List.length body_lines) in
+        interpret st body_lines line_nums false
       | false -> interpret_if c_t b_t st)
   | _, _ -> raise (SyntaxError "Conditional statements and bodies mismatched")
 and interpret_while (cond : expr) (body : string) (st: State.t) : State.t = 

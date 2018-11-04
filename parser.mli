@@ -13,6 +13,7 @@ type line_type = Assignment | Expression | If of (expr * string)
                | Empty | Else | Line of string | Elif of (expr * string) 
                | While of (expr * string) | Def of (string * string list * string)
                | Return of (expr) | For of (expr * string * string)
+               | Struct_Assignment of (string * string * string)
 
 exception EmptyInput
 exception IfMultiline of (expr * string)
