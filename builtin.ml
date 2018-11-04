@@ -235,6 +235,9 @@ let bool (val_list: value list) =
   | [] -> Bool false
   | _ -> raise (TypeError("bool() takes at most 1 argument"))
 
+(** [float val_list] is a float if [val_list] can be turned into a float. 
+    Raise: Either a ValueError or TypeError depending on what is wrong with 
+    [val_list] *)
 let float (val_list: value list) =
   match val_list with
   | Int x::[] -> Float(float_of_int(x))
