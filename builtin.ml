@@ -327,6 +327,20 @@ let rec replace (v : value list) = match v with
     in VList(ref (replace_help !l idx x))
   | _ -> raise (TypeError (""))
 
+(**List Functions*)
+let max (v:value list) = match v with
+  | VList l :: []-> let get_first l = begin match l with
+      | h::_ -> h 
+      | [] -> NoneVal
+    end in let
+      rec max_help l acc = begin match l with
+      | [] -> acc
+      | h::t -> if h >= acc then max_help t h else max_help t acc
+    end 
+    in let frst =  get_first(!l)
+    in (max_help !l frst)
+  |_ -> raise (TypeError("object is not iterable"))
+
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
