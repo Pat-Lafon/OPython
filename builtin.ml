@@ -336,6 +336,9 @@ let rec list (v : value list) = match v with
   | x -> raise (TypeError ("list() takes at most 1 argument (" 
                            ^ string_of_int (List.length x) ^ " given)"))
 
+(** Quit in actual python can take an arg, it ignores it.*)
+let quit arg = exit 0
+
 let rec replace (v : value list) = match v with
   | VList(l):: Int(idx):: x :: []-> let
     rec replace_help l idx x = begin match l with 
