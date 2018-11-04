@@ -12,7 +12,7 @@ type expr = Binary of (expr * op * expr) | Unary of (op * expr)
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
                | While of (expr * string) | Def of (string * string list * string)
-               | Return of (expr) 
+               | Return of (expr) | Struct_Assignment of (string * string * string)
 
 exception EmptyInput
 exception IfMultiline of (expr * string)
@@ -58,7 +58,8 @@ let is_var_name (s:string) : string =
 let not_mistaken str op =
   let oplen = String.length op in
   if String.length str = oplen then true
-  else if op <> "*" && op <> "=" && op <> "/" then true
+  else if op <> "*" && op <> "=" && op <> "/" && op <> "<" && op <> ">" 
+          && op <> "!" then true
   else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
 
 (** [get_idx str op] is the index number of the first occurrence of [op] in [str]
@@ -235,6 +236,7 @@ let else_regex = Str.regexp "^else *: *"
 let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
 let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
 let return_regex = Str.regexp "^return \\(.*\\)"
+let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] *= *\\(.*\\)"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
@@ -243,6 +245,8 @@ let is_elif line = Str.string_match elif_regex line 0
 let is_while line = Str.string_match while_regex line 0
 let is_def line = Str.string_match def_regex line 0
 let is_return line = Str.string_match return_regex line 0
+
+let is_struct_assignment line = Str.string_match struct_regex line 0
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
@@ -257,11 +261,19 @@ let parse_def (line: string) : (string * string list * string) =
   let fn_name = Str.matched_group 1 line in
   let args = List.map String.trim (String.split_on_char ',' (Str.matched_group 2 line)) in
   let body = String.trim (Str.matched_group 3 line) in
-  (fn_name, args, body)
+  fn_name, args, body
+
+let parse_struct_assignment (line:string) : string * string * string = 
+  let lst = Str.matched_group 1 line in
+  let idx = Str.matched_group 2 line in
+  let value = Str.matched_group 3 line in
+  lst, idx, value
 
 (** [line_type line] is the line_type of [line] *)
 let line_type (line : string) : line_type =
   if String.length line = 0 then Empty
+  else if  is_struct_assignment line 
+  then Struct_Assignment (parse_struct_assignment line)
   else if is_assignment line then Assignment
   else if is_if line then If (parse_if line)
   else if is_elif line then Elif (parse_if line)
@@ -275,12 +287,14 @@ let parse_line (line : string) : string option * expr =
   match line_type line with
   | Empty -> raise EmptyInput
   | Assignment -> parse_assignment line
-  | Expression -> (None, parse_expr line operators)
+  | Struct_Assignment (lst, idx, value) -> 
+    None, Function ("replace", exprlst (lst^","^idx^","^value) ',')
+  | Expression -> None, parse_expr line operators
   | If (cond, body) -> raise (IfMultiline (cond, body))
   | Def (name, args, body) -> raise (DefMultiline (name, args, body))
   | Elif (cond, body) -> raise (SyntaxError "Elif statement with no if")
   | Else -> raise (SyntaxError "Else statement with no if")
-  | Line l -> (None, parse_expr line operators)
+  | Line l -> None, parse_expr line operators
   | While (cond, body) -> raise (WhileMultiline (cond, body)) 
   | Return (expr) -> raise (ReturnExpr (expr))
 
@@ -310,6 +324,7 @@ let parse_multiline (line: string) : line_type =
   match line_type line with
   | Empty -> Empty
   | Assignment -> Line line
+  | Struct_Assignment (lst, idx, value) -> Line line
   | Expression -> Line line
   | Line line -> Line line
   | Return (expr) -> Line line
