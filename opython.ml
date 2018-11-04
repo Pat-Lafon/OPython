@@ -12,9 +12,11 @@ let _ =
      interpret State.empty [] [] true)
   else
     let file_name = Sys.argv.(1) in
-    let rec file_helper (file:in_channel) (lines : string list) (line_nums : int list) (curr : int)= 
+    let rec file_helper (file:in_channel) (lines : string list) 
+        (line_nums : int list) (curr : int)= 
       (match Pervasives.input_line file with
-       | exception End_of_file -> Pervasives.close_in file; (List.rev lines, List.rev line_nums)
+       | exception End_of_file -> 
+         Pervasives.close_in file; (List.rev lines, List.rev line_nums)
        | "" -> file_helper file lines line_nums (curr + 1)
        | text -> if String.get (String.trim text) 0 = '#' 
          then file_helper file lines line_nums (curr + 1)
