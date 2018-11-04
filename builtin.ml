@@ -17,11 +17,11 @@ let rec to_string (value:State.value) : string =
     "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
   | Dictionary d -> 
-    let helper = begin match !d with
+    let rec helper lst = begin match lst with
       | [] -> ""
-      | (h1,h2) :: [] -> 
-      | (h1,h2) :: t -> to_string h1 ^", " 
-    end
+      | (h1,h2) :: [] -> to_string h1 ^" : "^to_string h2 
+      | (h1,h2) :: t -> to_string h1 ^" : "^to_string h2 ^", " ^ helper t
+    end in "{" ^ helper(!d) ^ "}"
   | NoneVal -> "None"
 
 let dictionary (lst : value list) : State.value = 
