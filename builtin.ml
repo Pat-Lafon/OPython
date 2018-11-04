@@ -186,6 +186,27 @@ let range (lst : value list) : State.value =
 
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
+let dictionary (lst : value list) : State.value = 
+  let hashtbl = Hashtbl.create (List.length lst) in
+  let rec helper (assoc_lst : value list) : (value,value) Hashtbl.t = 
+    begin match assoc_lst with
+      | [] -> Hashtbl.copy hashtbl
+      | h1::h2::t -> Hashtbl.add hashtbl h1 h2; helper t
+      | _ -> raise (TypeError("Operation unsupported"))
+    end 
+  in Hash(helper lst)
+
+let put (lst : value list) : State.value =
+  match lst with
+  | Hash(h)::key::value::[] -> Hashtbl.remove h key; 
+    Hashtbl.add h key value; Hash(h)
+  | _ -> raise (TypeError("Operation unsupported"))
+
+let get (lst : value list) : State.value =
+  match lst with
+  | Hash(h)::key::[] -> Hashtbl.find h key
+  | _ -> raise (TypeError("Operation unsupported"))
+
 (** Type casts *)
 let chr (val_list : value list) =
   match val_list with
@@ -254,5 +275,6 @@ let rec replace (v : value list) = match v with
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index); ("assert", assertt); 
-                          ("list", list); ("quit", quit); ("replace", replace)]
+                          ("index", index); ("assert", assertt); ("list", list);
+                          ("put", put); ("get", get); 
+                          ("dictionary", dictionary); ("replace", replace)]
