@@ -8,16 +8,19 @@ type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
           | Value of State.value | Variable of string | List of expr list 
           | Function of (string * expr list)
+          | Dictionary of expr list
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
                | While of (expr * string) | Def of (string * string list * string)
-               | Return of (expr) | Struct_Assignment of (string * string * string)
+               | Return of (expr) | For of (expr * string * string)
+               | Struct_Assignment of (string * string * string)
 
 exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
 exception DefMultiline of (string * string list * string)
+exception ForMultiline of (expr * string * string)
 exception ReturnExpr of expr
 
 val parse_line : string -> string option * expr

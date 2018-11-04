@@ -15,4 +15,3 @@ val if_decider : State.value -> bool
 (**[to_bool] evaluates expression to value and determines if it is true
    or false.*)
 val to_bool : expr -> State.t -> bool
-

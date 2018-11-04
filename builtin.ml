@@ -1,6 +1,7 @@
 open State
 open Parser
 open Error
+open Arithmetic
 
 (**[to_string] returns the string of a value*)
 let rec to_string (value:State.value) : string = 
@@ -129,82 +130,6 @@ let splice (lst : value list) : State.value =
     String(splice_string a1 a2 a3 a4)
   | _ -> failwith "Something went wrong in splice evaluation"
 
-
-(*  let rec helper lst x y z = if z = 0 then 
-      raise (ValueError "Third argument must not be zero") else 
-    if y > List.length lst then helper lst x (List.length lst) z else 
-      (if z < 0 then (if x <= y then [] else List.nth lst x :: helper lst (x+z) y z)
-       else (if x >= y then [] else List.nth lst x::helper lst (x+z) y z) ) in
-    let decider x len = if x < - len then 0 else 
-    if x < 0 then x + len else if x > len then len else x in
-    let splice_helper lst x y z = 
-    helper lst (decider x (List.length lst)) (decider y (List.length lst)) 
-      (z) in
-    let rec helper_str str x y z = if z = 0 then 
-      raise (ValueError "Third argument must not be zero") else 
-    if y > String.length str then helper_str str x (List.length lst) z else 
-    if x >= y then "" else String.concat "" 
-        ([String.sub str x 1;  helper_str str (x+z) y z]) in
-    let splice_str str x y z =
-    if z > 0 then (if x >= y then "" else String.concat "" 
-                       ([String.sub str x 1;  helper_str str (x+z) y z])) else
-    if x <= y then "" else String.concat "" 
-        ([String.sub str x 1;  helper_str str (x+z) y z])in
-    let splice_str str x y z =
-    helper_str str (decider x (String.length str)) 
-      (decider y (String.length str)) (z) in
-    match lst with
-    | h1::h2::[] -> begin match h1, h2 with
-      | String(s), Int(x) -> String(String.sub s x 1)
-      | VList(l), Int(x) -> if (x < 0 || x > List.length !l) then raise 
-            (Invalid_argument ("Out of bounds")) else
-          (match List.nth !l x with
-           | x -> x)
-      | _ -> raise (TypeError ("Operation not supported"))
-    end
-    | h1::h2::h3::[] -> begin match h1, h2, h3 with 
-      | String(s), String(""), String("") -> String(s)
-      | String(s), String(""), Int(x) -> String(splice_str s 0 x 1)
-      | String(s), Int(x), String("") -> 
-        String(splice_str s x (String.length s) 1)
-      | String(s), Int(x), Int(y) -> String(splice_str s x y 1)
-      | VList(l), String(""), String("") -> VList(l)
-      | VList(l), String(""), Int(x) -> VList(ref(splice_helper !l 0 x 1))
-      | VList(l), Int(x), String("") -> 
-        VList(ref(splice_helper !l x (List.length !l) 1)) 
-      | VList(l), Int(x), Int(y) -> VList(ref(splice_helper !l x y 1))
-      | _ -> raise (TypeError ("Operation not supported"))
-    end
-    | h1::h2::h3::h4::[] -> begin match h1,h2, h3, h4 with 
-      | String(s), String(""), String(""), String("") -> String(s)
-      | String(s), String(""), String(""), Int(x) -> 
-        String(splice_str s 0 (String.length s) x)
-      | String(s), String(""), Int(x), String("") -> String(splice_str s 0 x 1)
-      | String(s), Int(x), String(""), String("") -> 
-        String(splice_str s x (String.length s) 1) 
-      | String(s), Int(x), Int(y), String("") -> String(splice_str s x y 1) 
-      | String(s), Int(x), String(""), Int(y) -> 
-        String(splice_str s x (String.length s) y) 
-      | String(s), String(""), Int(x), Int(y) -> String(splice_str s 0 x y)  
-      | String(s), Int(x), Int(y), Int(z) -> String(splice_str s x y z) 
-      | VList(l), String(""), String(""), String("") -> VList(l)
-      | VList(l), String(""), String(""), Int(x) -> 
-        VList(ref(splice_helper !l 0 (List.length !l) x)) 
-      | VList(l), String(""), Int(x), String("") -> 
-        VList(ref(splice_helper !l 0 x 1))
-      | VList(l), Int(x), String(""), String("") -> 
-        VList(ref(splice_helper !l x (List.length !l) 1))
-      | VList(l), Int(x), Int(y), String("") -> 
-        VList(ref(splice_helper !l x y 1))
-      | VList(l), Int(x), String(""), Int(y) -> 
-        VList(ref(splice_helper !l x (List.length !l) y))
-      | VList(l), String(""), Int(x), Int(y) -> 
-        VList(ref(splice_helper !l 0 x y))
-      | VList(l), Int(x), Int(y), Int(z) -> VList(ref(splice_helper !l x y z))
-      | _ -> raise (TypeError ("Operation not supported"))
-    end 
-    | _ -> raise (TypeError ("Operation not supported")) *)
-
 (** [append lst] appends the second element of lst into the first element, 
     which must either be a list**)
 let append (val_list : value list)= 
@@ -262,6 +187,27 @@ let range (lst : value list) : State.value =
 
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
+let dictionary (lst : value list) : State.value = 
+  let hashtbl = Hashtbl.create (List.length lst) in
+  let rec helper (assoc_lst : value list) : (value,value) Hashtbl.t = 
+    begin match assoc_lst with
+      | [] -> Hashtbl.copy hashtbl
+      | h1::h2::t -> Hashtbl.add hashtbl h1 h2; helper t
+      | _ -> raise (TypeError("Operation unsupported"))
+    end 
+  in Hash(helper lst)
+
+let put (lst : value list) : State.value =
+  match lst with
+  | Hash(h)::key::value::[] -> Hashtbl.remove h key; 
+    Hashtbl.add h key value; Hash(h)
+  | _ -> raise (TypeError("Operation unsupported"))
+
+let get (lst : value list) : State.value =
+  match lst with
+  | Hash(h)::key::[] -> Hashtbl.find h key
+  | _ -> raise (TypeError("Operation unsupported"))
+
 (** Type casts *)
 let chr (val_list : value list) =
   match val_list with
@@ -309,11 +255,17 @@ let rec list (v : value list) = match v with
   | VList(l)::[]-> VList(l)
   | String(s)::[] -> let rec help_list str = if str = "" then [] else 
                        if String.length str = 1 then [String(str)] else 
-                         String(String.sub s 0 1) :: (help_list (String.sub s 1 1))
+                         String(String.sub str 0 1) :: (help_list (String.sub str 1 (String.length str - 1)))
     in VList(ref(help_list s))
   | _ :: [] -> raise (TypeError ("Input type is not iterable"))
   | x -> raise (TypeError ("list() takes at most 1 argument (" 
                            ^ string_of_int (List.length x) ^ " given)"))
+
+let rec to_list (lst : value list) = 
+  let vlist = list lst in
+  match vlist with
+  | VList(l) -> !l
+  | _ -> raise (TypeError ("Input type is not iterable"))
 
 (** Quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
@@ -327,6 +279,9 @@ let rec replace (v : value list) = match v with
     in VList(ref (replace_help !l idx x))
   | _ -> raise (TypeError (""))
 
+let match_bool = function
+  |Bool x -> x|_->failwith("not possble")
+
 (**List Functions*)
 let max (v:value list) = match v with
   | VList l :: []-> let get_first l = begin match l with
@@ -339,10 +294,37 @@ let max (v:value list) = match v with
     end 
     in let frst =  get_first(!l)
     in (max_help !l frst)
-  |_ -> raise (TypeError("object is not iterable"))
+  | x -> let get_first l = begin match l with
+      | f::_ -> f
+      | [] -> NoneVal
+    end in let rec max_assist x acc = begin match x with
+      | [] -> acc
+      | h::t -> if match_bool(helper_greater_equal (h,acc)) then max_assist t h else max_assist t acc
+    end in let frst =  get_first(x) in (max_assist x frst)
+
+let min (v:value list) = match v with
+  | VList l :: []-> let get_first l = begin match l with
+      | h::_ -> h 
+      | [] -> NoneVal
+    end in let
+      rec min_help l acc = begin match l with
+      | [] -> acc
+      | h::t -> if h <= acc then min_help t h else min_help t acc
+    end 
+    in let frst =  get_first(!l)
+    in (min_help !l frst)
+  | x -> let get_first l = begin match l with
+      | f::_ -> f
+      | [] -> NoneVal
+    end in let rec max_assist x acc = begin match x with
+      | [] -> acc
+      | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h else max_assist t acc
+    end in let frst =  get_first(x) in (max_assist x frst)
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
-                          ("index", index); ("assert", assertt); 
-                          ("list", list); ("quit", quit); ("replace", replace)]
+                          ("index", index); ("assert", assertt); ("list", list);
+                          ("put", put); ("get", get); 
+                          ("dictionary", dictionary); ("replace", replace);
+                          ("max", max); ("min", min)]
