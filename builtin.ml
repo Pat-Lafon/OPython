@@ -35,8 +35,8 @@ let dictionary (lst : value list) : State.value =
 
 let put (lst : value list) : State.value =
   match lst with
-  | Dictionary(h)::key::value::[] -> if not (List.mem_assoc key !h) then 
-      Dictionary(h) else Dictionary(ref((key,value) :: List.remove_assoc key !h))
+  | Dictionary(h)::key::value::[] -> 
+    h := ((key,value) :: (List.remove_assoc key !h)); NoneVal
   | _ -> raise (TypeError("Operation unsupported"))
 
 let get (lst : value list) : State.value =
