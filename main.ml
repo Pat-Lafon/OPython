@@ -108,26 +108,21 @@ let rec interpret (st:State.t) (lines: string list)
                                 interpret st [read_line ()] [1] new_line) else st
   | h::t, n_h::n_t -> 
     (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
-     | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); 
+     | exception (SyntaxError x) -> print_error "SyntaxError" x h n_h;
        interpret st [] [] new_line
-     | exception (IndexError x) -> print_endline ("IndexError: "^x); 
+     | exception (IndexError x) -> print_error "IndexError" x h n_h;
        interpret st [] [] new_line
-     | exception (NameError x) -> print_endline ("NameError: "^x); 
+     | exception (NameError x) -> print_error "NameError" x h n_h;
        interpret st [] [] new_line
-     | exception (TypeError x) -> print_endline ("TypeError: "^x^
-                                                 ": '" ^ h ^
-                                                 "' in line " ^
-                                                 string_of_int n_h); 
+     | exception (TypeError x) -> print_error "TypeError" x h n_h;
        interpret st [] [] new_line
-     | exception (OverflowError x) -> print_endline ("OverflowError: "^x); 
+     | exception (OverflowError x) -> print_error "OverflowError" x h n_h;
        interpret st [] [] new_line
-     | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
+     | exception (IndentationError x) -> print_error "IndentationError" x h n_h;
        interpret st [] [] new_line
-     | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
+     | exception (ZeroDivisionError x) -> print_error "ZeroDivisionError" x h n_h;
        interpret st [] [] new_line
-     | exception (AssertionError)-> print_endline ("Assertion Error: '" ^ h ^ 
-                                                   "' in line " ^ 
-                                                   string_of_int n_h);  
+     | exception (AssertionError) -> print_error "AssertionError" "Incorrect" h n_h;
        interpret st [] [] new_line
      | exception EmptyInput -> interpret st t n_t new_line
      | exception (IfMultiline (cond, body)) -> 
