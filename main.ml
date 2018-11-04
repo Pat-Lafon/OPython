@@ -114,7 +114,10 @@ let rec interpret (st:State.t) (lines: string list)
        interpret st [] [] new_line
      | exception (NameError x) -> print_endline ("NameError: "^x); 
        interpret st [] [] new_line
-     | exception (TypeError x) -> print_endline ("TypeError: "^x); 
+     | exception (TypeError x) -> print_endline ("TypeError: "^x^
+                                                 ": '" ^ h ^
+                                                 "' in line " ^
+                                                 string_of_int n_h); 
        interpret st [] [] new_line
      | exception (OverflowError x) -> print_endline ("OverflowError: "^x); 
        interpret st [] [] new_line
