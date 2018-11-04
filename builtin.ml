@@ -1,6 +1,7 @@
 open State
 open Parser
 open Error
+open Arithmetic
 
 (**[to_string] returns the string of a value*)
 let rec to_string (value:State.value) : string = 
@@ -35,8 +36,8 @@ let dictionary (lst : value list) : State.value =
 
 let put (lst : value list) : State.value =
   match lst with
-  | Dictionary(h)::key::value::[] -> if not (List.mem_assoc key !h) then 
-      Dictionary(h) else Dictionary(ref((key,value) :: List.remove_assoc key !h))
+  | Dictionary(h)::key::value::[] -> 
+    h := ((key,value) :: (List.remove_assoc key !h)); NoneVal
   | _ -> raise (TypeError("Operation unsupported"))
 
 let get (lst : value list) : State.value =
@@ -122,7 +123,7 @@ let splice (lst : value list) : State.value =
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
       in VList a1, NoneVal, NoneVal, NoneVal
-    | Hash h :: idx :: [] -> let a1 = ref(get (Hash h :: idx :: []) :: []) 
+    | Dictionary h :: idx :: [] -> let a1 = ref(get (Dictionary h::idx::[]) :: [])
       in VList a1, NoneVal, NoneVal, NoneVal
     | String a1 :: a2 :: [] ->
       let length = String.length a1 in
@@ -234,6 +235,9 @@ let bool (val_list: value list) =
   | [] -> Bool false
   | _ -> raise (TypeError("bool() takes at most 1 argument"))
 
+(** [float val_list] is a float if [val_list] can be turned into a float. 
+    Raise: Either a ValueError or TypeError depending on what is wrong with 
+    [val_list] *)
 let float (val_list: value list) =
   match val_list with
   | Int x::[] -> Float(float_of_int(x))
@@ -266,6 +270,12 @@ let rec list (v : value list) = match v with
   | x -> raise (TypeError ("list() takes at most 1 argument (" 
                            ^ string_of_int (List.length x) ^ " given)"))
 
+let rec to_list (lst : value list) = 
+  let vlist = list lst in
+  match vlist with
+  | VList(l) -> !l
+  | _ -> raise (TypeError ("Input type is not iterable"))
+
 (** Quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
 
@@ -276,12 +286,56 @@ let rec replace (v : value list) = match v with
       | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
     end
     in VList(ref (replace_help !l idx x))
-  | Hash(h)::key::valu::[] -> put (Hash(h)::key::valu::[]) 
+  | Dictionary(h)::key::valu::[] -> put (Dictionary(h)::key::valu::[]) 
   | _ -> raise (TypeError (""))
+
+let match_bool = function
+  |Bool x -> x|_->failwith("not possble")
+
+(**List Functions*)
+let max (v:value list) = match v with
+  | VList l :: []-> let get_first l = begin match l with
+      | h::_ -> h 
+      | [] -> NoneVal
+    end in let
+      rec max_help l acc = begin match l with
+      | [] -> acc
+      | h::t -> if h >= acc then max_help t h else max_help t acc
+    end 
+    in let frst =  get_first(!l)
+    in (max_help !l frst)
+  | x -> let get_first l = begin match l with
+      | f::_ -> f
+      | [] -> NoneVal
+    end in let rec max_assist x acc = begin match x with
+      | [] -> acc
+      | h::t -> if match_bool(helper_greater_equal (h,acc)) 
+        then max_assist t h else max_assist t acc
+    end in let frst =  get_first(x) in (max_assist x frst)
+
+let min (v:value list) = match v with
+  | VList l :: []-> let get_first l = begin match l with
+      | h::_ -> h 
+      | [] -> NoneVal
+    end in let
+      rec min_help l acc = begin match l with
+      | [] -> acc
+      | h::t -> if h <= acc then min_help t h else min_help t acc
+    end 
+    in let frst =  get_first(!l)
+    in (min_help !l frst)
+  | x -> let get_first l = begin match l with
+      | f::_ -> f
+      | [] -> NoneVal
+    end in let rec max_assist x acc = begin match x with
+      | [] -> acc
+      | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h else max_assist t acc
+    end in let frst =  get_first(x) in (max_assist x frst)
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
                           ("index", index); ("assert", assertt); ("list", list);
                           ("put", put); ("get", get); 
-                          ("dictionary", dictionary); ("replace", replace)]
+                          ("dictionary", dictionary); ("replace", replace);
+                          ("max", max); ("min", min)]

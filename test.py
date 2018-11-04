@@ -1,31 +1,3 @@
-# Testing lists
-assert([] == [])
-l = []
-# TODO: this is printing the array and it shouldn't
-l.append(5)
-assert(l == [5])
-
-# Appending list with while loop
-x = 0
-l = []
-while x < 10:
-    # TODO: Commenting at the end of a line 
-    l.append(x)
-    x = x + 1
-# assert(l == range(10))
-# TODO: this is actually incorrect, list(range(x)) gives a list, range gives an iterator
-# We should have a list() function
-assert(l == list(range(10)))
-
-x = 0
-l = []
-while x < 10:
-    if x % 2 == 0:
-        l.append(x)
-    x = x + 1
-assert(l == [0,2,4,6,8])
-
-# Implement prefix sum
 def prefix_arr(arr):
     sums = [arr[0]]
     i = 1
@@ -64,3 +36,6 @@ assert(bin_search_left(arr, 7) == 2)
 assert(bin_search_right(arr, 7) == 6)
 assert(bin_search_left(arr, 11) == 6)
 assert(bin_search_right(arr, 11) == 10)
+x = [i for i in range(5)]
+x = [[i for i in range(5)] for j in range(6) if j % 2 == 0]
+x = [[i for i in range(5)] for j in [1,2,3] if j % 2 == 0]
