@@ -9,6 +9,6 @@ assert(4 <= 5.0)
 assert(3 <= 5.0)
 
 # lists
-# assert([] == [])
+assert([] == [])
 assert([1] == [1])
 assert([1,2] == [1,2])
