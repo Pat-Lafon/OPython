@@ -39,7 +39,6 @@ let rec read_if (conds : expr list) (bodies : string list)
                        List.rev (""::(String.trim acc::bodies)), lines, line_nums)
            | Line line -> (List.rev (Value(Bool(true))::conds), 
                            List.rev (""::(String.trim acc::bodies)), lines, line_nums)
-           (* | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t *)
            | If (cond, body) -> read_if (cond::conds) 
                                   (String.trim acc::bodies) body new_line t n_t
            | Elif (cond, body) -> read_if (cond::conds) 

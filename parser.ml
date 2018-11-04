@@ -9,6 +9,7 @@ type expr = Binary of (expr * op * expr) | Unary of (op * expr)
           | Value of State.value | Variable of string | List of expr list 
           | Function of (string * expr list) 
           | Dictionary of expr list
+          | ListComp of (expr * string * expr * expr option)
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
@@ -164,6 +165,8 @@ let is_assignment (line:string) : bool =
       else String.get line (idx+1) in
     prev <> '>' && prev <> '<' && prev <> '!' && next <> '='
   else false
+
+let list_comp_regex = Str.regexp "\\[\\(.*\\) for \\(.*\\) in \\(.*\\)\\]"
 
 (** [exprlst line chr] is an expr list of [line] partitioned into elements by 
     [chr] *)
