@@ -221,7 +221,6 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
         interpret new_state remaining_lines false
       | exception (ForMultiline (iter, arg, body)) -> 
         let (for_body, remaining_lines) = read_for body t (t = []) in 
-        let old_state = st in
         let iter_val = to_list [(eval iter st)] in
         let new_state = interpret_for iter_val arg body st in
         interpret new_state remaining_lines false
