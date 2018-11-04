@@ -1,4 +1,8 @@
 for f in tests/*; 
 do 
-    ./opython $f
+    out="`./opython $f`"
+    if ((${#out} \> 0))
+    then
+        echo "'$out' in $f"
+    fi
 done 

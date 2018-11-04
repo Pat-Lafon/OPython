@@ -1,33 +1,3 @@
-# TODO: boolean for None types
-assert(not None)
-assert(None == None)
-a = None
-if a == None:
-    assert (not a)
-assert(not [].append(5))
-
-
-# Assignment tests
-a = 5
-assert(a == 5)
-a = []
-assert(a == [])
-a = ""
-assert(a == "")
-a = a + "b"
-assert(a == "b")
-a = a + "b"
-assert(a == "bb")
-
-# Nested if in while loop
-x = 1
-while x < 100:
-    if x == 90:
-        x = x + 30
-    else:
-        x = x + 1
-assert(x == 120)
-
 # Testing lists
 assert([] == [])
 l = []
