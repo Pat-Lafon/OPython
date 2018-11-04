@@ -61,11 +61,6 @@ let rec read_while (cond : expr) (body : string) (lines : string list)
        | _ -> read_while cond (body ^ "\n" ^ indent_line) t n_t new_line)
   | _, _ -> failwith "Lines and line numbers should match"
 
-let rec create_int_list n =
-  match n with
-  | 0 -> []
-  | t -> t::(create_int_list (n-1))
-
 (** Read the next lines as part of the body of the function *)
 let rec read_function (body : string) (lines : string list) 
   (line_nums : int list) (new_line : bool) =

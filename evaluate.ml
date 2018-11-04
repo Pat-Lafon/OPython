@@ -151,6 +151,20 @@ and read_while (cond : expr) (body : string) (lines : string list)
        | Empty -> (cond, String.trim body, lines)
        | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
 
+and read_for (body : string) (lines : string list) (new_line : bool) =
+  match lines with
+  | [] -> if new_line then (print_string "... "; 
+                            read_for body [read_line ()] new_line)
+    else (String.trim body, [])
+  | line::t -> 
+    let depth = indent_depth line in
+    if depth = 0 then
+      (String.trim body, lines)
+    else let indent_line = add_depth (String.trim line) (depth - 1) in
+      (match parse_multiline indent_line with
+       | Empty -> (String.trim body, lines)
+       | _ -> read_for (body ^ "\n" ^ indent_line) t new_line)
+
 and read_function (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; 
@@ -188,6 +202,12 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
         let (conds, bodies, remaining_lines)=read_if [cond] [] body (t = []) t in 
         let new_state = interpret_if conds bodies st in
         interpret new_state remaining_lines false
+      | exception (ForMultiline (iter, arg, body)) -> 
+        let (for_body, remaining_lines) = read_for body t (t = []) in 
+        let old_state = st in
+        let new_state = interpret_for iter arg body st in
+        (* let new_state = interpret_if conds bodies st in *)
+        interpret new_state remaining_lines false
       | exception (WhileMultiline (cond, init_body)) -> 
         (* Parse out the loop condition and body, process them in 
            [interpret_while] *)
@@ -223,6 +243,15 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     let new_state = interpret st new_lines false in 
     interpret_while cond body new_state
   | false -> interpret st [] false
+
+and interpret_for (iter : expr) (arg : string) (body : string) (st: State.t) : State.t = 
+  match iter with
+  | h::t -> 
+    let new_lines = String.split_on_char '\n' body in
+    let new_state = interpret st new_lines false in 
+    interpret_while cond body new_state
+  | [] -> interpret st [] false
+
 
 (** [run_function f_name expr_args global_st] runs function [f_name] with arguments
     [expr_args] and returns the return value of the function *)

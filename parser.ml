@@ -12,12 +12,13 @@ type expr = Binary of (expr * op * expr) | Unary of (op * expr)
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
                | While of (expr * string) | Def of (string * string list * string)
-               | Return of (expr) 
+               | Return of (expr) | For of (expr * string * string)
 
 exception EmptyInput
 exception IfMultiline of (expr * string)
 exception WhileMultiline of (expr * string)
 exception DefMultiline of (string * string list * string)
+exception ForMultiline of (expr * string * string)
 exception ReturnExpr of expr
 
 let operators = [[("or", Or)];
@@ -232,6 +233,7 @@ let elif_regex = Str.regexp "^elif \\(.*\\):\\(.*\\)"
 let else_regex = Str.regexp "^else *: *"
 let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
 let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
+let for_regex = Str.regexp "^for \\(.*\\) in \\(.*\\) *: \\(.*\\)"
 let return_regex = Str.regexp "^return \\(.*\\)"
 
 (** Check if line is an if statement *)
@@ -240,12 +242,20 @@ let is_else line = Str.string_match else_regex line 0
 let is_elif line = Str.string_match elif_regex line 0
 let is_while line = Str.string_match while_regex line 0
 let is_def line = Str.string_match def_regex line 0
+let is_for line = Str.string_match for_regex line 0
 let is_return line = Str.string_match return_regex line 0
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
   let body = String.trim (Str.matched_group 2 line) in
   (parse_expr condition operators, body)
+
+(** For now, assume single argument in for loop *)
+let parse_for (line: string) : (expr * string * string) =
+  let args = Str.matched_group 1 line in
+  let iterator = Str.matched_group 2 line in
+  let body = String.trim (Str.matched_group 3 line) in
+  (parse_expr iterator operators, (String.trim args), body)
 
 let parse_return (line: string) : (expr) =
   let return_expr = Str.matched_group 1 line in
@@ -264,6 +274,7 @@ let line_type (line : string) : line_type =
   else if is_if line then If (parse_if line)
   else if is_elif line then Elif (parse_if line)
   else if is_else line then Else
+  else if is_for line then For (parse_for line)
   else if is_while line then While (parse_if line)
   else if is_def line then Def (parse_def line)
   else if is_return line then Return (parse_return line)
@@ -275,6 +286,7 @@ let parse_line (line : string) : string option * expr =
   | Assignment -> parse_assignment line
   | Expression -> (None, parse_expr line operators)
   | If (cond, body) -> raise (IfMultiline (cond, body))
+  | For (iter, arg, body) -> raise (ForMultiline (iter, arg, body))
   | Def (name, args, body) -> raise (DefMultiline (name, args, body))
   | Elif (cond, body) -> raise (SyntaxError "Elif statement with no if")
   | Else -> raise (SyntaxError "Else statement with no if")
@@ -314,5 +326,6 @@ let parse_multiline (line: string) : line_type =
   | If (cond, body) -> If (cond, body)
   | Elif (cond, body) -> Elif (cond, body)
   | While (cond, body) -> While (cond, body)
+  | For (iter, arg, body) -> For (iter, arg, body)
   | Def (name, args, body) -> Def (name, args, body)
   | Else -> Else 
