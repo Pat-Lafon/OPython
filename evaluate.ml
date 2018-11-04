@@ -83,8 +83,8 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
 
 (** [evaluate input st] determines whether or not [input] is an assignment 
     statement; If there is an assignment, the expression the variable is assigned to
-    is evaluatedand are placed in the state paired as an association list. If there
-    is not an assignemnt,the expression is evaluated. The updated state is 
+    is evaluated and are placed in the state paired as an association list. If there
+    is not an assignment,the expression is evaluated. The updated state is 
     returned after either of the two cases occur.*)
 and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
