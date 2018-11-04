@@ -20,6 +20,27 @@ let rec to_string (value:State.value) : string =
     let print_element  
       | NoneVal -> "None"
 
+let dictionary (lst : value list) : State.value = 
+  let hashtbl = Hashtbl.create (List.length lst) in
+  let rec helper (assoc_lst : value list) : (value,value) Hashtbl.t = 
+    begin match assoc_lst with
+      | [] -> Hashtbl.copy hashtbl
+      | h1::h2::t -> Hashtbl.add hashtbl h1 h2; helper t
+      | _ -> raise (TypeError("Operation unsupported"))
+    end 
+  in Hash(helper lst)
+
+let put (lst : value list) : State.value =
+  match lst with
+  | Hash(h)::key::value::[] -> Hashtbl.remove h key; 
+    Hashtbl.add h key value; Hash(h)
+  | _ -> raise (TypeError("Operation unsupported"))
+
+let get (lst : value list) : State.value =
+  match lst with
+  | Hash(h)::key::[] -> Hashtbl.find h key
+  | _ -> raise (TypeError("Operation unsupported"))
+
 (** [index lst] returns the index of the second element of lst in the first 
     element of lst in an integer value, returns Int(-1) if not found.
     The first element of lst must be either a VList or a String **)
@@ -97,6 +118,8 @@ let splice (lst : value list) : State.value =
             else (x+length) mod length
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
+      in VList a1, NoneVal, NoneVal, NoneVal
+    | Hash h :: idx :: [] -> let a1 = ref(get (Hash h :: idx :: []) :: []) 
       in VList a1, NoneVal, NoneVal, NoneVal
     | String a1 :: a2 :: [] ->
       let length = String.length a1 in
@@ -188,27 +211,6 @@ let range (lst : value list) : State.value =
 
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
-let dictionary (lst : value list) : State.value = 
-  let hashtbl = Hashtbl.create (List.length lst) in
-  let rec helper (assoc_lst : value list) : (value,value) Hashtbl.t = 
-    begin match assoc_lst with
-      | [] -> Hashtbl.copy hashtbl
-      | h1::h2::t -> Hashtbl.add hashtbl h1 h2; helper t
-      | _ -> raise (TypeError("Operation unsupported"))
-    end 
-  in Hash(helper lst)
-
-let put (lst : value list) : State.value =
-  match lst with
-  | Hash(h)::key::value::[] -> Hashtbl.remove h key; 
-    Hashtbl.add h key value; Hash(h)
-  | _ -> raise (TypeError("Operation unsupported"))
-
-let get (lst : value list) : State.value =
-  match lst with
-  | Hash(h)::key::[] -> Hashtbl.find h key
-  | _ -> raise (TypeError("Operation unsupported"))
-
 (** Type casts *)
 let chr (val_list : value list) =
   match val_list with
@@ -272,6 +274,7 @@ let rec replace (v : value list) = match v with
       | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
     end
     in VList(ref (replace_help !l idx x))
+  | Hash(h)::key::valu::[] -> put (Hash(h)::key::valu::[]) 
   | _ -> raise (TypeError (""))
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 

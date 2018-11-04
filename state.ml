@@ -1,7 +1,7 @@
 type value = Int of int | Float of float | String of string 
            | Bool of bool | VList of value list ref 
            | Function of (string * string list * string)
-           | NoneVal | Hash of (value,value) Hashtbl.t 
+           | NoneVal 
 
 type t = (string*value) list
 
