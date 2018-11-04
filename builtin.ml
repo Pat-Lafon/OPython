@@ -315,6 +315,12 @@ let rec list (v : value list) = match v with
   | x -> raise (TypeError ("list() takes at most 1 argument (" 
                            ^ string_of_int (List.length x) ^ " given)"))
 
+let rec to_list (lst : value list) = 
+  let vlist = list lst in
+  match vlist with
+  | VList(l) -> !l
+  | _ -> raise (TypeError ("Input type is not iterable"))
+
 (** Quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
 

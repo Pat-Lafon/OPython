@@ -205,8 +205,8 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
       | exception (ForMultiline (iter, arg, body)) -> 
         let (for_body, remaining_lines) = read_for body t (t = []) in 
         let old_state = st in
-        let new_state = interpret_for iter arg body st in
-        (* let new_state = interpret_if conds bodies st in *)
+        let iter_val = to_list [(eval iter st)] in
+        let new_state = interpret_for iter_val arg body st in
         interpret new_state remaining_lines false
       | exception (WhileMultiline (cond, init_body)) -> 
         (* Parse out the loop condition and body, process them in 
@@ -243,14 +243,14 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     let new_state = interpret st new_lines false in 
     interpret_while cond body new_state
   | false -> interpret st [] false
-
-and interpret_for (iter : expr) (arg : string) (body : string) (st: State.t) : State.t = 
+and interpret_for (iter : value list) (arg : string) (body : string) (st: State.t) : State.t = 
   match iter with
+  | [] -> st
   | h::t -> 
+    let arg_state = insert arg h st in
     let new_lines = String.split_on_char '\n' body in
-    let new_state = interpret st new_lines false in 
-    interpret_while cond body new_state
-  | [] -> interpret st [] false
+    let new_state = interpret arg_state new_lines false in 
+    interpret_for t arg body new_state
 
 
 (** [run_function f_name expr_args global_st] runs function [f_name] with arguments

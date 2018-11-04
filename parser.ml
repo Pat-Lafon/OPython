@@ -7,8 +7,8 @@ type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
           | Value of State.value | Variable of string | List of expr list 
-          | Dictionary of expr list
           | Function of (string * expr list) 
+          | Dictionary of expr list
 
 type line_type = Assignment | Expression | If of (expr * string) 
                | Empty | Else | Line of string | Elif of (expr * string) 
@@ -263,6 +263,7 @@ let parse_if (line: string) : (expr * string) =
 
 (** For now, assume single argument in for loop *)
 let parse_for (line: string) : (expr * string * string) =
+  let () = print_endline line in
   let args = Str.matched_group 1 line in
   let iterator = Str.matched_group 2 line in
   let body = String.trim (Str.matched_group 3 line) in
