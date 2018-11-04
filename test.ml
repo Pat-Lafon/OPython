@@ -54,6 +54,8 @@ let function_tests = [
 
 let suite =
   "test suite for A6-A8"  >::: List.flatten [
+    arith_tests;
+    function_tests
   ]
 
 let _ = run_test_tt_main suite
