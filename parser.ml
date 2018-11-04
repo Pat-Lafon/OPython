@@ -167,7 +167,6 @@ let is_assignment (line:string) : bool =
   else false
 
 let list_comp_regex = Str.regexp "\\[\\(.*\\) for \\(.*\\) in \\(.*\\)\\]"
-
 let list_comp_if_regex = Str.regexp "\\[\\(.*\\) for \\(.*\\) in \\(.*\\) if \\(.*\\)\\]"
 
 let is_list_comp line = Str.string_match list_comp_regex line 0
@@ -234,9 +233,9 @@ and parse_list_comp_if (line:string) =
   let acc = Str.matched_group 1 line in
   let arg = Str.matched_group 2 line in
   let iter = Str.matched_group 3 line in
-  let iF = Str.matched_group 4 line in
+  let cond = Str.matched_group 4 line in
   parse_expr acc operators, arg, 
-  parse_expr iter operators, Some (parse_expr iF operators)
+  parse_expr iter operators, Some (parse_expr cond operators)
 and parse_list_comp (line:string) = 
   let acc = Str.matched_group 1 line in
   let arg = Str.matched_group 2 line in
