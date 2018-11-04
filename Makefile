@@ -11,9 +11,6 @@ PKGS=unix,str,oUnit,qcheck
 default: build
 	utop
 
-build:
-	$(OCAMLBUILD) $(OBJECTS)
-
 test:
 	$(OCAMLBUILD) -tag debug $(TEST) && ./$(TEST)
 
@@ -28,12 +25,12 @@ zip:
 	
 docs: docs-public docs-private
 	
-docs-public: build
+docs-public: all
 	mkdir -p doc.public
 	ocamlfind ocamldoc -I _build -package $(PKGS) \
 		-html -stars -d doc.public $(MLIS)
 
-docs-private: build
+docs-private: all
 	mkdir -p doc.private
 	ocamlfind ocamldoc -I _build -package $(PKGS) \
 		-html -stars -d doc.private \
