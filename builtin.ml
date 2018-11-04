@@ -122,7 +122,7 @@ let splice (lst : value list) : State.value =
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
       in VList a1, NoneVal, NoneVal, NoneVal
-    | Hash h :: idx :: [] -> let a1 = ref(get (Hash h :: idx :: []) :: []) 
+    | Dictionary h :: idx :: [] -> let a1 = ref(get (Dictionary h::idx::[]) :: [])
       in VList a1, NoneVal, NoneVal, NoneVal
     | String a1 :: a2 :: [] ->
       let length = String.length a1 in
@@ -277,7 +277,7 @@ let rec replace (v : value list) = match v with
       | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
     end
     in VList(ref (replace_help !l idx x))
-  | Hash(h)::key::valu::[] -> put (Hash(h)::key::valu::[]) 
+  | Dictionary(h)::key::valu::[] -> put (Dictionary(h)::key::valu::[]) 
   | _ -> raise (TypeError (""))
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
