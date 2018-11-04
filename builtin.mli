@@ -34,6 +34,8 @@ val int : value list -> State.value
 
 val list : value list -> State.value
 
+val to_list : value list -> value list
+
 val replace : value list -> State.value
 
 val built_in_functions : (string * (State.value list -> State.value)) list

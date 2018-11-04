@@ -11,9 +11,9 @@ let printt (value:State.value): unit = match to_string value with
   | "NoneVal" -> ()
   | s -> print_endline s
 
-(**[if_decider val] takes in a [State.value] and returns false if the values match
-   a "false" value of a respective type. The "empty" or "zero" of each type 
-   results in false, and if "non-empty" or "non-zero" then true*) 
+(**[if_decider val] takes in a [State.value] and returns false if the values 
+   match a "false" value of a respective type. The "empty" or "zero" of each 
+   type results in false, and if "non-empty" or "non-zero" then true*) 
 let if_decider = function
   | Int(0) -> false
   | String("") -> false
@@ -84,10 +84,10 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
 
 
 (** [evaluate input st] determines whether or not [input] is an assignment 
-    statement; If there is an assignment, the expression the variable is assigned to
-    is evaluated and are placed in the state paired as an association list. If there
-    is not an assignment,the expression is evaluated. The updated state is 
-    returned after either of the two cases occur.*)
+    statement; If there is an assignment, the expression the variable is assigned 
+    to is evaluated and are placed in the state paired as an association list. 
+    If there is not an assignment,the expression is evaluated. The updated state
+    is returned after either of the two cases occur.*)
 and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> printt (eval expr st); st
@@ -153,6 +153,20 @@ and read_while (cond : expr) (body : string) (lines : string list)
        | Empty -> (cond, String.trim body, lines)
        | _ -> read_while cond (body ^ "\n" ^ indent_line) t new_line)
 
+and read_for (body : string) (lines : string list) (new_line : bool) =
+  match lines with
+  | [] -> if new_line then (print_string "... "; 
+                            read_for body [read_line ()] new_line)
+    else (String.trim body, [])
+  | line::t -> 
+    let depth = indent_depth line in
+    if depth = 0 then
+      (String.trim body, lines)
+    else let indent_line = add_depth (String.trim line) (depth - 1) in
+      (match parse_multiline indent_line with
+       | Empty -> (String.trim body, lines)
+       | _ -> read_for (body ^ "\n" ^ indent_line) t new_line)
+
 and read_function (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; 
@@ -180,15 +194,21 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
         interpret st [] new_line
       | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
         interpret st [] new_line
-      | exception (ZeroDivisionError x)-> print_endline 
-                                            ("ZeroDivisionError: "^x); interpret st [] new_line
-      | exception (ReturnExpr expr) -> raise (EarlyReturn(evaluate 
-                                                            (Some "return", expr) st))
+      | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
+        interpret st [] new_line
+      | exception (ReturnExpr expr) -> 
+        raise (EarlyReturn(evaluate (Some "return", expr) st))
       | exception EmptyInput -> interpret st t new_line
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
         let (conds, bodies, remaining_lines)=read_if [cond] [] body (t = []) t in 
         let new_state = interpret_if conds bodies st in
+        interpret new_state remaining_lines false
+      | exception (ForMultiline (iter, arg, body)) -> 
+        let (for_body, remaining_lines) = read_for body t (t = []) in 
+        let old_state = st in
+        let iter_val = to_list [(eval iter st)] in
+        let new_state = interpret_for iter_val arg body st in
         interpret new_state remaining_lines false
       | exception (WhileMultiline (cond, init_body)) -> 
         (* Parse out the loop condition and body, process them in 
@@ -209,8 +229,8 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
 and interpret_if (conds : expr list) (bodies : string list) (st: State.t)
   : State.t =
   (* Go through [conds] and respective [bodies] in order. If any condition 
-     evaluates to true, then we run the corresponding body through the interpreter 
-     and throw out the rest *)
+     evaluates to true, then we run the corresponding body through the 
+     interpreter and throw out the rest *)
   match conds, bodies with
   | cond::c_t, body::b_t -> (match eval cond st |> if_decider with
       | true -> interpret st (String.split_on_char '\n' body) false
@@ -225,9 +245,18 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     let new_state = interpret st new_lines false in 
     interpret_while cond body new_state
   | false -> interpret st [] false
+and interpret_for (iter : value list) (arg : string) (body : string) (st: State.t) : State.t = 
+  match iter with
+  | [] -> st
+  | h::t -> 
+    let arg_state = insert arg h st in
+    let new_lines = String.split_on_char '\n' body in
+    let new_state = interpret arg_state new_lines false in 
+    interpret_for t arg body new_state
 
-(** [run_function f_name expr_args global_st] runs function [f_name] with arguments
-    [expr_args] and returns the return value of the function *)
+
+(** [run_function f_name expr_args global_st] runs function [f_name] with 
+    arguments [expr_args] and returns the return value of the function *)
 and run_function f_name expr_args global_st = 
   match List.assoc f_name global_st with
   | Function(name, string_args, body) as f -> 
@@ -275,5 +304,5 @@ and printt (value:State.value) : unit = match to_string value with
   | "None" -> ()
   | s -> print_endline s
 
-let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
+let add_function (st:State.t)(fnc_name:string)(args:string list)(body:string) =
   let func = Function(fnc_name, args, body) in insert fnc_name func st

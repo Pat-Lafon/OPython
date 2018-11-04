@@ -16,29 +16,32 @@ let rec to_string (value:State.value) : string =
     let address = 2*(Obj.magic (ref f)) in
     "<function " ^ name ^ " at " ^ Printf.sprintf "0x%08x" address ^ ">"
   | String x -> "'" ^ x ^ "'"
-  | Hash h -> 
-    let print_element  
-      | NoneVal -> "None"
+  | Dictionary d -> 
+    let helper = begin match !d with
+      | [] -> ""
+      | (h1,h2) :: [] -> 
+      | (h1,h2) :: t -> to_string h1 ^", " 
+    end
+  | NoneVal -> "None"
 
 let dictionary (lst : value list) : State.value = 
-  let hashtbl = Hashtbl.create (List.length lst) in
-  let rec helper (assoc_lst : value list) : (value,value) Hashtbl.t = 
-    begin match assoc_lst with
-      | [] -> Hashtbl.copy hashtbl
-      | h1::h2::t -> Hashtbl.add hashtbl h1 h2; helper t
+  let rec to_assoc lst = 
+    begin match lst with
+      | [] -> []
+      | h1::h2::t -> (h1,h2) :: to_assoc t
       | _ -> raise (TypeError("Operation unsupported"))
     end 
-  in Hash(helper lst)
+  in Dictionary(ref(to_assoc lst))
 
 let put (lst : value list) : State.value =
   match lst with
-  | Hash(h)::key::value::[] -> Hashtbl.remove h key; 
-    Hashtbl.add h key value; Hash(h)
+  | Dictionary(h)::key::value::[] -> if not (List.mem_assoc key !h) then 
+      Dictionary(h) else Dictionary(ref((key,value) :: List.remove_assoc key !h))
   | _ -> raise (TypeError("Operation unsupported"))
 
 let get (lst : value list) : State.value =
   match lst with
-  | Hash(h)::key::[] -> Hashtbl.find h key
+  | Dictionary(h)::key::[] -> List.assoc key !h
   | _ -> raise (TypeError("Operation unsupported"))
 
 (** [index lst] returns the index of the second element of lst in the first 
