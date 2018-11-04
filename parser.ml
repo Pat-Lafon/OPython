@@ -7,6 +7,7 @@ type op = Plus | Minus | Divide | Floor_Divide | Multiply | Modular | Exponent
 
 type expr = Binary of (expr * op * expr) | Unary of (op * expr) 
           | Value of State.value | Variable of string | List of expr list 
+          | Dictionary of expr list
           | Function of (string * expr list) 
 
 type line_type = Assignment | Expression | If of (expr * string) 
@@ -192,6 +193,10 @@ and
       then if length = 2 then List([])
         else List(List.map (fun x -> parse_expr x operators) 
                     (split_on_char ',' (String.sub line 1 (length - 2))))
+      else if line.[0] = '{' && line.[length-1] = '}' 
+      then String.sub line 1 (length-2) |> split_on_char ',' 
+           |> List.map (fun x -> split_on_char ':' x) |> List.flatten 
+           |> List.map (fun x -> parse_expr x operators) |> (fun x -> Dictionary x)
       else if  int_of_string_opt line <> None then Value(Int(int_of_string line))
       else if float_of_string_opt line <> None then Value(Float(float_of_string line))
       else if "True" = line || "False" = line 
@@ -245,7 +250,6 @@ let is_elif line = Str.string_match elif_regex line 0
 let is_while line = Str.string_match while_regex line 0
 let is_def line = Str.string_match def_regex line 0
 let is_return line = Str.string_match return_regex line 0
-
 let is_struct_assignment line = Str.string_match struct_regex line 0
 
 let parse_if (line: string) : (expr * string) =
