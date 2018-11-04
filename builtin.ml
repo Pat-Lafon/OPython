@@ -1,6 +1,7 @@
 open State
 open Parser
 open Error
+open Arithmetic
 
 (**[to_string] returns the string of a value*)
 let rec to_string (value:State.value) : string = 
@@ -286,9 +287,53 @@ let rec replace (v : value list) = match v with
   | Dictionary(h)::key::valu::[] -> put (Dictionary(h)::key::valu::[]) 
   | _ -> raise (TypeError (""))
 
+let match_bool = function
+  |Bool x -> x|_->failwith("not possble")
+
+(**List Functions*)
+let max (v:value list) = match v with
+  | VList l :: []-> let get_first l = begin match l with
+      | h::_ -> h 
+      | [] -> NoneVal
+    end in let
+      rec max_help l acc = begin match l with
+      | [] -> acc
+      | h::t -> if h >= acc then max_help t h else max_help t acc
+    end 
+    in let frst =  get_first(!l)
+    in (max_help !l frst)
+  | x -> let get_first l = begin match l with
+      | f::_ -> f
+      | [] -> NoneVal
+    end in let rec max_assist x acc = begin match x with
+      | [] -> acc
+      | h::t -> if match_bool(helper_greater_equal (h,acc)) 
+        then max_assist t h else max_assist t acc
+    end in let frst =  get_first(x) in (max_assist x frst)
+
+let min (v:value list) = match v with
+  | VList l :: []-> let get_first l = begin match l with
+      | h::_ -> h 
+      | [] -> NoneVal
+    end in let
+      rec min_help l acc = begin match l with
+      | [] -> acc
+      | h::t -> if h <= acc then min_help t h else min_help t acc
+    end 
+    in let frst =  get_first(!l)
+    in (min_help !l frst)
+  | x -> let get_first l = begin match l with
+      | f::_ -> f
+      | [] -> NoneVal
+    end in let rec max_assist x acc = begin match x with
+      | [] -> acc
+      | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h else max_assist t acc
+    end in let frst =  get_first(x) in (max_assist x frst)
+
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
                           ("index", index); ("assert", assertt); ("list", list);
                           ("put", put); ("get", get); 
-                          ("dictionary", dictionary); ("replace", replace)]
+                          ("dictionary", dictionary); ("replace", replace);
+                          ("max", max); ("min", min)]
