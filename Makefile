@@ -2,6 +2,7 @@ MODULES=opython main state parser evaluate utils arithmetic error builtin
 OBJECTS=$(MODULES:=.cmo)
 MLS=$(MODULES:=.ml)
 MLIS=$(MODULES:=.mli)
+TEST_DIR=tests/*
 TEST=test.byte
 MAIN=main.byte
 OPYTHON=opython
@@ -15,7 +16,8 @@ build:
 	$(OCAMLBUILD) $(OBJECTS)
 
 test:
-	$(OCAMLBUILD) -tag debug $(TEST) && ./$(TEST)
+	$(OCAMLBUILD) -tag debug $(TEST) && ./$(TEST) && \
+	$(OCAMLBUILD) opython.byte && mv opython.byte opython && ./run_tests.sh
 
 run:
 	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
