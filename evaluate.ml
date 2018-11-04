@@ -11,9 +11,9 @@ let printt (value:State.value): unit = match to_string value with
   | "NoneVal" -> ()
   | s -> print_endline s
 
-(**[if_decider val] takes in a [State.value] and returns false if the values match
-   a "false" value of a respective type. The "empty" or "zero" of each type 
-   results in false, and if "non-empty" or "non-zero" then true*) 
+(**[if_decider val] takes in a [State.value] and returns false if the values 
+   match a "false" value of a respective type. The "empty" or "zero" of each 
+   type results in false, and if "non-empty" or "non-zero" then true*) 
 let if_decider = function
   | Int(0) -> false
   | String("") -> false
@@ -82,10 +82,10 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
     else raise (NameError ("function name '"^f^"' is not defined"))
 
 (** [evaluate input st] determines whether or not [input] is an assignment 
-    statement; If there is an assignment, the expression the variable is assigned to
-    is evaluated and are placed in the state paired as an association list. If there
-    is not an assignment,the expression is evaluated. The updated state is 
-    returned after either of the two cases occur.*)
+    statement; If there is an assignment, the expression the variable is assigned 
+    to is evaluated and are placed in the state paired as an association list. 
+    If there is not an assignment,the expression is evaluated. The updated state
+    is returned after either of the two cases occur.*)
 and evaluate input st = match input with
   | Some s, expr -> insert s (eval expr st) st
   | None, expr -> printt (eval expr st); st
@@ -178,10 +178,10 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
         interpret st [] new_line
       | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
         interpret st [] new_line
-      | exception (ZeroDivisionError x)-> print_endline 
-                                            ("ZeroDivisionError: "^x); interpret st [] new_line
-      | exception (ReturnExpr expr) -> raise (EarlyReturn(evaluate 
-                                                            (Some "return", expr) st))
+      | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
+        interpret st [] new_line
+      | exception (ReturnExpr expr) -> 
+        raise (EarlyReturn(evaluate (Some "return", expr) st))
       | exception EmptyInput -> interpret st t new_line
       | exception (IfMultiline (cond, body)) -> 
         (* Create list of conditions with corresponding line bodies *)
@@ -207,8 +207,8 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
 and interpret_if (conds : expr list) (bodies : string list) (st: State.t)
   : State.t =
   (* Go through [conds] and respective [bodies] in order. If any condition 
-     evaluates to true, then we run the corresponding body through the interpreter 
-     and throw out the rest *)
+     evaluates to true, then we run the corresponding body through the 
+     interpreter and throw out the rest *)
   match conds, bodies with
   | cond::c_t, body::b_t -> (match eval cond st |> if_decider with
       | true -> interpret st (String.split_on_char '\n' body) false
@@ -224,8 +224,8 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     interpret_while cond body new_state
   | false -> interpret st [] false
 
-(** [run_function f_name expr_args global_st] runs function [f_name] with arguments
-    [expr_args] and returns the return value of the function *)
+(** [run_function f_name expr_args global_st] runs function [f_name] with 
+    arguments [expr_args] and returns the return value of the function *)
 and run_function f_name expr_args global_st = 
   match List.assoc f_name global_st with
   | Function(name, string_args, body) as f -> 
@@ -273,5 +273,5 @@ and printt (value:State.value) : unit = match to_string value with
   | "None" -> ()
   | s -> print_endline s
 
-let add_function (st: State.t) (fnc_name : string) (args : string list) (body : string) =
+let add_function (st:State.t)(fnc_name:string)(args:string list)(body:string) =
   let func = Function(fnc_name, args, body) in insert fnc_name func st
