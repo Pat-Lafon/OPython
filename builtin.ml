@@ -175,13 +175,17 @@ let print (val_list : value list) =
                   val_list);
   NoneVal 
 
+(**[if_decider val] takes in a [State.value] and returns false if the values 
+   match a "false" value of a respective type. The "empty" or "zero" of each 
+   type results in false, and if "non-empty" or "non-zero" then true*) 
 let if_decider = function
   | Int(0) -> false
   | String("") -> false
   | Bool(false) -> false
   | NoneVal -> false
   | Float(0.0)  -> false
-  | VList(a) -> if !a = [] then false else true
+  | VList(a) -> !a <> []
+  | Dictionary a -> !a <> []
   | _ -> true
 
 let rec assertt (val_list : value list) =

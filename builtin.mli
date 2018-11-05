@@ -39,3 +39,6 @@ val to_list : value list -> value list
 val replace : value list -> State.value
 
 val built_in_functions : (string * (State.value list -> State.value)) list
+
+(**[if_decider] determines if a non-boolean-value is false or true.*)
+val if_decider : State.value -> bool
