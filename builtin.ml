@@ -42,7 +42,9 @@ let put (lst : value list) : State.value =
 
 let get (lst : value list) : State.value =
   match lst with
-  | Dictionary(h)::key::[] -> List.assoc key !h
+  | Dictionary(h)::key::[] -> if List.assoc_opt key !h <> None 
+    then List.assoc key !h
+    else raise (KeyError (to_string key))
   | _ -> raise (TypeError("Operation unsupported"))
 
 (** [index lst] returns the index of the second element of lst in the first 
@@ -123,8 +125,8 @@ let splice (lst : value list) : State.value =
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
       in VList a1, NoneVal, NoneVal, NoneVal
-    | Dictionary h :: idx :: [] -> let a1 = ref(get (Dictionary h::idx::[]) :: [])
-      in VList a1, NoneVal, NoneVal, NoneVal
+    | Dictionary h :: idx :: [] -> 
+      VList (ref(get (Dictionary h::idx::[])::[])), NoneVal, NoneVal, NoneVal
     | String a1 :: a2 :: [] ->
       let length = String.length a1 in
       let idx = (match a2 with 
@@ -333,13 +335,13 @@ let min (v:value list) = match v with
       | [] -> NoneVal
     end in let rec max_assist x acc = begin match x with
       | [] -> acc
-      | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h else max_assist t acc
+      | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h 
+        else max_assist t acc
     end in let frst =  get_first(x) in (max_assist x frst)
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
                           ("index", index); ("assert", assertt); ("list", list);
-                          ("put", put); ("get", get); 
-                          ("dictionary", dictionary); ("replace", replace);
-                          ("max", max); ("min", min)]
+                          ("put", put); ("get", get); ("dictionary", dictionary); 
+                          ("replace", replace); ("max", max); ("min", min)]

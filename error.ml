@@ -1,3 +1,4 @@
+exception KeyError of string
 exception TypeError of string
 exception NameError of string
 exception ValueError of string
