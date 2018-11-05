@@ -84,7 +84,7 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
     then List.assoc f built_in_functions (List.map (fun x -> eval x st) lst)
     else if (List.mem_assoc f st) then run_function f lst st
     else raise (NameError ("function name '"^f^"' is not defined"))
-  | Dictionary lst -> dictionary (List.map (fun x -> eval x st) lst)
+  | Dictionary lst -> dict (List.map (fun x -> eval x st) lst)
 
 
 (** [evaluate input st] determines whether or not [input] is an assignment 

@@ -22,7 +22,7 @@ val len : value list -> State.value
 
 val range : value list -> State.value 
 
-val dictionary : value list -> State.value 
+val dict : value list -> State.value 
 (** Type casts *)
 val chr : value list -> State.value 
 

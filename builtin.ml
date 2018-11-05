@@ -25,7 +25,9 @@ let rec to_string (value:State.value) : string =
     end in "{" ^ helper(!d) ^ "}"
   | NoneVal -> "None"
 
-let dictionary (lst : value list) : State.value = 
+(** [dictionary lst] returns a python dictionary with the keys being the
+    elements in odd indexes of lst and its respective value is the next element **)
+let dict (lst : value list) : State.value = 
   let rec to_assoc lst = 
     begin match lst with
       | [] -> []
@@ -34,6 +36,7 @@ let dictionary (lst : value list) : State.value =
     end 
   in Dictionary(ref(to_assoc lst))
 
+(**  **)
 let put (lst : value list) : State.value =
   match lst with
   | Dictionary(h)::key::value::[] -> 
@@ -335,5 +338,5 @@ let built_in_functions = [("append", append); ("len", len); ("print", print);
                           ("int",int); ("range", range); ("splice", splice); 
                           ("index", index); ("assert", assertt); ("list", list);
                           ("put", put); ("get", get); 
-                          ("dictionary", dictionary); ("replace", replace);
+                          ("dictionary", dict); ("replace", replace);
                           ("max", max); ("min", min)]
