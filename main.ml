@@ -108,23 +108,23 @@ let rec interpret (st:State.t) (lines: string list)
                                 interpret st [read_line ()] [1] new_line) else st
   | h::t, n_h::n_t -> 
     (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
-     | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); 
+     | exception (KeyError x) -> print_error "Type Error" x h n_h; 
        interpret st [] [] new_line
-     | exception (IndexError x) -> print_endline ("IndexError: "^x); 
+     | exception (SyntaxError x) -> print_error "SyntaxError" x h n_h;
        interpret st [] [] new_line
-     | exception (NameError x) -> print_endline ("NameError: "^x); 
+     | exception (IndexError x) -> print_error "IndexError" x h n_h;
        interpret st [] [] new_line
-     | exception (TypeError x) -> print_endline ("TypeError: "^x); 
+     | exception (NameError x) -> print_error "NameError" x h n_h;
        interpret st [] [] new_line
-     | exception (OverflowError x) -> print_endline ("OverflowError: "^x); 
+     | exception (TypeError x) -> print_error "TypeError" x h n_h;
        interpret st [] [] new_line
-     | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
+     | exception (OverflowError x) -> print_error "OverflowError" x h n_h;
        interpret st [] [] new_line
-     | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
+     | exception (IndentationError x) -> print_error "IndentationError" x h n_h;
        interpret st [] [] new_line
-     | exception (AssertionError)-> print_endline ("Assertion Error: '" ^ h ^ 
-                                                   "' in line " ^ 
-                                                   string_of_int n_h);  
+     | exception (ZeroDivisionError x) -> print_error "ZeroDivisionError" x h n_h;
+       interpret st [] [] new_line
+     | exception (AssertionError) -> print_error "AssertionError" "Incorrect" h n_h;
        interpret st [] [] new_line
      | exception EmptyInput -> interpret st t n_t new_line
      | exception (IfMultiline (cond, body)) -> 
@@ -133,12 +133,12 @@ let rec interpret (st:State.t) (lines: string list)
          = read_if [cond] [] body (t = []) t n_t in 
        let new_state = interpret_if conds bodies st in
        interpret new_state next_lines next_line_nums false
-      | exception (ForMultiline (iter, arg, body)) -> 
-        let (for_body, remaining_lines) = read_for body t (t = []) in 
-        let iter_val = to_list [(eval iter st)] in
-        let new_state = interpret_for iter_val arg for_body st in
-        let new_line_nums = create_int_list (List.length remaining_lines) in
-        interpret new_state remaining_lines new_line_nums new_line
+     | exception (ForMultiline (iter, arg, body)) -> 
+       let (for_body, remaining_lines) = read_for body t (t = []) in 
+       let iter_val = to_list [(eval iter st)] in
+       let new_state = interpret_for iter_val arg for_body st in
+       let new_line_nums = create_int_list (List.length remaining_lines) in
+       interpret new_state remaining_lines new_line_nums new_line
      | exception (WhileMultiline (cond, init_body)) -> 
        (* Parse out the loop condition and body, process them in [interpret_while] *)
        let (while_cond, while_body, next_lines, next_line_nums) 
@@ -160,7 +160,7 @@ and interpret_if (conds : expr list) (bodies : string list) (st: State.t) : Stat
      evaluates to true then we run the corresponding body through the 
      interpreter and throw out the rest *)
   match conds, bodies with
-  | cond::c_t, body::b_t -> (match Evaluate.eval cond st |> Evaluate.if_decider with
+  | cond::c_t, body::b_t -> (match Evaluate.eval cond st |> if_decider with
       | true -> let body_lines = String.split_on_char '\n' body in
         let line_nums = create_int_list (List.length body_lines) in
         interpret st body_lines line_nums false

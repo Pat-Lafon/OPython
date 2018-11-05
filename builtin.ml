@@ -45,7 +45,9 @@ let put (lst : value list) : State.value =
 
 let get (lst : value list) : State.value =
   match lst with
-  | Dictionary(h)::key::[] -> List.assoc key !h
+  | Dictionary(h)::key::[] -> if List.assoc_opt key !h <> None 
+    then List.assoc key !h
+    else raise (KeyError (to_string key))
   | _ -> raise (TypeError("Operation unsupported"))
 
 (** [index lst] returns the index of the second element of lst in the first 
@@ -126,8 +128,8 @@ let splice (lst : value list) : State.value =
           | _ -> raise (SyntaxError "invalid syntax")) in
       let a1 = ref(List.nth !a1 idx::[])
       in VList a1, NoneVal, NoneVal, NoneVal
-    | Dictionary h :: idx :: [] -> let a1 = ref(get (Dictionary h::idx::[]) :: [])
-      in VList a1, NoneVal, NoneVal, NoneVal
+    | Dictionary h :: idx :: [] -> 
+      VList (ref(get (Dictionary h::idx::[])::[])), NoneVal, NoneVal, NoneVal
     | String a1 :: a2 :: [] ->
       let length = String.length a1 in
       let idx = (match a2 with 
@@ -178,13 +180,17 @@ let print (val_list : value list) =
                   val_list);
   NoneVal 
 
+(**[if_decider val] takes in a [State.value] and returns false if the values 
+   match a "false" value of a respective type. The "empty" or "zero" of each 
+   type results in false, and if "non-empty" or "non-zero" then true*) 
 let if_decider = function
   | Int(0) -> false
   | String("") -> false
   | Bool(false) -> false
   | NoneVal -> false
   | Float(0.0)  -> false
-  | VList(a) -> if !a = [] then false else true
+  | VList(a) -> !a <> []
+  | Dictionary a -> !a <> []
   | _ -> true
 
 let rec assertt (val_list : value list) =
@@ -203,7 +209,6 @@ let rec helper_range s f i =
   else if i > 0 then (if s >= f then [] 
                       else Int(s) :: helper_range (s+i) f i) 
   else (if s <= f then [] else Int(s) :: helper_range (s+i) f i)
-
 
 let range (lst : value list) : State.value = 
   match lst with
@@ -239,6 +244,9 @@ let bool (val_list: value list) =
   | [] -> Bool false
   | _ -> raise (TypeError("bool() takes at most 1 argument"))
 
+(** [float val_list] is a float if [val_list] can be turned into a float. 
+    Raise: Either a ValueError or TypeError depending on what is wrong with 
+    [val_list] *)
 let float (val_list: value list) =
   match val_list with
   | Int x::[] -> Float(float_of_int(x))
@@ -330,13 +338,13 @@ let min (v:value list) = match v with
       | [] -> NoneVal
     end in let rec max_assist x acc = begin match x with
       | [] -> acc
-      | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h else max_assist t acc
+      | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h 
+        else max_assist t acc
     end in let frst =  get_first(x) in (max_assist x frst)
 
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
                           ("index", index); ("assert", assertt); ("list", list);
-                          ("put", put); ("get", get); 
-                          ("dictionary", dict); ("replace", replace);
-                          ("max", max); ("min", min)]
+                          ("put", put); ("get", get); ("dictionary", dict); 
+                          ("replace", replace); ("max", max); ("min", min)]

@@ -29,6 +29,7 @@ let helper_plus = function
   | _, Function t-> raise (TypeError "unsupported operand type function for +")
   | _, NoneVal -> raise (TypeError "unsupported operand type function for +")
   | NoneVal, _ -> raise (TypeError "unsupported operand type function for +")
+  | Dictionary t, _ | _, Dictionary t -> raise (TypeError "unsupported operand type")
 
 let helper_multiply = function 
   | Int x, Int y -> Int (x * y)
@@ -60,6 +61,7 @@ let helper_multiply = function
   | _, Function t-> raise (TypeError "unsupported operand type function for *")
   | _, NoneVal -> raise (TypeError "unsupported operand type function for *")
   | NoneVal, _ -> raise (TypeError "unsupported operand type function for *")
+  | Dictionary t, _ | _, Dictionary t -> raise (TypeError "unsupported operand type")
 
 let helper_divide = function 
   | _, Int 0 -> raise (ZeroDivisionError "division by zero")
@@ -81,6 +83,7 @@ let helper_divide = function
   | _, Function t-> raise (TypeError "unsupported operand type function for /")
   | _, NoneVal -> raise (TypeError "unsupported operand type function for /")
   | NoneVal, _ -> raise (TypeError "unsupported operand type function for /")
+  | Dictionary t, _ | _, Dictionary t -> raise (TypeError "unsupported operand type")
 
 let helper_floor exp = match helper_divide exp with
   | Int x -> Int x
@@ -108,6 +111,8 @@ let helper_mod = function
     raise (TypeError "unsupported operand type function for %")
   | _, NoneVal | NoneVal, _ -> 
     raise (TypeError "unsupported operand type function for %")
+  | Dictionary t, _ | _, Dictionary t -> 
+    raise (TypeError "unsupported operand type")
 
 let helper_exp = function 
   | Int x, Int y -> Int (int_of_float (float_of_int x ** float_of_int y))
@@ -127,6 +132,8 @@ let helper_exp = function
     raise (TypeError "unsupported operand type function for **")
   | _, NoneVal | NoneVal, _ -> 
     raise (TypeError "unsupported operand type function for **")
+  | Dictionary t, _ | _, Dictionary t -> 
+    raise (TypeError "unsupported operand type")
 
 let helper_and = function
   | Int x, y -> if x = 0 then Int 0 else y
@@ -136,6 +143,7 @@ let helper_and = function
   | VList x, y -> if !x = [] then VList x else y
   | Function x, y -> y
   | NoneVal, y -> Bool(false)
+  | Dictionary x, y -> if !x = [] then Dictionary x else y 
 
 let helper_or = function 
   | Int x, y -> if x<>0 then Int x else y
@@ -145,6 +153,7 @@ let helper_or = function
   | VList x, y -> if !x <> [] then VList x else y
   | Function x, y -> Function x
   | NoneVal, y -> y
+  | Dictionary x, y -> failwith("fix this in parse?") 
 
 let helper_equal = function
   | Int x, Int y -> Bool (x = y)
@@ -158,13 +167,15 @@ let helper_equal = function
   | Bool x, Bool y -> Bool (x = y)
   | String x, String y -> Bool(x=y)
   | _, String x |String x, _-> Bool false
-  | VList x, VList y -> Bool(x=y)    (*ask eric about this note*)
+  | VList x, VList y -> Bool(x=y)    
   | VList x, _ | _, VList x -> Bool false
   | Function (name1, args1, body1), Function (name2, args2, body2) -> 
     Bool (name1 = name2)
   | NoneVal, NoneVal -> Bool true
   | NoneVal, _ | _, NoneVal -> Bool false
   | Function _, _ | _, Function _ -> Bool false
+  | Dictionary x, Dictionary y -> Bool(x=y)
+  | Dictionary t, _ | _, Dictionary t -> Bool false
 
 let helper_greater_than = function
   | Int x, Int y -> Bool (x > y)
@@ -182,6 +193,7 @@ let helper_greater_than = function
   | VList x, _ | _, VList x -> Bool false
   | NoneVal, _ | _, NoneVal -> Bool false
   | Function _, _ | _, Function _ -> Bool false
+  | Dictionary t, _ | _, Dictionary t -> Bool false
 
 let helper_greater_equal = function
   | Int x, Int y -> Bool (x >= y)
@@ -199,6 +211,7 @@ let helper_greater_equal = function
   | VList x, _ | _, VList x -> Bool false
   | NoneVal, _ | _, NoneVal -> Bool false
   | Function _, _ | _, Function _ -> Bool false
+  | Dictionary t, _ | _, Dictionary t -> Bool false
 
 let helper_less_than = function
   | Int x, Int y -> Bool (x < y)
@@ -216,6 +229,7 @@ let helper_less_than = function
   | VList x, _ | _, VList x -> Bool false
   | NoneVal, _ | _, NoneVal -> Bool false
   | Function _, _ | _, Function _ -> Bool false
+  | Dictionary t, _ | _, Dictionary t -> Bool false
 
 let helper_less_equal = function
   | Int x, Int y -> Bool (x <= y)
@@ -233,3 +247,4 @@ let helper_less_equal = function
   | VList x, _ | _, VList x -> Bool false
   | NoneVal, _ | _, NoneVal -> Bool false
   | Function _, _ | _, Function _ -> Bool false
+  | Dictionary t, _ | _, Dictionary t -> Bool false

@@ -11,18 +11,6 @@ let printt (value:State.value): unit = match to_string value with
   | "NoneVal" -> ()
   | s -> print_endline s
 
-(**[if_decider val] takes in a [State.value] and returns false if the values 
-   match a "false" value of a respective type. The "empty" or "zero" of each 
-   type results in false, and if "non-empty" or "non-zero" then true*) 
-let if_decider = function
-  | Int(0) -> false
-  | String("") -> false
-  | Bool(false) -> false
-  | Float(0.0)  -> false
-  | NoneVal -> false
-  | VList(a) -> if !a = [] then false else true
-  | _ -> true
-
 (** [eval exp st] takes a variant expression and returns the value of the 
     expression. Evaluates arithmetic expressions, defined variables, and defined
     functions to values. 
@@ -59,12 +47,13 @@ let rec eval (exp : expr) (st : State.t) : value = match exp with
      | Minus, Float x -> Float (-.x)
      | Minus, Bool x -> if x then Int (-1) else Int 0
      | Minus, _ -> raise (TypeError "bad operand type for unary -")
-     | Not, Int x -> if x = 0 then Bool true else Bool false
-     | Not, Float x -> if x = 0. then Bool true else Bool false
+     | Not, Int x -> Bool(x = 0)
+     | Not, Float x -> Bool(x = 0.)
      | Not, Bool x -> Bool (not x)
      | Not, NoneVal -> Bool (true)
-     | Not, String x -> if String.length x = 0 then Bool true else Bool false
-     | Not, VList x -> if !x = [] then Bool true else Bool false
+     | Not, String x -> Bool(String.length x = 0)
+     | Not, VList x -> Bool(!x = [])
+     | Not, Dictionary x -> Bool(!x = [])
      | Complement, Int x -> Int (-x-1)
      | Complement, Bool x -> if x then Int (-2) else Int (-1)
      | Complement, _ -> raise (TypeError "bad operand type for unary ~")
@@ -221,7 +210,6 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
         interpret new_state remaining_lines false
       | exception (ForMultiline (iter, arg, body)) -> 
         let (for_body, remaining_lines) = read_for body t (t = []) in 
-        let old_state = st in
         let iter_val = to_list [(eval iter st)] in
         let new_state = interpret_for iter_val arg body st in
         interpret new_state remaining_lines false

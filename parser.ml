@@ -205,9 +205,12 @@ and
         else List(List.map (fun x -> parse_expr x operators) 
                     (split_on_char ',' (String.sub line 1 (length - 2))))
       else if line.[0] = '{' && line.[length-1] = '}' 
-      then String.sub line 1 (length-2) |> split_on_char ',' 
-           |> List.map (fun x -> split_on_char ':' x) |> List.flatten 
-           |> List.map (fun x -> parse_expr x operators) |> (fun x -> Dictionary x)
+      then 
+        if length = 2 then Dictionary([])
+        else 
+          String.sub line 1 (length-2) |> split_on_char ',' 
+          |> List.map (fun x -> split_on_char ':' x) |> List.flatten 
+          |> List.map (fun x -> parse_expr x operators) |> (fun x -> Dictionary x)
       else if  int_of_string_opt line <> None then Value(Int(int_of_string line))
       else if float_of_string_opt line <> None then Value(Float(float_of_string line))
       else if "True" = line || "False" = line 
@@ -265,7 +268,7 @@ let while_regex = Str.regexp "^while \\(.*\\):\\(.*\\)"
 let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
 let for_regex = Str.regexp "^for \\(.*\\) in \\(.*\\) *:\\(.*\\)"
 let return_regex = Str.regexp "^return \\(.*\\)"
-let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] *= *\\(.*\\)"
+let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] = \\(.*\\)"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
