@@ -376,6 +376,8 @@ let min (v:value list) = match v with
         else max_assist t acc
     end in let frst =  get_first(x) in (max_assist x frst)
 
+(** A list associating the name of the built-in function to the actual 
+    functions *)
 let built_in_functions = [("append", append); ("len", len); ("print", print); 
                           ("chr", chr); ("bool", bool); ("float", float); 
                           ("int",int); ("range", range); ("splice", splice); 
