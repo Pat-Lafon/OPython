@@ -63,7 +63,7 @@ let not_mistaken str op =
   let oplen = String.length op in
   if String.length str = oplen then true
   (* Will mess up for cases like grand = 3 *)
-  else if op = "or" || op = "and" then str.[oplen] = ' '
+  else if op = "or" || op = "and" || op = "not" then str.[oplen] = ' '
   else if op <> "*" && op <> "=" && op <> "/" && op <> "<" && op <> ">" 
           && op <> "!" then true
   else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
@@ -221,13 +221,13 @@ and
       else if args <> -1 && fstarg <> -1
       (* TODO: Pass None instead of strings *)
       then Function(String.sub line (fstarg+1) (args-fstarg-1), 
-                    if length -args-2 = 0
+                    if length -args = 2
                     then exprlst(String.sub line 0 (fstarg)) ','
                     else exprlst(String.sub line 0 (fstarg) ^","^ 
                                  String.sub line (args+1) (length-args-2))',')
       else if args <> -1 
-      then Function(String.sub line 0 (args), 
-                    if length -args-2 = 0 then []
+      then Function(String.sub line 0 (args),
+                    if length -args = 2 then []
                     else exprlst (String.sub line (args+1) (length-args-2))',')
       else if line.[length -1] = ']' then 
         let args = (rev_get_idx (String.sub line 0 (length-1)) "[") in
