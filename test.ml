@@ -44,18 +44,14 @@ let function_tests = [
   make_line_test "bool2" "x = bool(0.0)" [] ["x", Bool(false)] ;
   make_line_test "int" "x = int(\"420\")" [] ["x", Int(420)] ;
   make_line_test "int2" "x = int(1234.02344)" [] ["x", Int(1234)] ;
-  make_line_test "float" "x = float(345)" [] ["x", Float(345.)] ;
-  (* make_line_test "float2" "x = float([])" [] ["x", Float(0.)] ; *)
-
-  (* make_line_test "append1" "x = [123, 23] == append([123],23)" 
-     [] ["x",Bool(true)] ;
-     make_line_test "append2" "x = [\"\"] == append([],\"\")" [] ["x", Bool(true)]; *)
+  make_line_test "float" "x = float(345)" [] ["x", Float(345.0)] ;
+  make_line_test "float2" "x = float()" [] ["x", Float(0.)] ; 
 
   make_line_test "len of []" "x = len([])" [] ["x", Int(0)];
   make_line_test "len of [1,2,3]" "x = len([1,2,3])" [] ["x", Int(3)];
-  make_line_test "len of string" "x = ''" [] ["x", Int(0)];
-  make_line_test "range test 1" "x = range(4)" [] 
-    ["x", VList(ref([Int(1); Int(2); Int(3)]))];
+  make_line_test "len of string" "x = len(\"\")" [] ["x", Int(0)]; 
+  (* make_line_test "range test 1" "x = range(4)" [] 
+     ["x", VList(ref([Int(1); Int(2); Int(3)]))]; *)
 
   make_line_test "creating a dict with non-empty state" "x = {'a' : 12, 14 : y}" 
     ["y",Int(10)] 
