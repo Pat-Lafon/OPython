@@ -221,13 +221,13 @@ and
       else if args <> -1 && fstarg <> -1
       (* TODO: Pass None instead of strings *)
       then Function(String.sub line (fstarg+1) (args-fstarg-1), 
-                    if args = length -args-2 
+                    if length -args-2 = 0
                     then exprlst(String.sub line 0 (fstarg)) ','
                     else exprlst(String.sub line 0 (fstarg) ^","^ 
                                  String.sub line (args+1) (length-args-2))',')
       else if args <> -1 
       then Function(String.sub line 0 (args), 
-                    if args = length -args-2 then []
+                    if length -args-2 = 0 then []
                     else exprlst (String.sub line (args+1) (length-args-2))',')
       else if line.[length -1] = ']' then 
         let args = (rev_get_idx (String.sub line 0 (length-1)) "[") in

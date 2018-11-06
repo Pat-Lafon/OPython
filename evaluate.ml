@@ -188,18 +188,25 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
   match lines with
   | [] -> st
   | h::t -> (match Parser.parse_line h |> (fun x -> evaluate x st) with
-      | exception (SyntaxError x) -> print_endline ("SyntaxError: "^x); 
+      | exception (KeyError x) -> print_error "Key Error" x h 0; 
         interpret st [] new_line
-      | exception (NameError x) -> print_endline ("NameError: "^x); 
+      | exception (SyntaxError x) -> print_error "SyntaxError" x h 0;
         interpret st [] new_line
-      | exception (TypeError x) -> print_endline ("TypeError: "^x); 
+      | exception (IndexError x) -> print_error "IndexError" x h 0;
         interpret st [] new_line
-      | exception (OverflowError x) -> print_endline ("OverflowError: "^x); 
+      | exception (NameError x) -> print_error "NameError" x h 0;
         interpret st [] new_line
-      | exception (IndentationError x) -> print_endline ("IndentationError"^x); 
+      | exception (TypeError x) -> print_error "TypeError" x h 0;
         interpret st [] new_line
-      | exception (ZeroDivisionError x)-> print_endline ("ZeroDivisionError: "^x); 
+      | exception (OverflowError x) -> print_error "OverflowError" x h 0;
         interpret st [] new_line
+      | exception (IndentationError x) -> print_error "IndentationError" x h 0;
+        interpret st [] new_line
+      | exception (ZeroDivisionError x) -> print_error "ZeroDivisionError" x h 0;
+        interpret st [] new_line
+      | exception (AssertionError) -> print_error "AssertionError" 
+                                      "Incorrect" h 0;
+                                      interpret st [] new_line
       | exception (ReturnExpr expr) -> 
         raise (EarlyReturn(evaluate (Some "return", expr) st))
       | exception EmptyInput -> interpret st t new_line
@@ -211,7 +218,7 @@ and interpret (st:State.t) (lines: string list) (new_line : bool) : State.t =
       | exception (ForMultiline (iter, arg, body)) -> 
         let (for_body, remaining_lines) = read_for body t (t = []) in 
         let iter_val = to_list [(eval iter st)] in
-        let new_state = interpret_for iter_val arg body st in
+        let new_state = interpret_for iter_val arg for_body st in
         interpret new_state remaining_lines false
       | exception (WhileMultiline (cond, init_body)) -> 
         (* Parse out the loop condition and body, process them in 
@@ -242,21 +249,23 @@ and interpret_if (conds : expr list) (bodies : string list) (st: State.t)
 and interpret_while (cond : expr) (body : string) (st: State.t) : State.t = 
   match to_bool cond st with
   | true -> 
-    (* If while conditional is true, then we want to interpret the body, 
-       and after that, interpret the loop condition until it's false *)
+    (* If while conditional is true, then we want to interpret the body, and 
+       after that, interpret the loop condition until it's false *)
     let new_lines = String.split_on_char '\n' body in
     let new_state = interpret st new_lines false in 
     interpret_while cond body new_state
-  | false -> interpret st [] false
-and interpret_for (iter : value list) (arg : string) (body : string) (st: State.t) : State.t = 
+  | false -> st
+and interpret_for (iter : value list) (arg : string) 
+    (body : string) (st: State.t) : State.t = 
   match iter with
   | [] -> st
   | h::t -> 
+  (* For each element in the iterator, assign it to the argument and run 
+    the body of the for loop *)
     let arg_state = insert arg h st in
     let new_lines = String.split_on_char '\n' body in
     let new_state = interpret arg_state new_lines false in 
     interpret_for t arg body new_state
-
 
 (** [run_function f_name expr_args global_st] runs function [f_name] with 
     arguments [expr_args] and returns the return value of the function *)
