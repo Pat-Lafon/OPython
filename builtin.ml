@@ -198,6 +198,8 @@ let rec assertt (val_list : value list) =
   | [] -> NoneVal 
   | h::t -> if if_decider h then assertt t else raise AssertionError
 
+(**[len lst] returns the number of characters in a string or the number of
+   elements in a list.*)
 let len (lst : value list) : State.value = match lst with
   | VList(l)::[] -> Int(List.length !l)
   | String(s)::[] -> Int (String.length s)
@@ -223,7 +225,10 @@ let range (lst : value list) : State.value =
 
   | _ -> raise (TypeError("Range takes at most three arguments"))
 
-(** Type casts *)
+(** [chr val_list] typecasts an integer into a string of the ASCII character
+    equivalent, requires an integer input.
+    Raise: TypeError if [val_list] has multiple elements or if the the element
+    is not an integer value*)
 let chr (val_list : value list) =
   match val_list with
   | Int(x)::[] ->if (x>=0) && (x<=1114111) 
@@ -232,6 +237,9 @@ let chr (val_list : value list) =
   | _ ::[]-> raise (TypeError("an integer is required"))
   | _ -> raise (TypeError("chr() takes exactly 1 argument"))
 
+(** [bool val_list] typecasts any singular input value into a boolean, and it
+    requires one input.
+    Raise: TypeError if [val_list] contains more than one element*)
 let bool (val_list: value list) = 
   match val_list with
   | Bool x::[] -> Bool x
@@ -258,6 +266,9 @@ let float (val_list: value list) =
   | [] -> Float(0.0)
   | _ -> raise (TypeError("float() takes at most 1 argument"))
 
+(** [int val_list] is a int if [val_list] can be turned into a int. 
+    Raise: Either a ValueError or TypeError depending on what is wrong with 
+    [val_list] *)
 let int (val_list: value list) = 
   match val_list with
   | Int(x)::[] -> Int(x)
@@ -285,7 +296,8 @@ let rec to_list (lst : value list) =
   | VList(l) -> !l
   | _ -> raise (TypeError ("Input type is not iterable"))
 
-(** Quit in actual python can take an arg, it ignores it.*)
+(** [quit arg] quits the interpreter.
+    Note: quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
 
 let rec replace (v : value list) = match v with
@@ -301,11 +313,12 @@ let rec replace (v : value list) = match v with
 let match_bool = function
   |Bool x -> x|_->failwith("not possble")
 
-(**List Functions*)
+(** [max v] returns the maximum element of the given list if a list is the 
+    only input value, or it returns the greatest value of the multiple a*)
 let max (v:value list) = match v with
   | VList l :: []-> let get_first l = begin match l with
       | h::_ -> h 
-      | [] -> NoneVal
+      | [] -> raise(TypeError("max arg is an empty sequence"))
     end in let
       rec max_help l acc = begin match l with
       | [] -> acc
@@ -315,7 +328,7 @@ let max (v:value list) = match v with
     in (max_help !l frst)
   | x -> let get_first l = begin match l with
       | f::_ -> f
-      | [] -> NoneVal
+      | [] -> raise(TypeError("max expected 1 arguments, got 0"))
     end in let rec max_assist x acc = begin match x with
       | [] -> acc
       | h::t -> if match_bool(helper_greater_equal (h,acc)) 
@@ -325,7 +338,7 @@ let max (v:value list) = match v with
 let min (v:value list) = match v with
   | VList l :: []-> let get_first l = begin match l with
       | h::_ -> h 
-      | [] -> NoneVal
+      | [] -> raise(TypeError("min arg is an empty sequence"))
     end in let
       rec min_help l acc = begin match l with
       | [] -> acc
@@ -335,7 +348,7 @@ let min (v:value list) = match v with
     in (min_help !l frst)
   | x -> let get_first l = begin match l with
       | f::_ -> f
-      | [] -> NoneVal
+      | [] -> raise(TypeError("min expected 1 arguments, got 0"))
     end in let rec max_assist x acc = begin match x with
       | [] -> acc
       | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h 
