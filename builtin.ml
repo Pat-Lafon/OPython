@@ -258,6 +258,7 @@ let bool (val_list: value list) =
   | Float x::[] -> Bool (x <> 0.)
   | String x::[] -> Bool (x<>"")
   | VList x::[] -> Bool (!x <> [])
+  | Dictionary x::[] -> Bool (!x <> [])
   | Function x::[] -> Bool true
   | NoneVal :: [] -> Bool false
   | [] -> Bool false
