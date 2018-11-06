@@ -53,10 +53,13 @@ let function_tests = [
 
   make_line_test "len of []" "x = len([])" [] ["x", Int(0)];
   make_line_test "len of [1,2,3]" "x = len([1,2,3])" [] ["x", Int(3)];
-  make_line_test "len of string" "x = ''" [] ["x", Int(0)];
+  make_line_test "len of string" "x = len('')" [] ["x", Int(0)];
   make_line_test "range test 1" "x = range(4)" [] 
+    ["x", VList(ref([Int(0); Int(1); Int(2); Int(3)]))];
+  make_line_test "range test 2" "x = range(1,4)" []
     ["x", VList(ref([Int(1); Int(2); Int(3)]))];
-
+  make_line_test "range test 3" "x = range(1,4,2)" []
+    ["x", VList(ref([Int(1); Int(3)]))];
   make_line_test "creating a dict with non-empty state" "x = {'a' : 12, 14 : y}" 
     ["y",Int(10)] 
     ["x", Dictionary(ref ([String("a"), Int(12); Int(14), Int(10)]));
