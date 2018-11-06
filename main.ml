@@ -180,7 +180,7 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     let new_line_nums = create_int_list (List.length new_lines) in
     let new_state = interpret st new_lines new_line_nums false in 
     interpret_while cond body new_state
-  | false -> interpret st [] [] false
+  | false -> st
 and interpret_for (iter : value list) (arg : string) 
     (body : string) (st: State.t) : State.t = 
   match iter with
