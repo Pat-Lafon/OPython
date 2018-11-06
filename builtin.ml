@@ -301,8 +301,8 @@ let rec replace (v : value list) = match v with
       | [] -> []
       | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
     end
-    in VList(ref (replace_help !l idx x))
-  | Dictionary(h)::key::valu::[] -> put (Dictionary(h)::key::valu::[]) 
+    in l := (replace_help !l idx x); NoneVal
+  | Dictionary(h)::key::valu::[] -> put (Dictionary(h)::key::valu::[])
   | _ -> raise (TypeError (""))
 
 let match_bool = function
@@ -354,4 +354,5 @@ let built_in_functions = [("append", append); ("len", len); ("print", print);
                           ("int",int); ("range", range); ("splice", splice); 
                           ("index", index); ("assert", assertt); ("list", list);
                           ("put", put); ("get", get); ("dictionary", dict); 
-                          ("replace", replace); ("max", max); ("min", min)]
+                          ("replace", replace); ("max", max); ("min", min);
+                          ("quit"), quit]
