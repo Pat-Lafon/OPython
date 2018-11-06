@@ -92,90 +92,6 @@ let index (lst : value list): State.value  = let func = function
     in if (search s1 s >= String.length s) then Int(-1) else Int(search s1 s)
   | _ -> raise (TypeError ("Operation not supported"))
 
-let rec splice_string (item:string) start stop step = 
-  if start >= stop then ""
-  else if step > 0 then Char.escaped (String.get item start) 
-                        ^ splice_string item (start+step) stop step
-  else Char.escaped (String.get item (stop-1)) 
-       ^ splice_string item start (stop+step) step
-
-let rec splice_list (item: value list) start stop step =
-  if start >= stop then []
-  else if step > 0 then List.nth item start
-                        :: splice_list item (start+step) stop step
-  else List.nth item (stop-1) :: splice_list item start (stop+step) step
-
-(** The splice function as in Python; the first element of lst is the 
-    string/list to splice, the optional second to fourth elements of lst consist 
-    of the start, end, and stepping of the index *)
-let splice (lst : value list) : State.value = 
-  let item, start, stop, step = match lst with
-    | VList a1 :: a2 :: a3 :: a4 :: [] -> 
-      let a4 = if a4 = Int 0 then raise (ValueError "Third argument must not be zero") 
-        else if a4 = String "" then Int 1 else a4 in 
-      let a3 = if a3 = String "" then Int (List.length !a1) else a3 in
-      let a2 = if a2 = String "" then Int 0 else a2
-      in VList a1, a2, a3, a4
-    | String a1 :: a2 :: a3 :: a4 :: [] -> 
-      let a4 = if a4 = Int 0 then raise (ValueError "Third argument must not be zero") 
-        else if a4 = String "" then Int 1 else a4 in 
-      let a3 = if a3 = String "" then Int (String.length a1) else a3 in
-      let a2 = if a2 = String "" then Int 0 else a2
-      in String a1, a2, a3, a4
-    | VList a1 :: a2 :: a3 :: [] ->       
-      let a4 =  Int 1 in 
-      let a3 = if a3 = String "" then Int (List.length !a1) else a3 in
-      let a2 = if a2 = String "" then Int 0 else a2
-      in VList a1, a2, a3, a4
-    | String a1 :: a2 :: a3 :: [] ->       
-      let a4 =  Int 1 in 
-      let a3 = if a3 = String "" then Int (String.length a1) else a3 in
-      let a2 = if a2 = String "" then Int 0 else a2
-      in String a1, a2, a3, a4
-    | VList a1 :: a2 :: [] -> 
-      let length = List.length !a1 in
-      let idx = (match a2 with 
-          | Int x -> if x > length || x < -length 
-            then raise (IndexError ("list index out of range"))
-            else (x+length) mod length
-          | _ -> raise (SyntaxError "invalid syntax")) in
-      let a1 = ref(List.nth !a1 idx::[])
-      in VList a1, NoneVal, NoneVal, NoneVal
-    | Dictionary h :: idx :: [] -> 
-      VList (ref(get (Dictionary h::idx::[])::[])), NoneVal, NoneVal, NoneVal
-    | String a1 :: a2 :: [] ->
-      let length = String.length a1 in
-      let idx = (match a2 with 
-          | Int x -> if x > length || x < -length 
-            then raise (IndexError ("list index out of range"))
-            else (x+String.length a1) mod (String.length a1)
-          | _ -> raise (SyntaxError "invalid syntax")) in
-      let a1 = Char.escaped (String.get a1 idx) in
-      String a1, NoneVal, NoneVal, NoneVal
-    | a1 :: [] -> raise (SyntaxError "invalid syntax")
-    | a1 -> raise (SyntaxError "invalid syntax") in
-  match item, start, stop, step with 
-  | VList a1, NoneVal, NoneVal, NoneVal -> 
-    (match !a1 with 
-     | a::[] -> a
-     | _ -> failwith "something above messed up")
-  | String a1, NoneVal, NoneVal, NoneVal -> String a1
-  | VList a1, Int a2, Int a3, Int a4 -> 
-    let length = List.length !a1 in
-    let a2, a3 = 
-      if a2 > length || a2 < -length || a3 > length || a3 < -length
-      then raise (IndexError "list index out of range")
-      else (a2+length) mod length, (a3+length+1) mod (length+1) in
-    VList(ref(splice_list !a1 a2 a3 a4))
-  | String a1, Int a2, Int a3, Int a4 -> 
-    let length = String.length a1 in
-    let a2, a3 = 
-      if a2 > length || a2 < -length || a3 > length || a3 < -length
-      then raise (IndexError "list index out of range")
-      else (a2+length) mod length, (a3+length+1) mod (length+1) in
-    String(splice_string a1 a2 a3 a4)
-  | _ -> failwith "Something went wrong in splice evaluation"
-
 (** [append lst] appends the second element of lst into the first element, 
     which must either be a list**)
 let append (val_list : value list)= 
@@ -386,6 +302,135 @@ let min (v:value list) = match v with
       | h::t -> if match_bool(helper_less_equal (h,acc)) then max_assist t h 
         else max_assist t acc
     end in let frst =  get_first(x) in (max_assist x frst)
+
+let rec splice_string (item:string) start stop step = 
+  if (step > 0 && start >= stop) || (step < 0 && start <= stop) then ""
+  else Char.escaped (String.get item start) ^ 
+       splice_string item (start+step) stop step
+
+let rec splice_list (item: value list) start stop step =
+  if (step > 0 && start >= stop) || (step < 0 && start <= stop) then []
+  else List.nth item start :: splice_list item (start+step) stop step
+
+let convert_to_splice (lst:value list) =
+  let empty v = v = String "" || v = NoneVal in
+  let neg_step s = match s with 
+    | Int x -> if x < 0 then true else false
+    | _ -> false in
+  match lst with
+  | VList a1 :: a2 :: a3 :: a4 :: [] -> 
+    let a4 = if a4 = Int 0 then raise (ValueError "Third argument must not be zero") 
+      else if empty a4 then Int 1 else int (a4::[]) in 
+    let a3 = if empty a3 then NoneVal else int (a3::[]) in
+    let a2 = if empty a2 then NoneVal else int (a2::[])
+    in VList a1, a2, a3, a4
+  | String a1 :: a2 :: a3 :: a4 :: [] -> 
+    let a4 = if a4 = Int 0 then raise (ValueError "Third argument must not be zero") 
+      else if empty a4 then Int 1 else int (a4::[]) in 
+    let a3 = if empty a3 then NoneVal else int (a3::[]) in
+    let a2 = if empty a2 then NoneVal else int (a2::[])
+    in String a1, a2, a3, a4
+  | VList a1 :: a2 :: a3 :: [] ->       
+    let a4 =  Int 1 in 
+    let a3 = if empty a3 then NoneVal else int (a3::[]) in
+    let a2 = if empty a2 then NoneVal else int (a2::[])
+    in VList a1, a2, a3, a4
+  | String a1 :: a2 :: a3 :: [] ->       
+    let a4 =  Int 1 in 
+    let a3 = if empty a3 then NoneVal else int (a3::[]) in
+    let a2 = if empty a2 then NoneVal else int (a2::[])
+    in String a1, a2, a3, a4
+  | VList a1 :: a2 :: [] -> 
+    let length = List.length !a1 in
+    let idx = (match int (a2::[]) with 
+        | Int x -> if x > length || x < -length 
+          then raise (IndexError ("list index out of range"))
+          else (x+length) mod length
+        | _ -> raise (SyntaxError "invalid syntax")) in
+    let a1 = ref(List.nth !a1 idx::[])
+    in VList a1, NoneVal, NoneVal, NoneVal
+  | Dictionary h :: idx :: [] -> 
+    VList (ref(get (Dictionary h::idx::[])::[])), NoneVal, NoneVal, NoneVal
+  | String a1 :: a2 :: [] ->
+    let length = String.length a1 in
+    let idx = (match int (a2::[]) with 
+        | Int x -> if x > length || x < -length 
+          then raise (IndexError ("list index out of range"))
+          else (x+String.length a1) mod (String.length a1)
+        | _ -> raise (SyntaxError "invalid syntax")) in
+    let a1 = Char.escaped (String.get a1 idx) in
+    String a1, NoneVal, NoneVal, NoneVal
+  | a1 :: [] -> raise (SyntaxError "invalid syntax")
+  | a1 -> raise (SyntaxError "invalid syntax") 
+
+(** The splice function as in Python; the first element of lst is the 
+    string/list to splice, the optional second to fourth elements of lst consist 
+    of the start, end, and stepping of the index *)
+let splice (lst : value list) : State.value = 
+  match convert_to_splice lst with 
+  | exception (ValueError x) -> raise (TypeError "list indices must be integers or slices, not str")
+  | VList a1, NoneVal, NoneVal, NoneVal -> 
+    (match !a1 with 
+     | a::[] -> a
+     | _ -> failwith "something above messed up")
+  | VList a1, NoneVal, NoneVal, Int a4 -> 
+    let length = List.length !a1 in
+    let a2, a3 = if a4 > 0 then 0, length else length-1, -1 in
+    VList(ref(splice_list !a1 a2 a3 a4))
+  | VList a1, Int a2, NoneVal, Int a4 -> 
+    let length = List.length !a1 in
+    let a3 = if a4 > 0 then length else -1 in
+    let a2 = if a2 > length || a2 < -length 
+      then raise (IndexError "list index out of range")
+      else if a4 > 0 then (a2+length) mod length
+      else (a2+length+1) mod (length+1) in
+    VList(ref(splice_list !a1 a2 a3 a4))
+  | VList a1, NoneVal, Int a3, Int a4 -> 
+    let length = List.length !a1 in
+    let a2 = if a4 > 0 then 0 else length -1 in
+    let a3 = if a3 > length || a3 < -length
+      then raise (IndexError "list index out of range")
+      else if a4 > 0 then (a3+length+1) mod (length+1)
+      else (a3+length) mod (length) in     
+    VList(ref(splice_list !a1 a2 a3 a4))
+  | VList a1, Int a2, Int a3, Int a4 -> 
+    let length = List.length !a1 in
+    let a2, a3 = 
+      if a2 > length || a2 < -length || a3 > length || a3 < -length
+      then raise (IndexError "list index out of range")
+      else if a4 > 0 then (a2+length) mod length, (a3+length+1) mod (length+1)
+      else (a2+length+1) mod (length+1), (a3+length) mod (length) in
+    VList(ref(splice_list !a1 a2 a3 a4))
+  | String a1, NoneVal, NoneVal, NoneVal -> String a1
+  | String a1, NoneVal, NoneVal, Int a4 -> 
+    let length = String.length a1 in
+    let a2, a3 = if a4 > 0 then 0, length else length-1, -1 in
+    String(splice_string a1 a2 a3 a4)
+  | String a1, Int a2, NoneVal, Int a4 -> 
+    let length = String.length a1 in
+    let a3 = if a4 > 0 then length else -1 in
+    let a2 = if a2 > length || a2 < -length 
+      then raise (IndexError "list index out of range")
+      else if a4 > 0 then (a2+length) mod length
+      else (a2+length+1) mod (length+1) in
+    String(splice_string a1 a2 a3 a4)
+  | String a1, NoneVal, Int a3, Int a4 -> 
+    let length = String.length a1 in
+    let a2 = if a4 > 0 then 0 else length -1 in
+    let a3 = if a3 > length || a3 < -length
+      then raise (IndexError "list index out of range")
+      else if a4 > 0 then (a3+length+1) mod (length+1)
+      else (a3+length) mod (length) in     
+    String(splice_string a1 a2 a3 a4)
+  | String a1, Int a2, Int a3, Int a4 -> 
+    let length = String.length a1 in
+    let a2, a3 = 
+      if a2 > length || a2 < -length || a3 > length || a3 < -length
+      then raise (IndexError "list index out of range")
+      else if a4 > 0 then (a2+length) mod length, (a3+length+1) mod (length+1)
+      else (a2+length+1) mod (length+1), (a3+length) mod (length)  in
+    String(splice_string a1 a2 a3 a4)
+  | _ -> failwith "Something went wrong in splice conversion"
 
 (** A list associating the name of the built-in function to the actual 
     functions *)
