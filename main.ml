@@ -111,7 +111,7 @@ let rec interpret (st:State.t) (lines: string list)
                                 interpret st [read_line ()] [1] new_line) else st
   | h::t, n_h::n_t -> 
     (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
-     | exception (KeyError x) -> print_error "Type Error" x h n_h; 
+     | exception (KeyError x) -> print_error "Key Error" x h n_h; 
        interpret st [] [] new_line
      | exception (SyntaxError x) -> print_error "SyntaxError" x h n_h;
        interpret st [] [] new_line

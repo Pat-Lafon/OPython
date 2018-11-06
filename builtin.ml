@@ -36,13 +36,17 @@ let dict (lst : value list) : State.value =
     end 
   in Dictionary(ref(to_assoc lst))
 
-(**  **)
+(** If lst is in the form [Dictionary h::k::v::[]],[put lst] places 
+    a new binding ([k],[v]) to the dictionary h. If [k] is already present,
+    the value of that key is replaced with [v]. Returns none. **)
 let put (lst : value list) : State.value =
   match lst with
   | Dictionary(h)::key::value::[] -> 
-    h := ((key,value) :: (List.remove_assoc key !h)); NoneVal
+    h := ((List.remove_assoc key !h) @ [(key,value)]); NoneVal
   | _ -> raise (TypeError("Operation unsupported"))
 
+(** If lst is in the form [Dictionary h::k::[]], [get lst] returns the value
+    k is bound to, if k is not a key in h, it raises a KeyError**)
 let get (lst : value list) : State.value =
   match lst with
   | Dictionary(h)::key::[] -> if List.assoc_opt key !h <> None 
@@ -268,6 +272,9 @@ let int (val_list: value list) =
   | [] -> Int(0)
   | _ -> raise (TypeError "int() can't convert more than one argument")
 
+(** [list v] returns the content of v if v contains a single VList, returns
+    VList(ref[]) if v is empty, or a VList of a list of characters (in string form) 
+    of s if v contains a single element Sitrng(s) **)
 let rec list (v : value list) = match v with
   | [] -> VList(ref[])
   | VList(l)::[]-> VList(l)
