@@ -17,13 +17,14 @@ let rec read_if (conds : expr list) (bodies : string list)
        | Empty -> 
          (List.rev (Value(Bool(true))::conds), 
           List.rev (""::(String.trim acc::bodies)), [], [])
-       | Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line lines line_nums
-       | If (cond, body) -> 
-         read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
-       | Elif (cond, body) -> 
-         read_if (cond::conds) (String.trim acc::bodies) body new_line lines line_nums
+       | Line line -> read_if conds bodies (acc ^ "\n" ^ line) 
+                      new_line lines line_nums
+       | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body 
+                            new_line lines line_nums
+       | Elif (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) body 
+                              new_line lines line_nums
        | Else -> read_if (Value(Bool(true))::conds) 
-                   (String.trim acc::bodies) "" new_line lines line_nums
+                 (String.trim acc::bodies) "" new_line lines line_nums
        | _ -> raise EmptyInput)
     else 
       let indented_line = add_depth (String.trim line) (depth - 1) in
@@ -85,6 +86,8 @@ let rec read_function (body : string) (lines : string list)
        | _ -> read_function (body ^ "\n" ^ indent_line) t n_t new_line)
   | _, _ -> failwith "Lines and line numbers should match"
 
+(** Read the next lines as the body of a for loop. Ends on an empty line
+    or a line with indent at the same level as the for loop *)
 let rec read_for (body : string) (lines : string list) (new_line : bool) =
   match lines with
   | [] -> if new_line then (print_string "... "; 
@@ -108,7 +111,7 @@ let rec interpret (st:State.t) (lines: string list)
                                 interpret st [read_line ()] [1] new_line) else st
   | h::t, n_h::n_t -> 
     (match Parser.parse_line h |> (fun x -> Evaluate.evaluate x st) with
-     | exception (KeyError x) -> print_error "Type Error" x h n_h; 
+     | exception (KeyError x) -> print_error "Key Error" x h n_h; 
        interpret st [] [] new_line
      | exception (SyntaxError x) -> print_error "SyntaxError" x h n_h;
        interpret st [] [] new_line
@@ -124,13 +127,15 @@ let rec interpret (st:State.t) (lines: string list)
        interpret st [] [] new_line
      | exception (ZeroDivisionError x) -> print_error "ZeroDivisionError" x h n_h;
        interpret st [] [] new_line
-     | exception (AssertionError) -> print_error "AssertionError" "Incorrect" h n_h;
-       interpret st [] [] new_line
+     | exception (AssertionError) -> print_error "AssertionError" 
+                                     "Incorrect" h n_h;
+                                     interpret st [] [] new_line
      | exception EmptyInput -> interpret st t n_t new_line
      | exception (IfMultiline (cond, body)) -> 
        (* Create list of conditions with corresponding line bodies *)
        let (conds, bodies, next_lines, next_line_nums) 
          = read_if [cond] [] body (t = []) t n_t in 
+       (* Iterate through conditions and run body of code *)
        let new_state = interpret_if conds bodies st in
        interpret new_state next_lines next_line_nums false
      | exception (ForMultiline (iter, arg, body)) -> 
@@ -176,10 +181,13 @@ and interpret_while (cond : expr) (body : string) (st: State.t) : State.t =
     let new_state = interpret st new_lines new_line_nums false in 
     interpret_while cond body new_state
   | false -> interpret st [] [] false
-and interpret_for (iter : value list) (arg : string) (body : string) (st: State.t) : State.t = 
+and interpret_for (iter : value list) (arg : string) 
+    (body : string) (st: State.t) : State.t = 
   match iter with
   | [] -> st
   | h::t -> 
+  (* For each element in the iterator, assign it to the argument and run 
+    the body of the for loop *)
     let arg_state = insert arg h st in
     let new_lines = String.split_on_char '\n' body in
     let new_line_nums = create_int_list (List.length new_lines) in
