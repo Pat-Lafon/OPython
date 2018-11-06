@@ -32,7 +32,7 @@ let arith_tests = [
   make_line_test "And" "x=True and True" [] ["x",Bool(true)] ;
   make_line_test "Or" "x=False or True" [] ["x",Bool(true)] ;
   make_line_test "Not" "x=(not False)" [] ["x",Bool(true)] ;
-  (* make_line_test "LessThan" "x=~5" [] ["x",Int(-6)] ; *)
+  make_line_test "Compliment" "x=~5" [] ["x",Int(-6)] ; 
 ]
 
 let function_tests = [
@@ -44,16 +44,13 @@ let function_tests = [
   make_line_test "bool2" "x = bool(0.0)" [] ["x", Bool(false)] ;
   make_line_test "int" "x = int(\"420\")" [] ["x", Int(420)] ;
   make_line_test "int2" "x = int(1234.02344)" [] ["x", Int(1234)] ;
-  make_line_test "float" "x = float(345)" [] ["x", Float(345.)] ;
-  (* make_line_test "float2" "x = float([])" [] ["x", Float(0.)] ; *)
-
-  (* make_line_test "append1" "x = [123, 23] == append([123],23)" 
-     [] ["x",Bool(true)] ;
-     make_line_test "append2" "x = [\"\"] == append([],\"\")" [] ["x", Bool(true)]; *)
-
+  make_line_test "float" "x = float(345)" [] ["x", Float(345.0)] ;
+  make_line_test "float2" "x = float()" [] ["x", Float(0.)] ; 
   make_line_test "len of []" "x = len([])" [] ["x", Int(0)];
   make_line_test "len of [1,2,3]" "x = len([1,2,3])" [] ["x", Int(3)];
-  make_line_test "len of string" "x = len('')" [] ["x", Int(0)];
+  make_line_test "len of string1" "x = len(\"\")" [] ["x", Int(0)]; 
+  make_line_test "len of string2" "x = len('')" [] ["x", Int(0)];
+  make_line_test "len of string3" "x = len('omae wa mou shinderu')" [] ["x", Int(20)];
   make_line_test "range test 1" "x = range(4)" [] 
     ["x", VList(ref([Int(0); Int(1); Int(2); Int(3)]))];
   make_line_test "range test 2" "x = range(1,4)" []
@@ -75,7 +72,6 @@ let function_tests = [
     ["y", Int(12); 
      "x", Dictionary(ref ([String("a"), Int(12); Int(14), String("q")]))];
 ]
-
 
 let suite =
   "test suite for A6-A8"  >::: List.flatten [
