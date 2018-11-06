@@ -3,6 +3,8 @@ def mergeSort(arr):
         mid = len(arr)//2 
         L = arr[:mid] 
         R = arr[mid:]
+        print(L)
+        print(R)
   
         mergeSort(L)
         mergeSort(R)
@@ -31,5 +33,5 @@ def mergeSort(arr):
             k+=1
   
 arr = [12, 11, 13, 5, 6, 7]  
-mergeSort(arr) 
+mergeSort(arr)
 print(arr)
