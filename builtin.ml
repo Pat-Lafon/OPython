@@ -314,10 +314,11 @@ let rec to_list (lst : value list) =
     Note: quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
 
+(* *)
 let rec replace (v : value list) = match v with
   | VList(l):: Int(idx):: x :: []-> let
     rec replace_help l idx x = begin match l with 
-      | [] -> []
+      | [] -> raise (IndexError "list index out of range")
       | h::t -> if idx = 0 then x :: t else h :: replace_help t (idx-1) x 
     end
     in l := (replace_help !l idx x); NoneVal
