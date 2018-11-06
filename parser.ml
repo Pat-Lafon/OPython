@@ -221,11 +221,14 @@ and
       else if args <> -1 && fstarg <> -1
       (* TODO: Pass None instead of strings *)
       then Function(String.sub line (fstarg+1) (args-fstarg-1), 
-                    exprlst(String.sub line 0 (fstarg) ^","^ 
-                            String.sub line (args+1) (length-args-2))',')
+                    if args = length -args-2 
+                    then exprlst(String.sub line 0 (fstarg)) ','
+                    else exprlst(String.sub line 0 (fstarg) ^","^ 
+                                 String.sub line (args+1) (length-args-2))',')
       else if args <> -1 
       then Function(String.sub line 0 (args), 
-                    exprlst (String.sub line (args+1) (length-args-2))',')
+                    if args = length -args-2 then []
+                    else exprlst (String.sub line (args+1) (length-args-2))',')
       else if line.[length -1] = ']' then 
         let args = (rev_get_idx (String.sub line 0 (length-1)) "[") in
         Function("splice", exprlst (String.sub line 0 (args) ^":"^ 
@@ -272,6 +275,9 @@ let for_regex = Str.regexp "^for \\(.*\\) in \\(.*\\) *:\\(.*\\)"
 let return_regex = Str.regexp "^return \\(.*\\)"
 let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] = \\(.*\\)"
 
+(* Find out what is wrong before fixing a[0]==2 case *)
+let not_struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] *== *\\(.*\\)"
+
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
 let is_else line = Str.string_match else_regex line 0
@@ -280,7 +286,7 @@ let is_while line = Str.string_match while_regex line 0
 let is_def line = Str.string_match def_regex line 0
 let is_for line = Str.string_match for_regex line 0
 let is_return line = Str.string_match return_regex line 0
-let is_struct_assignment line = Str.string_match struct_regex line 0
+let is_struct_assignment line = (Str.string_match struct_regex line 0)
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
