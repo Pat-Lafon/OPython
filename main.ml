@@ -75,7 +75,7 @@ let rec read_function (body : string) (lines : string list)
     (line_nums : int list) (new_line : bool) =
   match lines, line_nums with
   | [], [] -> if new_line then (print_string "... "; 
-                                read_function body [read_line ()] [] new_line)
+                                read_function body [read_line ()] [1] new_line)
     else (String.trim body, [], [])
   | line::t, line_num::n_t -> 
     let depth = indent_depth line in
