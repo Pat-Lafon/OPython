@@ -28,7 +28,13 @@ def quickSort(arr,low,high):
         quickSort(arr, pi+1, high)
 
 arr = [10, 7, 8, 9, 1, 5]
-n = len(arr)
-# quickSort(arr,0,n-1)
-print(partition(arr,0,n-1))
-print(arr)
+quickSort(arr,0,len(arr)-1)
+assert([1, 5, 7, 8, 9, 10] == arr)
+
+
+large_input = [3, 30, 40, 28, 41, 8, 25, 22, 30, 26, 48, 15, 39, 24, 34, 38, 4, 34, 4, 11, 9, 20, 32, 6, 15, 37, 50, 19, 12, 29]
+
+sorted_input = [3, 4, 4, 6, 8, 9, 11, 12, 15, 15, 19, 20, 22, 24, 25, 26, 28, 29, 30, 30, 32, 34, 34, 37, 38, 39, 40, 41, 48, 50]
+
+quickSort(large_input,0,len(large_input)-1)
+assert(large_input == sorted_input)
