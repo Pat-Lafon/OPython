@@ -1,6 +1,7 @@
 # Return the value right of val
 def bin_search_right(arr, val):
-    lo, hi = 0, len(arr) - 1
+    lo = 0 
+    hi = len(arr) - 1
     while lo < hi:
         mid = (lo + hi)//2
         if arr[mid] <= val:
@@ -11,7 +12,8 @@ def bin_search_right(arr, val):
 
 # Return the value left of val
 def bin_search_left(arr, val):
-    lo, hi = 0, len(arr) - 1
+    lo = 0 
+    hi = len(arr) - 1
     while lo < hi:
         mid = (lo + hi + 1)//2
         if arr[mid] < val:
