@@ -317,6 +317,7 @@ let rec replace (v : value list) = match v with
   | Dictionary(h)::key::valu::[] -> put (Dictionary(h)::key::valu::[])
   | _ -> raise (TypeError (""))
 
+(** [match_bool statevalue] converts a state.value bool into an ocaml bool.*)
 let match_bool = function
   |Bool x -> x|_->failwith("not possble")
 
