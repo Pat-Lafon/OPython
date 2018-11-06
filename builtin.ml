@@ -3,7 +3,7 @@ open Parser
 open Error
 open Arithmetic
 
-(**[to_string] returns the string of a value*)
+(**[to_string] returns the string representation of a value *)
 let rec to_string (value:State.value) : string = 
   match value with
   | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
@@ -26,7 +26,7 @@ let rec to_string (value:State.value) : string =
   | NoneVal -> "None"
 
 (** [dictionary lst] returns a python dictionary with the keys being the
-    elements in odd indexes of lst and its respective value is the next element **)
+    elements in odd indexes of lst and its respective value is the next element *)
 let dict (lst : value list) : State.value = 
   let rec to_assoc lst = 
     begin match lst with
@@ -38,7 +38,7 @@ let dict (lst : value list) : State.value =
 
 (** If lst is in the form [Dictionary h::k::v::[]],[put lst] places 
     a new binding ([k],[v]) to the dictionary h. If [k] is already present,
-    the value of that key is replaced with [v]. Returns none. **)
+    the value of that key is replaced with [v]. Returns none. *)
 let put (lst : value list) : State.value =
   match lst with
   | Dictionary(h)::key::value::[] -> 
@@ -46,7 +46,7 @@ let put (lst : value list) : State.value =
   | _ -> raise (TypeError("Operation unsupported"))
 
 (** If lst is in the form [Dictionary h::k::[]], [get lst] returns the value
-    k is bound to, if k is not a key in h, it raises a KeyError**)
+    k is bound to, if k is not a key in h, it raises a KeyError*)
 let get (lst : value list) : State.value =
   match lst with
   | Dictionary(h)::key::[] -> if List.assoc_opt key !h <> None 
@@ -56,7 +56,7 @@ let get (lst : value list) : State.value =
 
 (** [index lst] returns the index of the second element of lst in the first 
     element of lst in an integer value, returns Int(-1) if not found.
-    The first element of lst must be either a VList or a String **)
+    The first element of lst must be either a VList or a String *)
 let index (lst : value list): State.value  = let func = function
     | Int x, Int y -> (x = y)
     | Int x, Float y -> (float_of_int x = y)
@@ -98,7 +98,7 @@ let rec splice_list (item: value list) start stop step =
 
 (** The splice function as in Python; the first element of lst is the 
     string/list to splice, the optional second to fourth elements of lst consist 
-    of the start, end, and stepping of the index **)
+    of the start, end, and stepping of the index *)
 let splice (lst : value list) : State.value = 
   let item, start, stop, step = match lst with
     | VList a1 :: a2 :: a3 :: a4 :: [] -> 
@@ -186,7 +186,7 @@ let print (val_list : value list) =
 
 (**[if_decider val] takes in a [State.value] and returns false if the values 
    match a "false" value of a respective type. The "empty" or "zero" of each 
-   type results in false, and if "non-empty" or "non-zero" then true*) 
+   type results in false, and if "non-empty" or "non-zero" then true *) 
 let if_decider = function
   | Int(0) -> false
   | String("") -> false
@@ -202,6 +202,9 @@ let rec assertt (val_list : value list) =
   | [] -> NoneVal 
   | h::t -> if if_decider h then assertt t else raise AssertionError
 
+(** If lst contains exactly a single VList then [len lst] returns the length of 
+    that VList, if lst contains exactly a single string then [len lst] is the length
+    of that string. Raises a TypeError otherwise.*)
 let len (lst : value list) : State.value = match lst with
   | VList(l)::[] -> Int(List.length !l)
   | String(s)::[] -> Int (String.length s)
@@ -214,6 +217,13 @@ let rec helper_range s f i =
                       else Int(s) :: helper_range (s+i) f i) 
   else (if s <= f then [] else Int(s) :: helper_range (s+i) f i)
 
+(** [range lst] returns:
+    If lst contains exactly 3 Int's a,b,c then VList of integers from a up to b-1 
+    with stepping of c
+    If lst contains exactly 2 Int's a,b then VList of integers from a up to b-1 
+    with stepping of 1
+    If lst contains exactly 1 Int's a then VList of integers from 0 up to a-1  
+    with stepping of 1 *)
 let range (lst : value list) : State.value = 
   match lst with
   | Int(a)::[] -> VList (ref(helper_range 0 a 1))
@@ -274,7 +284,7 @@ let int (val_list: value list) =
 
 (** [list v] returns the content of v if v contains a single VList, returns
     VList(ref[]) if v is empty, or a VList of a list of characters (in string form) 
-    of s if v contains a single element Sitrng(s) **)
+    of s if v contains a single element Sitrng(s) *)
 let rec list (v : value list) = match v with
   | [] -> VList(ref[])
   | VList(l)::[]-> VList(l)
