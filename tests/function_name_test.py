@@ -19,5 +19,9 @@ a = xdefx(1)
 
 def f(): return 5
 
+<<<<<<< HEAD
 
 assert(f() == 5)
+=======
+a = f()
+>>>>>>> 851dde0587345a178b9a1eae9a0bcbc186daa788
