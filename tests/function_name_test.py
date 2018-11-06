@@ -9,3 +9,7 @@ a = xorx(1)
 a = xandx(1)
 a = xnotx(1)
 a = xdefx(1)
+
+def f(): return 5
+
+f()
