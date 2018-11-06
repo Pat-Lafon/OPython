@@ -12,4 +12,4 @@ a = xdefx(1)
 
 def f(): return 5
 
-f()
+a = f()

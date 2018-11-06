@@ -4,7 +4,7 @@ open Error
 open Arithmetic
 
 (**[to_string] returns the string representation of a value *)
-let rec to_string (value:State.value) : string = 
+let rec to_string (value : State.value) : string = 
   match value with
   | VList x -> List.fold_left (fun x y -> x^(to_string y)^", ") "[" !x |> 
                (fun x -> if String.length x = 1 then x ^ "]" 
@@ -24,6 +24,15 @@ let rec to_string (value:State.value) : string =
       | (h1,h2) :: t -> to_string h1 ^" : "^to_string h2 ^", " ^ helper t
     end in "{" ^ helper(!d) ^ "}"
   | NoneVal -> "None"
+
+let rec str_helper (vals : State.value list) =
+  match vals with
+  | [] -> ""
+  | h::t -> to_string h ^ " " ^ str_helper t
+
+let str (vals : State.value list) : State.value =
+  let full_str = str_helper vals in
+  String(full_str)
 
 (** [dictionary lst] returns a python dictionary with the keys being the
     elements in odd indexes of lst and its respective value is the next element *)
@@ -385,4 +394,4 @@ let built_in_functions = [("append", append); ("len", len); ("print", print);
                           ("index", index); ("assert", assertt); ("list", list);
                           ("put", put); ("get", get); ("dictionary", dict); 
                           ("replace", replace); ("max", max); ("min", min);
-                          ("quit"), quit]
+                          ("quit", quit); ("str", str)]
