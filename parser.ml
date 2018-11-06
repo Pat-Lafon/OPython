@@ -33,7 +33,7 @@ let operators = [[("or", Or)];
                  [("+", Plus);("-", Minus);];
                  [("%", Modular);("/", Divide);("//", Floor_Divide);
                   ("*", Multiply);];
-                 [("**", Exponent);]]
+                 [("**", Exponent);("~", Complement)]]
 
 let reserved_keywords = [
   "False"; "def"; "if"; "raise"; "None"; "del"; "import"; "return"; "True";	
@@ -62,6 +62,8 @@ let is_var_name (s:string) : string =
 let not_mistaken str op =
   let oplen = String.length op in
   if String.length str = oplen then true
+  (* Will mess up for cases like grand = 3 *)
+  else if op = "or" || op = "and" then str.[oplen] = ' '
   else if op <> "*" && op <> "=" && op <> "/" && op <> "<" && op <> ">" 
           && op <> "!" then true
   else str.[oplen] <> '*' && str.[oplen] <> '=' && str.[oplen] <> '/'
