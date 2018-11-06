@@ -306,7 +306,9 @@ let parse_return (line: string) : (expr) =
 
 let parse_def (line: string) : (string * string list * string) =
   let fn_name = Str.matched_group 1 line in
-  let args = List.map String.trim (String.split_on_char ',' (Str.matched_group 2 line)) in
+  let arg_string = Str.matched_group 2 line in
+  let args = if (String.trim arg_string = "") then [] 
+  else List.map String.trim (String.split_on_char ',' (Str.matched_group 2 line)) in
   let body = String.trim (Str.matched_group 3 line) in
   fn_name, args, body
 
