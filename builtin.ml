@@ -321,7 +321,9 @@ let match_bool = function
   |Bool x -> x|_->failwith("not possble")
 
 (** [max v] returns the maximum element of the given list if a list is the 
-    only input value, or it returns the greatest value of the multiple a*)
+    only input value, or it returns the greatest value of the multiple elements
+    of [v].
+    Raise: TypeError if no args or empty sequence is given.*)
 let max (v:value list) = match v with
   | VList l :: []-> let get_first l = begin match l with
       | h::_ -> h 
@@ -342,6 +344,10 @@ let max (v:value list) = match v with
         then max_assist t h else max_assist t acc
     end in let frst =  get_first(x) in (max_assist x frst)
 
+(** [min v] returns the minimum element of the given list if a list is the 
+    only input value, or it returns the least value of the multiple elements
+    of [v].
+    Raise: TypeError if no args or empty sequence is given.*)
 let min (v:value list) = match v with
   | VList l :: []-> let get_first l = begin match l with
       | h::_ -> h 
