@@ -6,8 +6,8 @@ open Error
 open Builtin
 
 (** Read next lines that are part of the if conditional block *)
-let rec read_if (conds : expr list) (bodies : string list) 
-    (acc : string) (new_line : bool) (lines : string list) (line_nums : int list) =
+let rec read_if (conds : expr list) (bodies : string list) (acc : string) 
+  (new_line : bool) (lines : string list) (line_nums : int list) =
   if new_line then
     let () = print_string "... " in
     let line = read_line () in
