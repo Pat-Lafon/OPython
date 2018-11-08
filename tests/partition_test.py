@@ -13,7 +13,7 @@ def partition(m):
         for k in range(1, m):
             memo[n][k] += memo[n][k-1]
             if n-k > 0:
-                memo[n][k] += memo[n-(k-1)][k]
+                memo[n][k] += memo[n-(k+1)][k]
 
     return memo[m][m-1]
 
