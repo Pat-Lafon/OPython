@@ -129,14 +129,14 @@ and read_if (conds : expr list) (bodies : string list) (acc : string)
                          (""::(String.trim acc::bodies)), lines)
            | Line line -> (List.rev (Value(Bool(true))::conds), List.rev 
                              (""::(String.trim acc::bodies)), lines)
-           (*| Line line -> read_if conds bodies (acc ^ "\n" ^ line) new_line t*)
            | If (cond, body) -> read_if (cond::conds) (String.trim acc::bodies) 
                                   body new_line t
            | Elif (cond, body) -> read_if (cond::conds) 
                                     (String.trim acc::bodies) body new_line t
            | Else -> read_if (Value(Bool(true))::conds) 
                        (String.trim acc::bodies) "" new_line t
-           | _ -> raise EmptyInput)
+           | _ -> (List.rev (Value(Bool(true))::conds), List.rev 
+                             (""::(String.trim acc::bodies)), lines))
         else 
           let line = add_depth (String.trim h) (depth - 1) in
           read_if conds bodies (acc ^ "\n" ^ line) new_line t
