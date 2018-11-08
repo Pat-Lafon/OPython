@@ -13,7 +13,7 @@ default: build
 	utop
 
 test:
-	$(OCAMLBUILD) -tag debug $(TEST) && ./$(TEST)
+	$(OCAMLBUILD) -tag debug $(TEST) && ./$(TEST) && $(OCAMLBUILD) opython.byte && mv opython.byte opython && ./run_tests.sh
 
 pytest:
 	$(OCAMLBUILD) opython.byte && mv opython.byte opython && ./run_tests.sh
