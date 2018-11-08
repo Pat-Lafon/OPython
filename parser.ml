@@ -181,7 +181,7 @@ let rec exprlst (line:string) (chr:char): expr list =
 (** [parse_expr_helper] is an expr made from [str] based on [op] *)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
   let oplen = String.length (fst op) in
-  let idx = rev_get_idx str (fst op) - (oplen-1)in
+  let idx = get_idx str (fst op) in
   let left = String.sub str 0 idx in
   let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
   if trim left = "" then Unary (snd op, parse_expr right operators) 
