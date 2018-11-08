@@ -266,7 +266,8 @@ let max (v:value list) = match v with
     end in let
       rec max_help l acc = begin match l with
       | [] -> acc
-      | h::t -> if h >= acc then max_help t h else max_help t acc
+      | h::t -> if match_bool(helper_greater_equal (h,acc))  
+      then max_help t h else max_help t acc
     end 
     in let frst =  get_first(!l)
     in (max_help !l frst)
@@ -290,7 +291,8 @@ let min (v:value list) = match v with
     end in let
       rec min_help l acc = begin match l with
       | [] -> acc
-      | h::t -> if h <= acc then min_help t h else min_help t acc
+      | h::t -> if match_bool(helper_less_equal (h,acc))
+       then min_help t h else min_help t acc
     end 
     in let frst =  get_first(!l)
     in (min_help !l frst)

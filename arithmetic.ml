@@ -188,12 +188,12 @@ let helper_greater_than = function
   | Bool x, Float y -> if x then Bool(y<1.0) else Bool (y<0.0)
   | Bool x, Bool y -> if x then Bool(not y) else Bool (false)
   | String x, String y ->  Bool (x>y)
-  | String x, _ | _, String x -> Bool false
+  | String x, _ | _, String x -> raise (TypeError("\'>\' not supported with these types"))
   | VList x, VList y -> Bool(x>y)
-  | VList x, _ | _, VList x -> Bool false
-  | NoneVal, _ | _, NoneVal -> Bool false
-  | Function _, _ | _, Function _ -> Bool false
-  | Dictionary t, _ | _, Dictionary t -> Bool false
+  | VList x, _ | _, VList x -> raise (TypeError("\'>\' not supported with these types"))
+  | NoneVal, _ | _, NoneVal -> raise (TypeError("\'>\' not supported with these types"))
+  | Function _, _ | _, Function _ -> raise (TypeError("\'>\' not supported with these types"))
+  | Dictionary t, _ | _, Dictionary t -> raise (TypeError("\'>\' not supported with these types"))
 
 let helper_greater_equal = function
   | Int x, Int y -> Bool (x >= y)
@@ -206,12 +206,12 @@ let helper_greater_equal = function
   | Bool x, Float y -> if x then Bool(y<=1.0) else Bool (y<=0.0)
   | Bool x, Bool y -> if x then Bool(true) else Bool (not y)
   | String x, String y -> Bool(x>=y)
-  | String x, _ | _, String x -> Bool false
+  | String x, _ | _, String x -> raise (TypeError("\'>=\' not supported with these types"))
   | VList x, VList y -> Bool(x>=y)
-  | VList x, _ | _, VList x -> Bool false
-  | NoneVal, _ | _, NoneVal -> Bool false
-  | Function _, _ | _, Function _ -> Bool false
-  | Dictionary t, _ | _, Dictionary t -> Bool false
+  | VList x, _ | _, VList x -> raise (TypeError("\'>=\' not supported with these types"))
+  | NoneVal, _ | _, NoneVal -> raise (TypeError("\'>=\' not supported with these types"))
+  | Function _, _ | _, Function _ -> raise (TypeError("\'>=\' not supported with these types"))
+  | Dictionary t, _ | _, Dictionary t -> raise (TypeError("\'>=\' not supported with these types"))
 
 let helper_less_than = function
   | Int x, Int y -> Bool (x < y)
@@ -224,12 +224,12 @@ let helper_less_than = function
   | Bool x, Float y -> if x then Bool(y>1.0) else Bool (y>0.0)
   | Bool x, Bool y -> if not x then Bool(true) else Bool (y)
   | String x, String y -> Bool(x<y)
-  | String x, _ | _, String x -> Bool false
+  | String x, _ | _, String x -> raise (TypeError("\'>\' not supported with these types"))
   | VList x, VList y -> Bool(x<y)
-  | VList x, _ | _, VList x -> Bool false
-  | NoneVal, _ | _, NoneVal -> Bool false
-  | Function _, _ | _, Function _ -> Bool false
-  | Dictionary t, _ | _, Dictionary t -> Bool false
+  | VList x, _ | _, VList x -> raise (TypeError("\'>\' not supported with these types"))
+  | NoneVal, _ | _, NoneVal -> raise (TypeError("\'>\' not supported with these types"))
+  | Function _, _ | _, Function _ -> raise (TypeError("\'>\' not supported with these types"))
+  | Dictionary t, _ | _, Dictionary t -> raise (TypeError("\'>\' not supported with these types"))
 
 let helper_less_equal = function
   | Int x, Int y -> Bool (x <= y)
@@ -242,9 +242,9 @@ let helper_less_equal = function
   | Bool x, Float y -> if x then Bool(y>=1.0) else Bool (y>=0.0)
   | Bool x, Bool y -> if not x then Bool(y) else Bool (false)
   | String x, String y -> Bool(x<=y)
-  | String x, _ | _, String x -> Bool false
+  | String x, _ | _, String x -> raise (TypeError("\'>=\' not supported with these types"))
   | VList x, VList y -> Bool(x<=y)
-  | VList x, _ | _, VList x -> Bool false
-  | NoneVal, _ | _, NoneVal -> Bool false
-  | Function _, _ | _, Function _ -> Bool false
-  | Dictionary t, _ | _, Dictionary t -> Bool false
+  | VList x, _ | _, VList x -> raise (TypeError("\'>=\' not supported with these types"))
+  | NoneVal, _ | _, NoneVal -> raise (TypeError("\'>=\' not supported with these types"))
+  | Function _, _ | _, Function _ -> raise (TypeError("\'>=\' not supported with these types"))
+  | Dictionary t, _ | _, Dictionary t -> raise (TypeError("\'>=\' not supported with these types"))
