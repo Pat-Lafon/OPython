@@ -50,7 +50,8 @@ let function_tests = [
   make_line_test "len of [1,2,3]" "x = len([1,2,3])" [] ["x", Int(3)];
   make_line_test "len of string1" "x = len(\"\")" [] ["x", Int(0)]; 
   make_line_test "len of string2" "x = len('')" [] ["x", Int(0)];
-  make_line_test "len of string3" "x = len('omae wa mou shinderu')" [] ["x", Int(20)];
+  make_line_test "len of string3" "x = len('omae wa mou shinderu')" [] 
+    ["x", Int(20)];
   make_line_test "range test 1" "x = range(4)" [] 
     ["x", VList(ref([Int(0); Int(1); Int(2); Int(3)]))];
   make_line_test "range test 2" "x = range(1,4)" []

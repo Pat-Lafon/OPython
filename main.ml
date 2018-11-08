@@ -40,13 +40,14 @@ let rec read_if (conds : expr list) (bodies : string list)
                        List.rev (""::(String.trim acc::bodies)), lines, line_nums)
            | Line line -> (List.rev (Value(Bool(true))::conds), 
                            List.rev (""::(String.trim acc::bodies)), lines, line_nums)
-           | If (cond, body) -> read_if (cond::conds) 
-                                  (String.trim acc::bodies) body new_line t n_t
+           | If (cond,body) -> (List.rev (Value(Bool(true))::conds), 
+                       List.rev (""::(String.trim acc::bodies)), lines, line_nums)
            | Elif (cond, body) -> read_if (cond::conds) 
                                     (String.trim acc::bodies) body new_line t n_t
            | Else -> read_if (Value(Bool(true))::conds) 
                        (String.trim acc::bodies) "" new_line t n_t
-           | _ -> raise EmptyInput)
+           | _ -> (List.rev (Value(Bool(true))::conds), 
+                       List.rev (""::(String.trim acc::bodies)), lines, line_nums))
         else 
           let line = add_depth (String.trim h) (depth - 1) in
           read_if conds bodies (acc ^ "\n" ^ line) new_line t n_t

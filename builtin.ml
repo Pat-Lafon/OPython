@@ -128,10 +128,12 @@ let rec assertt (val_list : value list) =
   | h::t -> if if_decider h then assertt t else raise AssertionError
 
 (**[len lst] returns the number of characters in a string or the number of
-   elements in a list.*)
+   elements in the first element of lst when lst has exactly a string or a
+   list. *)
 let len (lst : value list) : State.value = match lst with
   | VList(l)::[] -> Int(List.length !l)
   | String(s)::[] -> Int (String.length s)
+  | Dictionary(d)::[] -> Int (List.length !d)
   | _::[] -> raise (TypeError ("Object of that type has no len()"))
   | _ -> raise (TypeError("Length takes exactly one argument"))
 
@@ -240,7 +242,12 @@ let rec to_list (lst : value list) =
     Note: quit in actual python can take an arg, it ignores it.*)
 let quit arg = exit 0
 
-(* *)
+(** [replace lst]:
+    If lst contains a list [l], an int [idx], and a value [x], it replaces the 
+    idx-th element of [l] with [x] and returns none. 
+    If lst contains a dictionary [d] and values [k] and [v], it replaces the value
+    bound to [k] with [v], if [k] is not in the dictionary, it adds the new binding
+    [k],[v] *)
 let rec replace (v : value list) = match v with
   | VList(l):: Int(idx):: x :: []-> let
     rec replace_help l idx x = begin match l with 
