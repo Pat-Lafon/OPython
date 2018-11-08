@@ -25,7 +25,7 @@ all:
 	$(OCAMLBUILD) opython.byte && mv opython.byte opython
 
 zip:
-	zip search_src.zip *.ml* _tags Makefile .bashrc
+	zip opython.zip *.ml* _tags Makefile .bashrc tests/* run_tests.sh
 	
 docs: docs-public docs-private
 	
