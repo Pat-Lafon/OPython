@@ -15,7 +15,6 @@ type line_type = Assignment | Expression | If of (expr * string)
                | Empty | Else | Line of string | Elif of (expr * string) 
                | While of (expr * string) | Def of (string * string list * string)
                | Return of (expr) | For of (expr * string * string)
-               | Struct_Assignment of (string * string * string)
 
 exception EmptyInput
 exception IfMultiline of (expr * string)
@@ -181,8 +180,8 @@ let rec exprlst (line:string) (chr:char): expr list =
   else List.map (fun x -> parse_expr x operators) (split_on_char chr line)
 (** [parse_expr_helper] is an expr made from [str] based on [op] *)
 and parse_expr_helper (str:string) (op:string*op) : expr = 
-  let idx = get_idx str (fst op) in
   let oplen = String.length (fst op) in
+  let idx = get_idx str (fst op) in
   let left = String.sub str 0 idx in
   let right = String.sub str (idx + oplen) (String.length str - idx - oplen) in
   if trim left = "" then Unary (snd op, parse_expr right operators) 
@@ -250,6 +249,19 @@ and parse_list_comp (line:string) =
   let iter = Str.matched_group 3 line in
   parse_expr acc operators, arg, parse_expr iter operators, None
 
+let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\]"
+let is_struct_assignment line = (Str.string_match struct_regex line 0)
+let parse_struct_assignment (line:string) : string * string = 
+  let lst = Str.matched_group 1 line in
+  let idx = Str.matched_group 2 line in
+  lst, idx
+
+let assign left right =
+  if is_struct_assignment left 
+  then let lst, idx = parse_struct_assignment left in
+    None, Function ("replace", exprlst (lst^","^idx) ','@(right::[]))
+  else Some (is_var_name left), right
+
 (** [parse_assignment line] is Some string, expr where the string option 
     contains the variable name that is being assigned to and expr is the rest of
     [line] parsed into an expr. *)
@@ -258,12 +270,17 @@ let parse_assignment (line:string) : string option * expr =
   let right = trim (String.sub line (eq_idx+1) (String.length line-eq_idx-1)) in
   if eq_idx = 1 then Some (is_var_name (Char.escaped line.[0])), parse_expr right operators
   else
-    match expr_contains (String.sub line (eq_idx-2) 2) (List.flatten operators) with 
+    let op_string = 
+      let tmp = (String.sub line (eq_idx-2) 2) in 
+      get_idx tmp "]" |> 
+      (fun x -> if x = -1 then tmp 
+        else String.sub tmp (x+1) (String.length tmp-x-1)) in
+    match expr_contains op_string (List.flatten operators) with 
     | Some x, _ -> let left = x |> fst |> String.length |> (fun x -> eq_idx - x) 
-                              |> String.sub line 0 |> trim |> is_var_name in
-      Some left, Binary(Variable left, snd x, parse_expr right operators)
-    | None, _ -> let left = is_var_name (trim (String.sub line 0 eq_idx)) in
-      Some left, parse_expr right operators
+                              |> String.sub line 0 |> trim in
+      assign left (Binary(parse_expr left operators, snd x, parse_expr right operators))
+    | None, _ -> let left = trim (String.sub line 0 eq_idx) in
+      assign left (parse_expr right operators)
 
 (** Matches if statement *)
 let if_regex = Str.regexp "^if \\(.*\\):\\(.*\\)"
@@ -273,10 +290,6 @@ let while_regex = Str.regexp "^while\\(.*\\):\\(.*\\)"
 let def_regex = Str.regexp "^def \\(.*\\)(\\(.*\\)) *:\\(.*\\)$"
 let for_regex = Str.regexp "^for \\(.*\\) in \\(.*\\) *:\\(.*\\)"
 let return_regex = Str.regexp "^return \\(.*\\)"
-let struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] = \\(.*\\)"
-
-(* Find out what is wrong before fixing a[0]==2 case *)
-let not_struct_regex = Str.regexp "\\(.*\\)\\[\\(.*\\)\\] *== *\\(.*\\)"
 
 (** Check if line is an if statement *)
 let is_if line = Str.string_match if_regex line 0
@@ -286,7 +299,6 @@ let is_while line = Str.string_match while_regex line 0
 let is_def line = Str.string_match def_regex line 0
 let is_for line = Str.string_match for_regex line 0
 let is_return line = Str.string_match return_regex line 0
-let is_struct_assignment line = (Str.string_match struct_regex line 0)
 
 let parse_if (line: string) : (expr * string) =
   let condition = Str.matched_group 1 line in
@@ -308,21 +320,13 @@ let parse_def (line: string) : (string * string list * string) =
   let fn_name = Str.matched_group 1 line in
   let arg_string = Str.matched_group 2 line in
   let args = if (String.trim arg_string = "") then [] 
-  else List.map String.trim (String.split_on_char ',' (Str.matched_group 2 line)) in
+    else List.map String.trim (String.split_on_char ',' (Str.matched_group 2 line)) in
   let body = String.trim (Str.matched_group 3 line) in
   fn_name, args, body
-
-let parse_struct_assignment (line:string) : string * string * string = 
-  let lst = Str.matched_group 1 line in
-  let idx = Str.matched_group 2 line in
-  let value = Str.matched_group 3 line in
-  lst, idx, value
 
 (** [line_type line] is the line_type of [line] *)
 let line_type (line : string) : line_type =
   if String.length line = 0 then Empty
-  else if  is_struct_assignment line 
-  then Struct_Assignment (parse_struct_assignment line)
   else if is_assignment line then Assignment
   else if is_if line then If (parse_if line)
   else if is_elif line then Elif (parse_if line)
@@ -337,8 +341,6 @@ let parse_line (line : string) : string option * expr =
   match line_type line with
   | Empty -> raise EmptyInput
   | Assignment -> parse_assignment line
-  | Struct_Assignment (lst, idx, value) -> 
-    None, Function ("replace", exprlst (lst^","^idx^","^value) ',')
   | Expression -> None, parse_expr line operators
   | If (cond, body) -> raise (IfMultiline (cond, body))
   | For (iter, arg, body) -> raise (ForMultiline (iter, arg, body))
@@ -375,7 +377,6 @@ let parse_multiline (line: string) : line_type =
   match line_type line with
   | Empty -> Empty
   | Assignment -> Line line
-  | Struct_Assignment (lst, idx, value) -> Line line
   | Expression -> Line line
   | Line line -> Line line
   | Return (expr) -> Line line

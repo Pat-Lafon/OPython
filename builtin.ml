@@ -314,9 +314,6 @@ let rec splice_list (item: value list) start stop step =
 
 let convert_to_splice (lst:value list) =
   let empty v = v = String "" || v = NoneVal in
-  let neg_step s = match s with 
-    | Int x -> if x < 0 then true else false
-    | _ -> false in
   match lst with
   | VList a1 :: a2 :: a3 :: a4 :: [] -> 
     let a4 = if a4 = Int 0 then raise (ValueError "Third argument must not be zero") 
