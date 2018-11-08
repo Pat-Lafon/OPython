@@ -29,7 +29,6 @@ def merge(arr):
             arr[k] = R[j] 
             j+=1
             k+=1
-    return arr
   
 arr = [12, 11, 13, 5, 6, 7]  
 merge(arr)
