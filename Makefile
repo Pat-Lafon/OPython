@@ -19,16 +19,13 @@ pytest:
 	$(OCAMLBUILD) opython.byte && mv opython.byte opython && ./run_tests.sh
 
 run:
-	$(OCAMLBUILD) $(MAIN) && ./$(MAIN)
+	$(OCAMLBUILD) $(MAIN) && ./$(OPYTHON)
 
 all:
 	$(OCAMLBUILD) opython.byte && mv opython.byte opython
 
-zip:
-	zip opython.zip *.ml* _tags Makefile .bashrc tests/* run_tests.sh
-	
 docs: docs-public docs-private
-	
+
 docs-public: all
 	mkdir -p doc.public
 	ocamlfind ocamldoc -I _build -package $(PKGS) \
@@ -42,4 +39,4 @@ docs-private: all
 
 clean:
 	ocamlbuild -clean
-	rm -rf doc.public doc.private report search_src.zip bisect*.out
+	rm -rf doc.public doc.private search_src.zip bisect*.out
