@@ -1,6 +1,6 @@
 # OPython
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ecfb6b1f0e064f79899262419967515f)](https://www.codacy.com/manual/pat.lafontaine19/OPython?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Pat-Lafon/OPython&amp;utm_campaign=Badge_Grade)
+[![Coverage Status](https://coveralls.io/repos/github/Pat-Lafon/OPython/badge.svg?branch=master)](https://coveralls.io/github/Pat-Lafon/OPython?branch=master)
 
 A python interpreter written in Ocaml
 
